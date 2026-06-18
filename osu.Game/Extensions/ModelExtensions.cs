@@ -76,6 +76,17 @@ namespace osu.Game.Extensions
         public static bool IsLegacyRuleset(this IRulesetInfo ruleset) => ruleset.OnlineID >= 0 && ruleset.OnlineID <= ILegacyRuleset.MAX_LEGACY_RULESET_ID;
 
         /// <summary>
+        /// Check whether this <see cref="IRulesetInfo"/> represents a special RX/AP ruleset (osurx / osuap / taikorx / fruitsrx).
+        /// </summary>
+        public static bool IsSpecialRuleset(this IRulesetInfo ruleset) => ruleset.ShortName is RulesetInfo.OSU_RELAX_MODE_SHORTNAME or RulesetInfo.OSU_AUTOPILOT_MODE_SHORTNAME
+            or RulesetInfo.TAIKO_RELAX_MODE_SHORTNAME or RulesetInfo.CATCH_RELAX_MODE_SHORTNAME;
+
+        /// <summary>
+        /// Check whether this <see cref="IRulesetInfo"/> has RX/AP special rulesets associated with it (ie. is osu!, osu!taiko, or osu!catch).
+        /// </summary>
+        public static bool HasSpecialRuleset(this IRulesetInfo ruleset) => ruleset.ShortName is RulesetInfo.OSU_MODE_SHORTNAME or RulesetInfo.TAIKO_MODE_SHORTNAME or RulesetInfo.CATCH_MODE_SHORTNAME;
+
+        /// <summary>
         /// Check whether the online ID of two <see cref="IBeatmapSetInfo"/>s match.
         /// </summary>
         /// <param name="instance">The instance to compare.</param>

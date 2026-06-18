@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
@@ -13,6 +14,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Online.Leaderboards;
+using osu.Game.Rulesets;
 using osu.Game.Screens.Play.Leaderboards;
 using osuTK;
 
@@ -27,11 +29,17 @@ namespace osu.Game.Screens.Select
 
             private ShearedDropdown<BeatmapLeaderboardScope> scopeDropdown = null!;
             private ShearedDropdown<LeaderboardSortMode> sortDropdown = null!;
+            private VariantDropdown variantDropdown = null!;
             private ShearedToggleButton selectedModsToggle = null!;
+
+            [Resolved]
+            private IBindable<RulesetInfo> ruleset { get; set; } = null!;
 
             public IBindable<Selection> Type => tabControl.Current;
 
             public IBindable<BeatmapLeaderboardScope> Scope => scopeDropdown.Current;
+
+            public IBindable<LeaderboardVariant> Variant => variantDropdown.Current;
 
             private readonly Bindable<BeatmapDetailTab> configDetailTab = new Bindable<BeatmapDetailTab>();
 
@@ -82,12 +90,19 @@ namespace osu.Game.Screens.Select
                                         // Eyeballed to make spacing match. Because shear is silly and implemented in different ways between dropdown and button.
                                         Margin = new MarginPadding { Left = -9.2f },
                                     },
+                                    variantDropdown = new VariantDropdown
+                                    {
+                                        Anchor = Anchor.TopRight,
+                                        Origin = Anchor.TopRight,
+                                        RelativeSizeAxes = Axes.X,
+                                        Width = 0.3f,
+                                    },
                                     sortDropdown = new ShearedDropdown<LeaderboardSortMode>(BeatmapLeaderboardWedgeStrings.Sort)
                                     {
                                         Anchor = Anchor.TopRight,
                                         Origin = Anchor.TopRight,
                                         RelativeSizeAxes = Axes.X,
-                                        Width = 0.4f,
+                                        Width = 0.3f,
                                         Items = Enum.GetValues<LeaderboardSortMode>(),
                                     },
                                     scopeDropdown = new ScopeDropdown
@@ -95,7 +110,7 @@ namespace osu.Game.Screens.Select
                                         Anchor = Anchor.TopRight,
                                         Origin = Anchor.TopRight,
                                         RelativeSizeAxes = Axes.X,
-                                        Width = 0.4f,
+                                        Width = 0.3f,
                                         Current = { Value = BeatmapLeaderboardScope.Global },
                                     },
                                 },
@@ -123,6 +138,8 @@ namespace osu.Game.Screens.Select
                     updateConfigDetailTab();
                 }, true);
 
+                ruleset.BindValueChanged(r => updateVariantOptions(r.NewValue), true);
+
                 scopeDropdown.Current.BindValueChanged(scope =>
                 {
                     sortDropdown.Current.Disabled = false;
@@ -139,6 +156,19 @@ namespace osu.Game.Screens.Select
                         sortDropdown.Current.Disabled = true;
                     }
                 }, true);
+            }
+
+            private void updateVariantOptions(RulesetInfo? rulesetInfo)
+            {
+                var supported = rulesetInfo.SupportedVariants();
+
+                variantDropdown.Items = supported;
+
+                if (!supported.Contains(variantDropdown.Current.Value))
+                    variantDropdown.Current.Value = LeaderboardVariant.Vanilla;
+
+                // Hide the selector for rulesets without RX/AP variants (osu!mania).
+                variantDropdown.FadeTo(supported.Length > 1 ? 1 : 0, 200, Easing.OutQuint);
             }
 
             #region Reading / writing state from / to configuration
@@ -228,6 +258,30 @@ namespace osu.Game.Screens.Select
                 }
 
                 protected override LocalisableString GenerateItemText(BeatmapLeaderboardScope item) => item.GetLocalisableDescription();
+            }
+
+            private partial class VariantDropdown : ShearedDropdown<LeaderboardVariant>
+            {
+                public VariantDropdown()
+                    : base(@"Variant")
+                {
+                    Items = new[] { LeaderboardVariant.Vanilla };
+                }
+
+                protected override LocalisableString GenerateItemText(LeaderboardVariant item)
+                {
+                    switch (item)
+                    {
+                        case LeaderboardVariant.Relax:
+                            return @"Relax";
+
+                        case LeaderboardVariant.Autopilot:
+                            return @"Autopilot";
+
+                        default:
+                            return @"Vanilla";
+                    }
+                }
             }
         }
     }

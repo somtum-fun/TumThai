@@ -19,7 +19,7 @@ namespace osu.Game.Overlays
             AutoSizeAxes = Axes.Both;
         }
 
-        protected override TabItem<RulesetInfo> CreateTabItem(RulesetInfo value) => new OverlayRulesetTabItem(value);
+        protected override TabItem<RulesetInfo> CreateTabItem(RulesetInfo value) => new OverlayRulesetTabItem(value, this);
 
         protected override TabFillFlowContainer CreateTabFlow() => new TabFillFlowContainer
         {

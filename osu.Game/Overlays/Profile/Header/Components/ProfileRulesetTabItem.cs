@@ -42,8 +42,8 @@ namespace osu.Game.Overlays.Profile.Header.Components
 
         private readonly SpriteIcon icon;
 
-        public ProfileRulesetTabItem(RulesetInfo value)
-            : base(value)
+        public ProfileRulesetTabItem(RulesetInfo value, OverlayRulesetSelector overlayRulesetSelector)
+            : base(value, overlayRulesetSelector)
         {
             Add(icon = new DefaultRulesetIcon { Alpha = 0 });
         }

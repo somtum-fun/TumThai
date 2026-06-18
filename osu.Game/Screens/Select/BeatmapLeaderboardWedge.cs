@@ -49,6 +49,12 @@ namespace osu.Game.Screens.Select
 
         public IBindable<bool> FilterBySelectedMods { get; } = new BindableBool();
 
+        /// <summary>
+        /// The play variant (vanilla / relax / autopilot) the leaderboard is currently showing.
+        /// Drives which special ruleset (e.g. <c>osurx</c>) is requested from the server.
+        /// </summary>
+        public Bindable<LeaderboardVariant> Variant { get; } = new Bindable<LeaderboardVariant>();
+
         [Resolved]
         private LeaderboardManager leaderboardManager { get; set; } = null!;
 
@@ -198,9 +204,10 @@ namespace osu.Game.Screens.Select
             Scope.BindValueChanged(_ => RefetchScores());
             Sorting.BindValueChanged(_ => RefetchScores());
             FilterBySelectedMods.BindValueChanged(_ => RefetchScores());
+            Variant.BindValueChanged(_ => RefetchScores());
             beatmap.BindValueChanged(_ => RefetchScores());
             ruleset.BindValueChanged(_ => RefetchScores());
-            mods.BindValueChanged(_ => refetchScoresFromMods());
+            mods.BindValueChanged(_ => onModsChanged());
 
             RefetchScores();
         }
@@ -215,10 +222,45 @@ namespace osu.Game.Screens.Select
             this.FadeOut(300, Easing.OutQuint);
         }
 
-        private void refetchScoresFromMods()
+        private void onModsChanged()
         {
+            // "Both" behaviour: selecting an RX/AP mod auto-switches the leaderboard variant.
+            // Manual dropdown choices are preserved otherwise (we never reset back to Vanilla here).
+            var baseRuleset = ruleset.Value ?? beatmap.Value.BeatmapInfo.Ruleset;
+            var supported = baseRuleset.SupportedVariants();
+
+            if (mods.Value.Any(m => m.Acronym == "AP") && supported.Contains(LeaderboardVariant.Autopilot))
+                Variant.Value = LeaderboardVariant.Autopilot;
+            else if (mods.Value.Any(m => m.Acronym == "RX") && supported.Contains(LeaderboardVariant.Relax))
+                Variant.Value = LeaderboardVariant.Relax;
+
+            // A variant change already triggers a refetch via its own binding; this covers
+            // changes to non-automation mods while the "selected mods" filter is active.
             if (FilterBySelectedMods.Value)
                 RefetchScores();
+        }
+
+        /// <summary>
+        /// Resolves the effective variant for the current ruleset, falling back to
+        /// <see cref="LeaderboardVariant.Vanilla"/> if the selected variant is unsupported.
+        /// </summary>
+        private LeaderboardVariant effectiveVariant(IRulesetInfo baseRuleset)
+            => baseRuleset.SupportedVariants().Contains(Variant.Value) ? Variant.Value : LeaderboardVariant.Vanilla;
+
+        /// <summary>
+        /// Gets the mods to filter the leaderboard by. The RX/AP variant is conveyed via the requested
+        /// ruleset's <c>mode</c> (e.g. <c>osurx</c>), NOT the mod filter — the server gates mod-filtered
+        /// leaderboards behind supporter status + exact match, so sending RX/AP here returns nothing for
+        /// normal users. RX/AP are therefore stripped from any selected-mods filter.
+        /// </summary>
+        private Mod[]? getFilterMods()
+        {
+            if (!FilterBySelectedMods.Value)
+                return null;
+
+            var selectedMods = mods.Value.Where(m => m.Acronym != "RX" && m.Acronym != "AP").ToArray();
+
+            return selectedMods.Length > 0 ? selectedMods : null;
         }
 
         private bool initialFetchComplete;
@@ -243,13 +285,16 @@ namespace osu.Game.Screens.Select
             refetchOperation = Scheduler.AddDelayed(() =>
             {
                 var fetchBeatmapInfo = beatmap.Value.BeatmapInfo;
-                var fetchRuleset = ruleset.Value ?? fetchBeatmapInfo.Ruleset;
+                var baseRuleset = ruleset.Value ?? fetchBeatmapInfo.Ruleset;
+                // Apply the RX/AP variant by switching to the corresponding special ruleset (e.g. osurx),
+                // which makes GetScoresRequest send mode=osurx. Vanilla / unsupported combos keep the base ruleset.
+                var fetchRuleset = baseRuleset.ApplyVariant(effectiveVariant(baseRuleset));
                 var fetchSorting = fetchScope == BeatmapLeaderboardScope.Local ? Sorting.Value : LeaderboardSortMode.Score;
 
                 // For now, we forcefully refresh to keep things simple.
                 // In the future, removing this requirement may be deemed useful, but will need ample testing of edge case scenarios
                 // (like returning from gameplay after setting a new score, returning to song select after main menu).
-                leaderboardManager.FetchWithCriteria(new LeaderboardCriteria(fetchBeatmapInfo, fetchRuleset, fetchScope, FilterBySelectedMods.Value ? mods.Value.ToArray() : null, fetchSorting),
+                leaderboardManager.FetchWithCriteria(new LeaderboardCriteria(fetchBeatmapInfo, fetchRuleset, fetchScope, getFilterMods(), fetchSorting),
                     forceRefresh: true);
 
                 if (!initialFetchComplete)

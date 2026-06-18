@@ -73,12 +73,19 @@ namespace osu.Game.Online.Leaderboards
             {
                 case BeatmapLeaderboardScope.Local:
                 {
+                    // Local scores for a special (RX/AP) variant are stored under the base legacy ruleset
+                    // with the RX/AP mod attached, so query realm with the base ruleset and post-filter by mod
+                    // in localScoresChanged.
+                    string localRulesetShortName = newCriteria.Ruleset.IsSpecialRuleset()
+                        ? newCriteria.Ruleset.CreateNormalRuleset().ShortName
+                        : newCriteria.Ruleset.ShortName;
+
                     localScoreSubscription = realm.RegisterForNotifications(r =>
                         r.All<ScoreInfo>().Filter($"{nameof(ScoreInfo.BeatmapInfo)}.{nameof(BeatmapInfo.ID)} == $0"
                                                   + $" AND {nameof(ScoreInfo.BeatmapInfo)}.{nameof(BeatmapInfo.Hash)} == {nameof(ScoreInfo.BeatmapHash)}"
                                                   + $" AND {nameof(ScoreInfo.Ruleset)}.{nameof(RulesetInfo.ShortName)} == $1"
                                                   + $" AND {nameof(ScoreInfo.DeletePending)} == false"
-                            , newCriteria.Beatmap.ID, newCriteria.Ruleset.ShortName), localScoresChanged);
+                            , newCriteria.Beatmap.ID, localRulesetShortName), localScoresChanged);
                     return;
                 }
 
@@ -93,7 +100,9 @@ namespace osu.Game.Online.Leaderboards
                         return;
                     }
 
-                    if (!newCriteria.Ruleset.IsLegacyRuleset())
+                    // Special (RX/AP) rulesets carry a non-legacy online id but are valid server-side variants
+                    // of a legacy ruleset, so allow them through alongside genuine legacy rulesets.
+                    if (!newCriteria.Ruleset.IsLegacyRuleset() && !newCriteria.Ruleset.IsSpecialRuleset())
                     {
                         scores.Value = LeaderboardScores.Failure(LeaderboardFailState.RulesetUnavailable);
                         return;
@@ -175,18 +184,34 @@ namespace osu.Game.Online.Leaderboards
 
             var newScores = sender.AsEnumerable();
 
+            // For a special (RX/AP) variant, local scores live under the base ruleset, so restrict to scores
+            // that actually used the variant's automation mod (and fold it into the exact-mod comparison below).
+            var currentRuleset = CurrentCriteria.Ruleset;
+            string? variantAcronym = currentRuleset != null && currentRuleset.IsSpecialRuleset()
+                ? (currentRuleset.ShortName == RulesetInfo.OSU_AUTOPILOT_MODE_SHORTNAME ? "AP" : "RX")
+                : null;
+
+            if (variantAcronym != null)
+                newScores = newScores.Where(s => s.Mods.Any(m => m.Acronym == variantAcronym));
+
             if (CurrentCriteria.ExactMods != null)
             {
                 if (!CurrentCriteria.ExactMods.Any())
                 {
                     // we need to filter out all scores that have any mods to get all local nomod scores
-                    newScores = newScores.Where(s => !s.Mods.Any());
+                    // (for a special variant, the variant's automation mod is the expected baseline).
+                    var baseline = variantAcronym != null ? new HashSet<string> { variantAcronym } : new HashSet<string>();
+                    newScores = newScores.Where(s => baseline.SetEquals(s.Mods.Select(m => m.Acronym)));
                 }
                 else
                 {
                     // otherwise find all the scores that have all of the currently selected mods (similar to how web applies mod filters)
                     // we're creating and using a string HashSet representation of selected mods so that it can be translated into the DB query itself
                     var selectedMods = CurrentCriteria.ExactMods.Select(m => m.Acronym).ToHashSet();
+
+                    // RX/AP are stripped from the criteria mods (the variant rides on the ruleset); re-add for comparison.
+                    if (variantAcronym != null)
+                        selectedMods.Add(variantAcronym);
 
                     newScores = newScores.Where(s => selectedMods.SetEquals(s.Mods.Select(m => m.Acronym)));
                 }

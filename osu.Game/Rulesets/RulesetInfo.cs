@@ -11,6 +11,22 @@ namespace osu.Game.Rulesets
     [MapTo("Ruleset")]
     public class RulesetInfo : RealmObject, IEquatable<RulesetInfo>, IComparable<RulesetInfo>, IRulesetInfo
     {
+        public const string OSU_MODE_SHORTNAME = "osu";
+        public const string TAIKO_MODE_SHORTNAME = "taiko";
+        public const string CATCH_MODE_SHORTNAME = "fruits";
+
+        // RX/AP "special" rulesets exposed by the g0v0 server.
+        // https://github.com/GooGuTeam/g0v0-server
+        public const string OSU_RELAX_MODE_SHORTNAME = "osurx";
+        public const string OSU_AUTOPILOT_MODE_SHORTNAME = "osuap";
+        public const string TAIKO_RELAX_MODE_SHORTNAME = "taikorx";
+        public const string CATCH_RELAX_MODE_SHORTNAME = "fruitsrx";
+
+        public const int OSU_RELAX_ONLINE_ID = 4;
+        public const int OSU_AUTOPILOT_ONLINE_ID = 5;
+        public const int TAIKO_RELAX_ONLINE_ID = 6;
+        public const int CATCH_RELAX_ONLINE_ID = 7;
+
         [PrimaryKey]
         public string ShortName { get; set; } = string.Empty;
 
@@ -114,6 +130,43 @@ namespace osu.Game.Rulesets
             // ruleset.RulesetInfo = this;
 
             return ruleset;
+        }
+
+        /// <summary>
+        /// Creates a clone of this (base) ruleset rebadged as a special RX/AP ruleset
+        /// (e.g. <c>osurx</c>), used to request the corresponding variant from the server.
+        /// </summary>
+        public RulesetInfo CreateSpecialRuleset(string newShortName, int onlineId)
+        {
+            string suffix = newShortName[^2..].ToUpperInvariant();
+
+            var newRuleset = Clone();
+            newRuleset.OnlineID = onlineId;
+            newRuleset.ShortName = newShortName;
+            newRuleset.Name = $"{newRuleset.Name} ({suffix})";
+            return newRuleset;
+        }
+
+        /// <summary>
+        /// Creates a clone of this special (RX/AP) ruleset rebadged back to its base legacy ruleset.
+        /// </summary>
+        public RulesetInfo CreateNormalRuleset()
+        {
+            string baseShortName = ShortName.Length > 4 ? ShortName[..^2] : ShortName;
+
+            var newRuleset = Clone();
+            newRuleset.OnlineID = OnlineID switch
+            {
+                OSU_RELAX_ONLINE_ID or OSU_AUTOPILOT_ONLINE_ID => 0,
+                TAIKO_RELAX_ONLINE_ID => 1,
+                CATCH_RELAX_ONLINE_ID => 2,
+                _ => OnlineID,
+            };
+            newRuleset.ShortName = baseShortName;
+            newRuleset.Name = newRuleset.Name.Contains('(')
+                ? newRuleset.Name[..newRuleset.Name.LastIndexOf(" (", StringComparison.Ordinal)]
+                : newRuleset.Name;
+            return newRuleset;
         }
     }
 }

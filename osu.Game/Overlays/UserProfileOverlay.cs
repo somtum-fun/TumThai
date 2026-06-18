@@ -149,7 +149,19 @@ namespace osu.Game.Overlays
             if (changeOverlayColours(profileHue))
                 recreateBaseContent();
 
-            var actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? loadedUser.PlayMode).AsNonNull();
+            RulesetInfo? actualRuleset = rulesets.GetRuleset(userRuleset?.ShortName ?? loadedUser.PlayMode);
+
+            switch (actualRuleset)
+            {
+                // A special (RX/AP) ruleset isn't registered with the ruleset store, so rebuild it from its base ruleset.
+                case null when userRuleset != null && userRuleset.IsSpecialRuleset():
+                    actualRuleset = rulesets.GetRuleset(userRuleset.ShortName[..^2]).AsNonNull().CreateSpecialRuleset(userRuleset.ShortName, userRuleset.OnlineID);
+                    break;
+
+                case null:
+                    actualRuleset = rulesets.GetRuleset(loadedUser.PlayMode).AsNonNull();
+                    break;
+            }
 
             var userProfile = new UserProfileData(loadedUser, actualRuleset);
             Header.User.Value = userProfile;
