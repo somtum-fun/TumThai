@@ -96,6 +96,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.ShowOnlineExplicitContent, false);
 
             SetDefault(OsuSetting.CustomApiUrl, @"lazer.freedomdive.dev");
+            SetDefault(OsuSetting.CustomAvatarUrl, @"a.freedomdive.dev");
 
             SetDefault(OsuSetting.NotifyOnUsernameMentioned, true);
             SetDefault(OsuSetting.NotifyOnPrivateMessage, true);
@@ -475,5 +476,11 @@ namespace osu.Game.Configuration
         /// When empty, the default endpoints are used. A restart is required for changes to take effect.
         /// </summary>
         CustomApiUrl,
+
+        /// <summary>
+        /// Host serving user avatars (used as the fallback when the API doesn't provide an avatar URL).
+        /// Avatars are looked up as <c>https://{host}/{userId}</c>. Defaults to <c>a.freedomdive.dev</c>.
+        /// </summary>
+        CustomAvatarUrl,
     }
 }

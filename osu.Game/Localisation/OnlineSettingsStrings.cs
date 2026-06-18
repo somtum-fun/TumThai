@@ -115,6 +115,16 @@ namespace osu.Game.Localisation
         public static LocalisableString CustomApiUrlInvalid => new TranslatableString(getKey(@"custom_api_url_invalid"), @"Enter a valid host, optionally with a port (e.g. ""osu.example.com"" or ""osu.example.com:8080"").");
 
         /// <summary>
+        /// "Custom avatar URL"
+        /// </summary>
+        public static LocalisableString CustomAvatarUrl => new TranslatableString(getKey(@"custom_avatar_url"), @"Custom avatar URL");
+
+        /// <summary>
+        /// "Host serving user avatars (e.g. "a.example.com"). Looked up as https://{host}/{userId}. Leave empty to use the default."
+        /// </summary>
+        public static LocalisableString CustomAvatarUrlTooltip => new TranslatableString(getKey(@"custom_avatar_url_tooltip"), @"Host serving user avatars (e.g. ""a.example.com""). Looked up as https://{host}/{userId}. Leave empty to use the default.");
+
+        /// <summary>
         /// "Server"
         /// </summary>
         public static LocalisableString ServerSectionHeader => new TranslatableString(getKey(@"server_section_header"), @"Server");

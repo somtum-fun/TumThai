@@ -171,7 +171,7 @@ namespace osu.Game
             }
         }
 
-        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore(LocalConfig?.Get<string>(OsuSetting.CustomApiUrl));
+        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore(LocalConfig?.Get<string>(OsuSetting.CustomApiUrl), LocalConfig?.Get<string>(OsuSetting.CustomAvatarUrl));
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
 

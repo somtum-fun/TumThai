@@ -17,12 +17,22 @@ namespace osu.Game.Online
         /// </summary>
         private readonly string? customDomain;
 
+        /// <summary>
+        /// Additional registrable domain derived from the configured custom avatar host, so a custom avatar
+        /// server on a different domain than the API server is still trusted.
+        /// </summary>
+        private readonly string? customAvatarDomain;
+
         /// <param name="customServer">
         /// The configured custom server value (a bare host, optionally with scheme/port). May be null or empty.
         /// </param>
-        public TrustedDomainOnlineStore(string? customServer = null)
+        /// <param name="customAvatarServer">
+        /// The configured custom avatar host (a bare host, optionally with scheme/port). May be null or empty.
+        /// </param>
+        public TrustedDomainOnlineStore(string? customServer = null, string? customAvatarServer = null)
         {
             customDomain = getRegistrableDomain(customServer);
+            customAvatarDomain = getRegistrableDomain(customAvatarServer);
         }
 
         protected override string GetLookupUrl(string url)
@@ -39,13 +49,16 @@ namespace osu.Game.Online
             if (host.EndsWith(@".ppy.sh", StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (!string.IsNullOrEmpty(customDomain)
-                && (host.Equals(customDomain, StringComparison.OrdinalIgnoreCase)
-                    || host.EndsWith($@".{customDomain}", StringComparison.OrdinalIgnoreCase)))
+            if (matchesDomain(host, customDomain) || matchesDomain(host, customAvatarDomain))
                 return true;
 
             return false;
         }
+
+        private static bool matchesDomain(string host, string? domain)
+            => !string.IsNullOrEmpty(domain)
+               && (host.Equals(domain, StringComparison.OrdinalIgnoreCase)
+                   || host.EndsWith($@".{domain}", StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// Reduces a custom server value to its registrable domain (the last two labels, e.g.

@@ -19,6 +19,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
 
         private OsuConfigManager config = null!;
         private SettingsTextBox customApiUrlTextBox = null!;
+        private SettingsTextBox customAvatarUrlTextBox = null!;
 
         // validate a host[:port] input without scheme or path.
         private static readonly Regex host_port_pattern = new Regex(
@@ -46,18 +47,26 @@ namespace osu.Game.Overlays.Settings.Sections.Server
                     Current = config.GetBindable<string>(OsuSetting.CustomApiUrl),
                     Keywords = new[] { "server", "endpoint", "api", "private", "connection" },
                 },
+                customAvatarUrlTextBox = new SettingsTextBox
+                {
+                    LabelText = OnlineSettingsStrings.CustomAvatarUrl,
+                    TooltipText = OnlineSettingsStrings.CustomAvatarUrlTooltip,
+                    Current = config.GetBindable<string>(OsuSetting.CustomAvatarUrl),
+                    Keywords = new[] { "server", "avatar", "profile", "picture", "image" },
+                },
             };
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            customApiUrlTextBox.Current.BindValueChanged(onCustomApiUrlChanged);
+            customApiUrlTextBox.Current.BindValueChanged(_ => onHostUrlChanged(customApiUrlTextBox));
+            customAvatarUrlTextBox.Current.BindValueChanged(_ => onHostUrlChanged(customAvatarUrlTextBox));
         }
 
         private bool isProgrammaticUpdate;
 
-        private void onCustomApiUrlChanged(ValueChangedEvent<string> e)
+        private void onHostUrlChanged(SettingsTextBox textBox)
         {
             if (isProgrammaticUpdate)
                 return;
@@ -65,13 +74,13 @@ namespace osu.Game.Overlays.Settings.Sections.Server
             pendingValidation?.Cancel();
             pendingValidation = Scheduler.AddDelayed(() =>
             {
-                string rawInput = (customApiUrlTextBox.Current.Value ?? string.Empty).Trim();
+                string rawInput = (textBox.Current.Value ?? string.Empty).Trim();
 
-                // empty resets to the default server which is always valid
+                // empty resets to the default (which is always valid)
                 if (string.IsNullOrWhiteSpace(rawInput))
                 {
-                    setValue(string.Empty);
-                    customApiUrlTextBox.SetNoticeText(OnlineSettingsStrings.CustomApiUrlRestartRequired, false);
+                    setValue(textBox, string.Empty);
+                    textBox.SetNoticeText(OnlineSettingsStrings.CustomApiUrlRestartRequired, false);
                     return;
                 }
 
@@ -79,22 +88,22 @@ namespace osu.Game.Overlays.Settings.Sections.Server
 
                 if (!isValidHostPort(hostPort))
                 {
-                    customApiUrlTextBox.SetNoticeText(OnlineSettingsStrings.CustomApiUrlInvalid, true);
+                    textBox.SetNoticeText(OnlineSettingsStrings.CustomApiUrlInvalid, true);
                     return;
                 }
 
                 // stored value as bare host[:port].
                 if (!string.Equals(rawInput, hostPort, StringComparison.Ordinal))
-                    setValue(hostPort);
+                    setValue(textBox, hostPort);
 
-                customApiUrlTextBox.SetNoticeText(OnlineSettingsStrings.CustomApiUrlRestartRequired, false);
+                textBox.SetNoticeText(OnlineSettingsStrings.CustomApiUrlRestartRequired, false);
             }, debounce_delay);
         }
 
-        private void setValue(string value)
+        private void setValue(SettingsTextBox textBox, string value)
         {
             isProgrammaticUpdate = true;
-            customApiUrlTextBox.Current.Value = value;
+            textBox.Current.Value = value;
             isProgrammaticUpdate = false;
 
             // FORCE FLUSH to disk so the value survives even if the client is closed
