@@ -106,10 +106,72 @@ namespace osu.Game
 
         public virtual bool UseDevelopmentServer => DebugUtils.IsDebugBuild;
 
-        public virtual EndpointConfiguration CreateEndpoints() =>
-            UseDevelopmentServer ? new DevelopmentEndpointConfiguration() : new ProductionEndpointConfiguration();
+        public virtual EndpointConfiguration CreateEndpoints()
+        {
+            string customUrl = LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
+            customUrl = customUrl.Trim().TrimEnd('/');
 
-        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore();
+            // temp: because freedomdive.dev (our dev server) does not use Development secret
+            // i have to force it to use Production secret or else it will gave "invalid_client" error
+            EndpointConfiguration config = UseDevelopmentServer && string.IsNullOrEmpty(customUrl)
+                ? new DevelopmentEndpointConfiguration()
+                : new ProductionEndpointConfiguration();
+
+            if (!string.IsNullOrEmpty(customUrl))
+            {
+                // make sure that it has https:// or http:// since users typically enter a bare host.
+                if (!customUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !customUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    customUrl = "https://" + customUrl;
+
+                config.APIUrl = customUrl;
+                // a separate website URL from the API URL where possible so chat/external links
+                // resolve against the website host rather than the (JSON-only) API host. 
+                // Falls back to the API URL when the host doesn't follow a recognised pattern.
+                config.WebsiteUrl = DeriveWebsiteUrlFromApiUrl(customUrl);
+                config.SpectatorUrl = $"{customUrl}/signalr/spectator";
+                config.MultiplayerUrl = $"{customUrl}/signalr/multiplayer";
+                config.MetadataUrl = $"{customUrl}/signalr/metadata";
+                config.BeatmapSubmissionServiceUrl = $"{customUrl}/beatmap-submission";
+            }
+
+            Logger.Log($"API endpoint resolved to {config.APIUrl} (custom server setting={(string.IsNullOrEmpty(customUrl) ? "<default>" : customUrl)})", LoggingTarget.Network);
+
+            return config;
+        }
+
+        /// <summary>
+        /// Derive a website URL from a configured API URL. Two common private-server patterns are handled:
+        /// Falls back to the input URL when neither pattern matches (i.e. API and website are co-hosted).
+        /// </summary>
+        public static string DeriveWebsiteUrlFromApiUrl(string apiUrl)
+        {
+            if (string.IsNullOrEmpty(apiUrl))
+                return apiUrl;
+
+            try
+            {
+                var uri = new Uri(apiUrl);
+                string host = uri.Host;
+                string newHost = host;
+
+                if (host.Contains(@"-api.", StringComparison.OrdinalIgnoreCase))
+                    newHost = host.Replace(@"-api.", ".", StringComparison.OrdinalIgnoreCase);
+                else if (host.StartsWith(@"api.", StringComparison.OrdinalIgnoreCase))
+                    newHost = host.Substring(4);
+
+                if (newHost == host)
+                    return apiUrl;
+
+                return $"{uri.Scheme}://{newHost}";
+            }
+            catch (UriFormatException)
+            {
+                // fall back to the input.
+                return apiUrl;
+            }
+        }
+
+        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore(LocalConfig?.Get<string>(OsuSetting.CustomApiUrl));
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
 

@@ -94,6 +94,36 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString HideCountryFlags => new TranslatableString(getKey(@"hide_country_flags"), @"Hide country flags");
 
+        /// <summary>
+        /// "Custom server URL"
+        /// </summary>
+        public static LocalisableString CustomApiUrl => new TranslatableString(getKey(@"custom_api_url"), @"Custom server URL");
+
+        /// <summary>
+        /// "Host of the server to connect to (e.g. "osu.example.com"). Leave empty to use the default server."
+        /// </summary>
+        public static LocalisableString CustomApiUrlTooltip => new TranslatableString(getKey(@"custom_api_url_tooltip"), @"Host of the server to connect to (e.g. ""osu.example.com""). Leave empty to use the default server.");
+
+        /// <summary>
+        /// "A restart is required for this setting to take effect."
+        /// </summary>
+        public static LocalisableString CustomApiUrlRestartRequired => new TranslatableString(getKey(@"custom_api_url_restart_required"), @"A restart is required for this setting to take effect.");
+
+        /// <summary>
+        /// "Enter a valid host, optionally with a port (e.g. "osu.example.com" or "osu.example.com:8080")."
+        /// </summary>
+        public static LocalisableString CustomApiUrlInvalid => new TranslatableString(getKey(@"custom_api_url_invalid"), @"Enter a valid host, optionally with a port (e.g. ""osu.example.com"" or ""osu.example.com:8080"").");
+
+        /// <summary>
+        /// "Server"
+        /// </summary>
+        public static LocalisableString ServerSectionHeader => new TranslatableString(getKey(@"server_section_header"), @"Server");
+
+        /// <summary>
+        /// "Connection"
+        /// </summary>
+        public static LocalisableString ServerConnectionHeader => new TranslatableString(getKey(@"server_connection_header"), @"Connection");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

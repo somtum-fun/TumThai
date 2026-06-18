@@ -95,6 +95,8 @@ namespace osu.Game.Configuration
 
             SetDefault(OsuSetting.ShowOnlineExplicitContent, false);
 
+            SetDefault(OsuSetting.CustomApiUrl, @"lazer.freedomdive.dev");
+
             SetDefault(OsuSetting.NotifyOnUsernameMentioned, true);
             SetDefault(OsuSetting.NotifyOnPrivateMessage, true);
             SetDefault(OsuSetting.NotifyOnFriendPresenceChange, true);
@@ -467,5 +469,11 @@ namespace osu.Game.Configuration
 
         DashboardSortMode,
         DashboardDisplayStyle,
+
+        /// <summary>
+        /// Host (optionally with port) of a custom API server to connect to instead of the official one.
+        /// When empty, the default endpoints are used. A restart is required for changes to take effect.
+        /// </summary>
+        CustomApiUrl,
     }
 }

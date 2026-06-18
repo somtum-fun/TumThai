@@ -142,7 +142,8 @@ namespace osu.Game.Online.API
 
             try
             {
-                Logger.Log($@"Performing request {this}", LoggingTarget.Network);
+                // debug
+                Logger.Log($@"Performing request {this} ({WebRequest.Method} {WebRequest.Url})", LoggingTarget.Network);
                 WebRequest.Perform();
             }
             catch (OperationCanceledException)
