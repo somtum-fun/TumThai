@@ -2,146 +2,110 @@
   <img width="500" alt="osu! logo" src="assets/lazer.png">
 </p>
 
-# osu!
+# osu!tumthai
 
-[![Build status](https://github.com/ppy/osu/actions/workflows/ci.yml/badge.svg?branch=master&event=push)](https://github.com/ppy/osu/actions/workflows/ci.yml)
-[![GitHub release](https://img.shields.io/github/release/ppy/osu.svg)](https://github.com/ppy/osu/releases/latest)
-[![CodeFactor](https://www.codefactor.io/repository/github/ppy/osu/badge)](https://www.codefactor.io/repository/github/ppy/osu)
-[![dev chat](https://discordapp.com/api/guilds/188630481301012481/widget.png?style=shield)](https://discord.gg/ppy)
-[![Crowdin](https://d322cqt584bo4o.cloudfront.net/osu-web/localized.svg)](https://crowdin.com/project/osu-web)
+The community client for the **osu!somtum** private server — a fork of [osu!](https://github.com/ppy/osu) (*lazer*) built and tuned for playing on osu!somtum.
 
-A free-to-win rhythm game. Rhythm is just a *click* away!
+> 🚧 **Work in progress.** This client is under active development. Expect bugs, breaking changes, and features that are still being built. Please report issues and don't rely on it being stable yet.
 
-This is the future – and final – iteration of the [osu!](https://osu.ppy.sh) game client which marks the beginning of an open era! Currently known by and released under the release codename "*lazer*". As in sharper than cutting-edge.
+It's the same osu! game you know, optimized for osu!somtum:
 
-## Status
+- **Connects to osu!somtum out of the box** — preconfigured to the osu!somtum server, no setup needed to start playing.
+- **Relax / Autopilot (RX/AP) support** — browse RX/AP leaderboards on song select, view RX/AP profiles and rankings, and submit RX/AP scores.
+- **Configurable server & avatar host** — advanced users can point the client at another compatible private server (e.g. a [g0v0-server](https://github.com/GooGuTeam/g0v0-server) instance) from in-game settings, no rebuild required.
 
-This project is under constant development, but we do our best to keep things in a stable state. Players are encouraged to install from a release alongside their stable *osu!* client. This project will continue to evolve until we eventually reach the point where most users prefer it over the previous "osu!stable" release.
+---
 
-A few resources are available as starting points to getting involved and understanding the project:
+## ⚠️ Important — please read before using
 
-- Detailed release changelogs are available on the [official osu! site](https://osu.ppy.sh/home/changelog/lazer).
-- You can learn more about our approach to [project management](https://github.com/ppy/osu/wiki/Project-management).
-- Track our current efforts [towards improving the game](https://github.com/orgs/ppy/projects/7/views/6).
+### Support osu! first
 
-## Running osu!
+This is a **community fork** that builds on top of the work done by [ppy](https://github.com/ppy) and the osu! team. **Please support official osu! first:**
 
-If you are just looking to give the game a whirl, you can grab the latest release for your platform:
+- Play and support the official client at **[osu.ppy.sh](https://osu.ppy.sh)**.
+- Consider buying [osu!supporter](https://osu.ppy.sh/home/support) to back the people who make all of this possible.
+- This fork would not exist without the original osu! project. All credit for the game itself goes to ppy and the osu! contributors.
 
-### Latest release:
+### 🚫 Never connect this client to official osu!
 
-| [Windows 10+ (x64)](https://github.com/ppy/osu/releases/latest/download/install.exe) | macOS 12+ ([Intel](https://github.com/ppy/osu/releases/latest/download/osu.app.Intel.zip), [Apple Silicon](https://github.com/ppy/osu/releases/latest/download/osu.app.Apple.Silicon.zip)) | [Linux (x64)](https://github.com/ppy/osu/releases/latest/download/osu.AppImage) | [iOS 13.4+](https://osu.ppy.sh/home/testflight) | [Android 5+](https://github.com/ppy/osu/releases/latest/download/sh.ppy.osulazer.apk) |
-|--------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------- | ------------- | ------------- |
+> **Do NOT use this client to connect to `osu.ppy.sh` or `dev.ppy.sh`.**
 
-You can also generally download a version for your current device from the [osu! site](https://osu.ppy.sh/home/download).
+This is a **third-party client** intended **only** for private servers. Connecting it to the official osu! servers (`osu.ppy.sh` / `dev.ppy.sh`) is against the [osu! rules](https://osu.ppy.sh/wiki/en/Rules) and **will get your official account restricted or banned.**
 
-If your platform is unsupported or not listed above, there is still a chance you can run the release or manually build it by following the instructions below.
+Use this client **only** with private servers you are permitted to play on. You are responsible for how you use it.
 
-**For iOS/iPadOS users**: The iOS testflight link fills up very fast (Apple has a hard limit of 10,000 users). We reset it occasionally. Please do not ask about this. Check back regularly for link resets or follow [peppy](https://twitter.com/ppy) on twitter for announcements. Our goal is to get the game on mobile app stores very soon so we don't have to live with this limitation.
+---
 
-## Developing a custom ruleset
+## Running
 
-osu! is designed to allow user-created gameplay variations, called "rulesets". Building one of these allows a developer to harness the power of the osu! beatmap library, game engine, and general UX for a new style of gameplay. To get started working on a ruleset, we have some templates available [here](https://github.com/ppy/osu/tree/master/Templates).
+Grab a build for your platform from the [Releases](https://github.com/osu-somtum/osu-tumthai/releases) page.
 
-You can see some examples of custom rulesets by visiting the [custom ruleset directory](https://github.com/ppy/osu/discussions/13096).
+On Linux, the release ships as an **AppImage** — make it executable and run it:
 
-## Developing osu!
+```shell
+chmod +x osu-tumthai-x86_64.AppImage
+./osu-tumthai-x86_64.AppImage
+```
+
+### Choosing a server
+
+By default the client connects to **osu!somtum** — no configuration needed. To play on a different compatible private server, open **Settings → Online → Connection** and set:
+
+- **Custom server URL** — the host of the private server (e.g. `osu.example.com`). Leave empty to use osu!somtum. A restart is required.
+- **Custom avatar URL** — the host serving user avatars (avatars are looked up as `https://{host}/{userId}`). Leave empty to use the default.
+
+---
+
+## Building from source
 
 ### Prerequisites
 
-Please make sure you have the following prerequisites:
-
 - A desktop platform with the [.NET 8.0 SDK](https://dotnet.microsoft.com/download) installed.
 
-When working with the codebase, we recommend using an IDE with intelligent code completion and syntax highlighting, such as the latest version of [Visual Studio](https://visualstudio.microsoft.com/vs/), [JetBrains Rider](https://www.jetbrains.com/rider/), or [Visual Studio Code](https://code.visualstudio.com/) with the [EditorConfig](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig) and [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) plugin installed.
+An IDE with C# support is recommended: [JetBrains Rider](https://www.jetbrains.com/rider/), [Visual Studio](https://visualstudio.microsoft.com/vs/), or [Visual Studio Code](https://code.visualstudio.com/) with the C# Dev Kit.
 
-### Downloading the source code
-
-Clone the repository:
+### Get the source
 
 ```shell
-git clone https://github.com/ppy/osu
-cd osu
+git clone https://github.com/osu-somtum/osu-tumthai
+cd osu-tumthai
 ```
 
-To update the source code to the latest commit, run the following command inside the `osu` directory:
-
-```shell
-git pull
-```
-
-### Building
-
-#### From an IDE
-
-You should load the solution via one of the platform-specific `.slnf` files, rather than the main `.sln`. This will reduce dependencies and hide platforms that you don't care about. Valid `.slnf` files are:
-
-- `osu.Desktop.slnf` (most common)
-- `osu.Android.slnf`
-- `osu.iOS.slnf`
-
-Run configurations for the recommended IDEs (listed above) are included. You should use the provided Build/Run functionality of your IDE to get things going. When testing or building new components, it's highly encouraged you use the `osu! (Tests)` project/configuration. More information on this is provided [below](#contributing).
-
-To build for mobile platforms, you will likely need to run `sudo dotnet workload restore` if you haven't done so previously. This will install Android/iOS tooling required to complete the build.
-
-#### From CLI
-
-You can also build and run *osu!* from the command-line with a single command:
+### Run
 
 ```shell
 dotnet run --project osu.Desktop
 ```
 
-When running locally to do any kind of performance testing, make sure to add `-c Release` to the build command, as the overhead of running with the default `Debug` configuration can be large (especially when testing with local framework modifications as below).
+For performance testing or producing a build, add `-c Release`. If a build fails, try `dotnet restore` first. When loading in an IDE, prefer the `osu.Desktop.slnf` solution filter.
 
-If the build fails, try to restore NuGet packages with `dotnet restore`.
+### Building a Linux AppImage
 
-### Testing with resource/framework modifications
+Publish a self-contained build, then package it with [`appimagetool`](https://github.com/AppImage/appimagetool):
 
-Sometimes it may be necessary to cross-test changes in [osu-resources](https://github.com/ppy/osu-resources) or [osu-framework](https://github.com/ppy/osu-framework). This can be quickly achieved using included commands:
+```shell
+# 1. publish (bundles the .NET runtime — no install needed to run)
+dotnet publish osu.Desktop -c Release -r linux-x64 --self-contained -f net8.0 \
+  -o "osu!.AppDir/usr/bin"
 
-Windows:
-
-```ps
-UseLocalFramework.ps1
-UseLocalResources.ps1
+# 2. add AppRun, an osu!.desktop entry and an icon to osu!.AppDir/ , then:
+ARCH=x86_64 appimagetool osu!.AppDir osu-tumthai-x86_64.AppImage
 ```
 
-macOS / Linux:
-
-```ps
-UseLocalFramework.sh
-UseLocalResources.sh
-```
-
-Note that these commands assume you have the relevant project(s) checked out in adjacent directories:
-
-```
-|- osu            // this repository
-|- osu-framework
-|- osu-resources
-```
-
-### Code analysis
-
-Before committing your code, please run a code formatter. This can be achieved by running `dotnet format` in the command line, or using the `Format code` command in your IDE.
-
-We have adopted some cross-platform, compiler integrated analyzers. They can provide warnings when you are editing, building inside IDE or from command line, as-if they are provided by the compiler itself.
-
-JetBrains ReSharper InspectCode is also used for wider rule sets. You can run it from PowerShell with `.\InspectCode.ps1`. Alternatively, you can install ReSharper or use Rider to get inline support in your IDE of choice.
+---
 
 ## Contributing
 
-When it comes to contributing to the project, the two main things you can do to help out are reporting issues and submitting pull requests. Please refer to the [contributing guidelines](CONTRIBUTING.md) to understand how to help in the most effective way possible.
-
-If you wish to help with localisation efforts, head over to [crowdin](https://crowdin.com/project/osu-web).
-
-Our team believes in **human contributions**. Any contribution – be it an issue report or a pull request – which is created by, documented by, or aided by AI/LLM usage will typically be **closed and locked without further discussion**.
+Issues and pull requests are welcome. For game-engine or gameplay changes that aren't specific to this fork, please consider contributing them upstream to [ppy/osu](https://github.com/ppy/osu) so the whole community benefits.
 
 ## Licence
 
-*osu!*'s code and framework are licensed under the [MIT licence](https://opensource.org/licenses/MIT). Please see [the licence file](LICENCE) for more information. [tl;dr](https://tldrlegal.com/license/mit-license) you can do whatever you want as long as you include the original copyright and license notice in any copy of the software/source.
+This fork, like upstream osu!, is licensed under the [MIT licence](https://opensource.org/licenses/MIT). See [the licence file](LICENCE) for details. [tl;dr](https://tldrlegal.com/license/mit-license): do what you want, as long as you include the original copyright and licence notice.
 
-Please note that this *does not cover* the usage of the "osu!" or "ppy" branding in any software, resources, advertising or promotion, as this is protected by trademark law.
+This **does not** cover the "osu!" or "ppy" branding (software, resources, advertising, or promotion), which is protected by trademark law. Game resources are covered by a separate licence — see [ppy/osu-resources](https://github.com/ppy/osu-resources).
 
-Please also note that game resources are covered by a separate licence. Please see the [ppy/osu-resources](https://github.com/ppy/osu-resources) repository for clarifications.
+## Credits
+
+- [osu!](https://github.com/ppy/osu) by [ppy](https://github.com/ppy) and contributors — the game this is built on. ❤️
+- [torii-osu](https://github.com/ShikkesoraSIM/torii-osu) (the Torii client) — reference for the Relax / Autopilot private-server integration.
+- [g0v0-server](https://github.com/GooGuTeam/g0v0-server) — the private-server software this client targets.
