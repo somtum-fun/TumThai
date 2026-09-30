@@ -122,7 +122,13 @@ namespace osu.Game
         /// </summary>
         private string CustomApiServer => LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
 
-        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore(
+        protected override OnlineStore CreateOnlineStore() => CreateTrustedOnlineStore();
+
+        /// <summary>
+        /// A web asset store that trusts the configured server and its avatar host. Every path that fetches
+        /// web assets must use one of these, or that server's avatars and covers are rejected as external.
+        /// </summary>
+        protected TrustedDomainOnlineStore CreateTrustedOnlineStore() => new TrustedDomainOnlineStore(
             new SomtumEndpointConfiguration(CustomApiServer).APIUrl,
             SomtumEndpointConfiguration.ResolveAvatarHost(CustomApiServer, LocalConfig?.Get<string>(OsuSetting.CustomAvatarUrl)));
 
@@ -307,7 +313,9 @@ namespace osu.Game
             largeStore.AddTextureSource(Host.CreateTextureLoaderStore(CreateOnlineStore()));
             dependencies.Cache(largeStore);
 
-            dependencies.Cache(onlineAssetStore = new OnlineAssetCachingStore(Host, realm));
+            // avatars, covers and flags come through here, so it needs the same trusted domains as the
+            // game-wide store; its own default would trust only the official hosts.
+            dependencies.Cache(onlineAssetStore = new OnlineAssetCachingStore(Host, realm, CreateTrustedOnlineStore()));
 
             dependencies.CacheAs(LocalConfig);
             dependencies.CacheAs<IGameplaySettings>(LocalConfig);

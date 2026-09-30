@@ -32,10 +32,15 @@ namespace osu.Game.Graphics
         private readonly RealmFileStore fileStore;
         private readonly LargeTextureStore largeTextureStore;
 
-        public OnlineAssetCachingStore(GameHost host, RealmAccess realmAccess)
+        /// <param name="onlineStore">
+        /// The store used to fetch assets. It must trust the configured server, otherwise that server's
+        /// avatars and covers are rejected as external and the game falls back to placeholder textures.
+        /// Required rather than defaulted, so a new call site has to make that choice explicitly.
+        /// </param>
+        public OnlineAssetCachingStore(GameHost host, RealmAccess realmAccess, OnlineStore onlineStore)
         {
             this.realmAccess = realmAccess;
-            onlineStore = new TrustedDomainOnlineStore();
+            this.onlineStore = onlineStore;
             fileStore = new RealmFileStore(realmAccess, host.Storage);
             // largeTextureStore = new LargeTextureStore(host.Renderer, host.CreateTextureLoaderStore(new StorageBackedResourceStore(fileStore.Storage)));
             largeTextureStore = new LargeTextureStore(host.Renderer, host.CreateTextureLoaderStore(onlineStore));

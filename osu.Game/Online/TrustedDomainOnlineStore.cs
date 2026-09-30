@@ -28,7 +28,7 @@ namespace osu.Game.Online
         /// <param name="customAvatarServer">
         /// The configured custom avatar host (a bare host, optionally with scheme/port). May be null or empty.
         /// </param>
-        public TrustedDomainOnlineStore(string? customServer = null, string? customAvatarServer = null)
+        public TrustedDomainOnlineStore(string? customServer, string? customAvatarServer)
         {
             customDomain = ServerHost.RegistrableDomain(customServer);
             customAvatarDomain = ServerHost.RegistrableDomain(customAvatarServer);
@@ -36,14 +36,17 @@ namespace osu.Game.Online
 
         protected override string GetLookupUrl(string url)
         {
-            if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) && isTrusted(uri.Host))
+            if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) && IsTrusted(uri.Host))
                 return url;
 
             Logger.Log($@"Blocking resource lookup from external website: {url}", LoggingTarget.Network, LogLevel.Important);
             return string.Empty;
         }
 
-        private bool isTrusted(string host)
+        /// <summary>
+        /// Whether assets served from <paramref name="host"/> may be fetched.
+        /// </summary>
+        public bool IsTrusted(string host)
         {
             if (host.EndsWith(@".ppy.sh", StringComparison.OrdinalIgnoreCase))
                 return true;
