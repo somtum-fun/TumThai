@@ -6,19 +6,19 @@
 #
 # Requirements (the script checks for these):
 #   - git
-#   - .NET SDK 8.0+      (https://dotnet.microsoft.com/download)
+#   - .NET SDK 10.0+     (https://dotnet.microsoft.com/download)
 #   - curl
+#   - file               (appimagetool requires it)
 #   - FUSE (libfuse2) for running the resulting AppImage
 #
 # Usage:
 #   ./build-osu-appimage.sh [options]
 #
-# By default this builds the LOCAL checkout at:
-#   /var/mnt/hddsata/Development/osu-tumthai
+# By default this builds the checkout this script lives in.
 # Use --clone to fetch ppy/osu from GitHub instead.
 #
 # Options:
-#   -s, --source  <dir>       Local osu! checkout to build (default: osu-tumthai)
+#   -s, --source  <dir>       Local osu! checkout to build (default: this script's checkout)
 #   -r, --ref     <git-ref>   Tag/branch/commit to build (only with --clone)
 #       --clone               Clone ppy/osu from GitHub instead of using --source
 #   -o, --outdir  <dir>       Where the .AppImage is written (default: ./dist)
@@ -33,7 +33,8 @@ set -euo pipefail
 # Defaults
 # ----------------------------------------------------------------------------
 REPO_URL="https://github.com/ppy/osu.git"
-SOURCE="/var/mnt/hddsata/Development/osu-tumthai"   # local checkout to build
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE="$SCRIPT_DIR"             # local checkout to build (defaults to this script's own checkout)
 GIT_REF=""                       # empty => resolve from local repo / latest tag
 OUTDIR="$(pwd)/dist"
 WORKDIR="$(pwd)/.osu-build"
@@ -90,10 +91,11 @@ log "Checking prerequisites"
 need git
 need curl
 need dotnet
+need file   # appimagetool shells out to this when packaging
 
 DOTNET_MAJOR="$(dotnet --version | cut -d. -f1)"
-if [[ "${DOTNET_MAJOR:-0}" -lt 8 ]]; then
-  die ".NET SDK 8.0+ required, found $(dotnet --version)"
+if [[ "${DOTNET_MAJOR:-0}" -lt 10 ]]; then
+  die ".NET SDK 10.0+ required, found $(dotnet --version)"
 fi
 log ".NET SDK $(dotnet --version) detected"
 
@@ -156,6 +158,48 @@ dotnet publish "$SRCDIR/$PROJECT" \
   --output "$PUBLISHDIR"
 
 [[ -f "$PUBLISHDIR/osu!" ]] || die "expected launcher '$PUBLISHDIR/osu!' not found after publish"
+
+# ----------------------------------------------------------------------------
+# Normalise Nix store references so the AppImage is portable
+# ----------------------------------------------------------------------------
+# A .NET SDK from nixpkgs ships an apphost and runtime libraries whose ELF
+# interpreter and RPATH are rewritten to absolute /nix/store paths. Those paths
+# exist only on the machine that built them, so an AppImage produced this way
+# would refuse to start anywhere else. Point them back at the standard loader
+# and drop the store directories from RPATH.
+if patchelf --print-interpreter "$PUBLISHDIR/osu!" 2>/dev/null | grep -q '^/nix/store/'; then
+  log "Normalising Nix store references for portability"
+  need patchelf
+
+  case "$RID" in
+    linux-x64)   STD_INTERP="/lib64/ld-linux-x86-64.so.2" ;;
+    linux-arm64) STD_INTERP="/lib/ld-linux-aarch64.so.1"  ;;
+    *) die "don't know the standard ELF interpreter for RID: $RID" ;;
+  esac
+
+  while IFS= read -r -d '' f; do
+    head -c 4 "$f" | grep -q $'\x7fELF' || continue
+
+    if patchelf --print-interpreter "$f" 2>/dev/null | grep -q '^/nix/store/'; then
+      patchelf --set-interpreter "$STD_INTERP" "$f"
+    fi
+
+    rpath="$(patchelf --print-rpath "$f" 2>/dev/null || true)"
+    if [[ "$rpath" == */nix/store/* ]]; then
+      cleaned="$(tr ':' '\n' <<<"$rpath" | grep -v '^/nix/store/' | paste -sd: - || true)"
+      if [[ -n "$cleaned" ]]; then
+        patchelf --set-rpath "$cleaned" "$f"
+      else
+        patchelf --set-rpath '$ORIGIN' "$f"
+      fi
+    fi
+  done < <(find "$PUBLISHDIR" -type f -print0)
+
+  # nothing should reference the store any more.
+  if patchelf --print-interpreter "$PUBLISHDIR/osu!" | grep -q '^/nix/store/'; then
+    die "failed to normalise the launcher's ELF interpreter"
+  fi
+fi
 
 # ----------------------------------------------------------------------------
 # Assemble the AppDir
@@ -221,12 +265,21 @@ if [[ ! -x "$AIT" ]]; then
   chmod +x "$AIT"
 fi
 
-OUTFILE="$OUTDIR/osu-lazer-${GIT_REF}-${AIT_ARCH}.AppImage"
+OUTFILE="$OUTDIR/osu-tumthai-${GIT_REF}-${AIT_ARCH}.AppImage"
 log "Building AppImage -> $OUTFILE"
 
-# appimagetool needs FUSE; --appimage-extract-and-run avoids that requirement.
-ARCH="$AIT_ARCH" "$AIT" --appimage-extract-and-run "$APPDIR" "$OUTFILE" \
-  || die "appimagetool failed (is FUSE/libfuse2 available?)"
+# appimagetool needs FUSE; --appimage-extract-and-run avoids that requirement. That flag is
+# consumed by the AppImage runtime, so where something else already extracts the AppImage before
+# running it (e.g. appimage-run on NixOS) it reaches appimagetool itself, which rejects it. Try
+# with the flag first, then without.
+run_appimagetool() {
+  ARCH="$AIT_ARCH" "$AIT" "$@" "$APPDIR" "$OUTFILE"
+}
+
+if ! run_appimagetool --appimage-extract-and-run; then
+  warn "appimagetool rejected --appimage-extract-and-run, retrying without it"
+  run_appimagetool || die "appimagetool failed (is FUSE/libfuse2 available?)"
+fi
 
 chmod +x "$OUTFILE"
 
