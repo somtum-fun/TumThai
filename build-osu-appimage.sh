@@ -149,7 +149,7 @@ dotnet publish "$SRCDIR/$PROJECT" \
   --configuration Release \
   --runtime "$RID" \
   --self-contained true \
-  --framework net8.0 \
+  --framework net10.0 \
   -p:PublishSingleFile=false \
   -p:DebugType=none \
   -p:DebugSymbols=false \

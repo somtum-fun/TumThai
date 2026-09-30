@@ -60,7 +60,7 @@ By default the client connects to **osu!somtum** — no configuration needed. To
 
 ### Prerequisites
 
-- A desktop platform with the [.NET 8.0 SDK](https://dotnet.microsoft.com/download) installed.
+- A desktop platform with the [.NET 10.0 SDK](https://dotnet.microsoft.com/download) installed.
 
 An IDE with C# support is recommended: [JetBrains Rider](https://www.jetbrains.com/rider/), [Visual Studio](https://visualstudio.microsoft.com/vs/), or [Visual Studio Code](https://code.visualstudio.com/) with the C# Dev Kit.
 
@@ -85,7 +85,7 @@ Publish a self-contained build, then package it with [`appimagetool`](https://gi
 
 ```shell
 # 1. publish (bundles the .NET runtime — no install needed to run)
-dotnet publish osu.Desktop -c Release -r linux-x64 --self-contained -f net8.0 \
+dotnet publish osu.Desktop -c Release -r linux-x64 --self-contained -f net10.0 \
   -o "osu!.AppDir/usr/bin"
 
 # 2. add AppRun, an osu!.desktop entry and an icon to osu!.AppDir/ , then:
