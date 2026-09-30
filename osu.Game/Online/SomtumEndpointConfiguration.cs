@@ -24,9 +24,11 @@ namespace osu.Game.Online
         {
             WebsiteUrl = APIUrl = $@"https://{API_HOST}";
 
-            // the server issues public clients, so no client ID/secret is required.
-            APIClientID = string.Empty;
-            APIClientSecret = string.Empty;
+            // the server validates against osu!'s public client credentials, the same pair
+            // ProductionEndpointConfiguration sends. Leaving these empty makes the token endpoint reject
+            // every sign-in attempt with "Check the `client_id` parameter" before any username is checked.
+            APIClientID = @"5";
+            APIClientSecret = @"FGc9GAtyHzeQDshWP5Ah7dega8hJACAJpQtw6OXk";
 
             SpectatorUrl = $@"https://{SPECTATOR_HOST}/spectator";
             MultiplayerUrl = $@"https://{SPECTATOR_HOST}/multiplayer";

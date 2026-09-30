@@ -17,8 +17,9 @@ namespace osu.Game.Tests.Online
             Assert.That(config.APIUrl, Is.EqualTo("https://osu.sundei.eu"));
             Assert.That(config.WebsiteUrl, Is.EqualTo("https://osu.sundei.eu"));
 
-            Assert.That(config.APIClientID, Is.Empty);
-            Assert.That(config.APIClientSecret, Is.Empty);
+            // the server's token endpoint rejects a sign-in outright when these are not sent.
+            Assert.That(config.APIClientID, Is.EqualTo("5"));
+            Assert.That(config.APIClientSecret, Is.Not.Empty);
 
             Assert.That(config.SpectatorUrl, Is.EqualTo("https://spectator.sundei.eu/spectator"));
             Assert.That(config.MultiplayerUrl, Is.EqualTo("https://spectator.sundei.eu/multiplayer"));
