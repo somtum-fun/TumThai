@@ -38,7 +38,8 @@ namespace osu.Game.Configuration
         /// <summary>
         /// Server hosts that were previously shipped as defaults. Installs that still hold one of these
         /// as an explicit value are moved back onto the current defaults, rather than being stranded on a
-        /// server this client no longer targets.
+        /// server this client no longer targets. These are historical values: they must keep naming the old
+        /// hosts, so do not update them when the current server changes.
         /// </summary>
         private static readonly (OsuSetting setting, string legacyValue)[] legacy_server_defaults =
         {
@@ -120,9 +121,10 @@ namespace osu.Game.Configuration
 
             SetDefault(OsuSetting.ShowOnlineExplicitContent, false);
 
-            // empty means "use the built-in osu!somtum endpoints"; see SomtumEndpointConfiguration.
+            // both empty means "follow the built-in server"; SomtumEndpointConfiguration resolves them,
+            // so no hostname is repeated here and the avatar host tracks whichever server is configured.
             SetDefault(OsuSetting.CustomApiUrl, string.Empty);
-            SetDefault(OsuSetting.CustomAvatarUrl, @"a.sundei.eu");
+            SetDefault(OsuSetting.CustomAvatarUrl, string.Empty);
 
             SetDefault(OsuSetting.NotifyOnUsernameMentioned, true);
             SetDefault(OsuSetting.NotifyOnPrivateMessage, true);
@@ -522,7 +524,8 @@ namespace osu.Game.Configuration
 
         /// <summary>
         /// Host serving user avatars (used as the fallback when the API doesn't provide an avatar URL).
-        /// Avatars are looked up as <c>https://{host}/{userId}</c>. Defaults to <c>a.sundei.eu</c>.
+        /// Avatars are looked up as <c>https://{host}/{userId}</c>. When empty, the host follows the
+        /// configured server; see <see cref="Online.SomtumEndpointConfiguration.ResolveAvatarHost"/>.
         /// </summary>
         CustomAvatarUrl,
     }

@@ -3,13 +3,13 @@
 
 #nullable disable
 
-using System.Text.RegularExpressions;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Online;
 using osu.Game.Online.API.Requests.Responses;
 
 namespace osu.Game.Users.Drawables
@@ -39,32 +39,18 @@ namespace osu.Game.Users.Drawables
             if (user != null && user.OnlineID > 1)
                 // TODO: The fallback here should not need to exist. Users should be looked up and populated via UserLookupCache or otherwise
                 // in remaining cases where this is required (chat tabs, local leaderboard), at which point this should be removed.
-                Texture = onlineTextures.Get((user as APIUser)?.AvatarUrl ?? $@"https://{getAvatarHost(config)}/{user.OnlineID}");
+                Texture = onlineTextures.Get((user as APIUser)?.AvatarUrl ?? $@"https://{avatarHost(config)}/{user.OnlineID}");
 
             Texture ??= textures.Get(@"Online/avatar-guest");
         }
 
         /// <summary>
-        /// The host used to look up avatars when the API doesn't provide an explicit URL.
-        /// Configurable via <see cref="OsuSetting.CustomAvatarUrl"/>; defaults to <c>a.sundei.eu</c>.
+        /// The avatar host for the configured server, used only as a fallback when the API did not supply
+        /// an explicit avatar URL for the user.
         /// </summary>
-        private const string default_avatar_host = @"a.sundei.eu";
-
-        private static string getAvatarHost(OsuConfigManager config)
-        {
-            string host = config.Get<string>(OsuSetting.CustomAvatarUrl) ?? string.Empty;
-
-            // accept a pasted scheme/path but reduce to a bare host so we can format https://{host}/{id}.
-            host = Regex.Replace(host.Trim(), @"^\s*https?://", string.Empty, RegexOptions.IgnoreCase);
-
-            int slash = host.IndexOf('/');
-            if (slash >= 0)
-                host = host.Substring(0, slash);
-
-            host = host.Trim().Trim('/');
-
-            return string.IsNullOrEmpty(host) ? default_avatar_host : host;
-        }
+        private static string avatarHost(OsuConfigManager config) => SomtumEndpointConfiguration.ResolveAvatarHost(
+            config.Get<string>(OsuSetting.CustomApiUrl),
+            config.Get<string>(OsuSetting.CustomAvatarUrl));
 
         protected override void LoadComplete()
         {

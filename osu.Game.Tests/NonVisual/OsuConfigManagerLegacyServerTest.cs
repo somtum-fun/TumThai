@@ -28,8 +28,9 @@ namespace osu.Game.Tests.NonVisual
 
                 using (var config = new OsuConfigManager(storage))
                 {
+                    // both empty means "follow the built-in server".
                     Assert.That(config.Get<string>(OsuSetting.CustomApiUrl), Is.Empty);
-                    Assert.That(config.Get<string>(OsuSetting.CustomAvatarUrl), Is.EqualTo("a.sundei.eu"));
+                    Assert.That(config.Get<string>(OsuSetting.CustomAvatarUrl), Is.Empty);
                 }
             }
         }

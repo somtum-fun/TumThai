@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Text.RegularExpressions;
 using osu.Framework.IO.Stores;
 using osu.Framework.Logging;
 
@@ -11,8 +10,8 @@ namespace osu.Game.Online
     public sealed class TrustedDomainOnlineStore : OnlineStore
     {
         /// <summary>
-        /// An additional registrable domain (e.g. "sundei.eu") to trust alongside ppy.sh.
-        /// Derived from the configured server so its avatar/cover hosts (e.g. "a.sundei.eu")
+        /// An additional registrable domain (e.g. "example.com") to trust alongside ppy.sh.
+        /// Derived from the configured server so its avatar/cover hosts (e.g. "a.example.com")
         /// are not blocked. Null when the value supplied is empty or a bare IP address.
         /// </summary>
         private readonly string? customDomain;
@@ -31,8 +30,8 @@ namespace osu.Game.Online
         /// </param>
         public TrustedDomainOnlineStore(string? customServer = null, string? customAvatarServer = null)
         {
-            customDomain = getRegistrableDomain(customServer);
-            customAvatarDomain = getRegistrableDomain(customAvatarServer);
+            customDomain = ServerHost.RegistrableDomain(customServer);
+            customAvatarDomain = ServerHost.RegistrableDomain(customAvatarServer);
         }
 
         protected override string GetLookupUrl(string url)
@@ -60,41 +59,5 @@ namespace osu.Game.Online
                && (host.Equals(domain, StringComparison.OrdinalIgnoreCase)
                    || host.EndsWith($@".{domain}", StringComparison.OrdinalIgnoreCase));
 
-        /// <summary>
-        /// Reduces a custom server value to its registrable domain (the last two labels, e.g.
-        /// "osu.sundei.eu" -> "sundei.eu") so that any sibling subdomain hosting
-        /// avatars/covers is trusted. Returns null for empty input or bare IP addresses.
-        /// </summary>
-        private static string? getRegistrableDomain(string? customServer)
-        {
-            if (string.IsNullOrWhiteSpace(customServer))
-                return null;
-
-            // Strip scheme, any path, and a trailing port to leave a bare host.
-            string host = Regex.Replace(customServer.Trim(), @"^\s*https?://", string.Empty, RegexOptions.IgnoreCase);
-
-            int slash = host.IndexOf('/');
-            if (slash >= 0)
-                host = host.Substring(0, slash);
-
-            int colon = host.IndexOf(':');
-            if (colon >= 0)
-                host = host.Substring(0, colon);
-
-            host = host.Trim('.');
-
-            if (host.Length == 0)
-                return null;
-
-            // Leave IP addresses untrusted for sub-host matching (an IP has no subdomains to extend trust to).
-            if (Uri.CheckHostName(host) != UriHostNameType.Dns)
-                return null;
-
-            string[] labels = host.Split('.');
-            if (labels.Length < 2)
-                return null;
-
-            return $@"{labels[^2]}.{labels[^1]}";
-        }
     }
 }

@@ -24,7 +24,7 @@ namespace osu.Game.Audio
         /// <summary>
         /// Base URL (scheme included, no trailing slash) of the configured custom server, or empty for the default server.
         /// </summary>
-        private string customServerUrl = string.Empty;
+        private string serverUrl = string.Empty;
 
         protected TrackManagerPreviewTrack? CurrentTrack;
 
@@ -38,24 +38,20 @@ namespace osu.Game.Audio
         [BackgroundDependencyLoader]
         private void load(AudioManager audioManager, OsuConfigManager config)
         {
-            string customApiUrl = config.Get<string>(OsuSetting.CustomApiUrl);
-            string customAvatarUrl = config.Get<string>(OsuSetting.CustomAvatarUrl);
+            string customApiServer = config.Get<string>(OsuSetting.CustomApiUrl);
+            string avatarHost = SomtumEndpointConfiguration.ResolveAvatarHost(customApiServer, config.Get<string>(OsuSetting.CustomAvatarUrl));
 
-            // Trust the configured custom server's domain so preview audio served from it isn't blocked
-            // by TrustedDomainOnlineStore (mirrors OsuGameBase.CreateOnlineStore()).
-            trackStore = audioManager.GetTrackStore(new TrustedDomainOnlineStore(customApiUrl, customAvatarUrl));
+            // Resolve the server once here (the manager loads fully before any track is created), then hand
+            // the URL to each track. Resolving it inside the track's GetTrack() is unsafe because that runs
+            // during base-class dependency activation, before the track's own dependencies are injected.
+            //
+            // This resolves to the built-in server when nothing custom is configured, which is what keeps
+            // previews working for the server's own beatmap sets.
+            serverUrl = new SomtumEndpointConfiguration(customApiServer).APIUrl;
 
-            // Resolve the custom server URL once here (the manager loads fully before any track is created),
-            // then hand it to each track. Resolving it inside the track's GetTrack() is unsafe because that
-            // runs during base-class dependency activation, before the track's own dependencies are injected.
-            string url = (customApiUrl ?? string.Empty).Trim().TrimEnd('/');
-
-            if (!string.IsNullOrEmpty(url)
-                && !url.StartsWith("http://", System.StringComparison.OrdinalIgnoreCase)
-                && !url.StartsWith("https://", System.StringComparison.OrdinalIgnoreCase))
-                url = "https://" + url;
-
-            customServerUrl = url;
+            // Trust the server's domain so preview audio served from it isn't blocked by
+            // TrustedDomainOnlineStore (mirrors OsuGameBase.CreateOnlineStore()).
+            trackStore = audioManager.GetTrackStore(new TrustedDomainOnlineStore(serverUrl, avatarHost));
         }
 
         /// <summary>
@@ -65,7 +61,7 @@ namespace osu.Game.Audio
         /// <returns>The playable <see cref="PreviewTrack"/>.</returns>
         public PreviewTrack Get(IBeatmapSetInfo beatmapSetInfo)
         {
-            var track = CreatePreviewTrack(beatmapSetInfo, trackStore, customServerUrl);
+            var track = CreatePreviewTrack(beatmapSetInfo, trackStore, serverUrl);
 
             track.Started += () => Schedule(() =>
             {
@@ -109,8 +105,8 @@ namespace osu.Game.Audio
         /// <summary>
         /// Creates the <see cref="TrackManagerPreviewTrack"/>.
         /// </summary>
-        protected virtual TrackManagerPreviewTrack CreatePreviewTrack(IBeatmapSetInfo beatmapSetInfo, ITrackStore trackStore, string customServerUrl) =>
-            new TrackManagerPreviewTrack(beatmapSetInfo, trackStore, customServerUrl);
+        protected virtual TrackManagerPreviewTrack CreatePreviewTrack(IBeatmapSetInfo beatmapSetInfo, ITrackStore trackStore, string serverUrl) =>
+            new TrackManagerPreviewTrack(beatmapSetInfo, trackStore, serverUrl);
 
         public partial class TrackManagerPreviewTrack : PreviewTrack
         {
@@ -119,13 +115,13 @@ namespace osu.Game.Audio
 
             private readonly IBeatmapSetInfo beatmapSetInfo;
             private readonly ITrackStore trackManager;
-            private readonly string customServerUrl;
+            private readonly string serverUrl;
 
-            public TrackManagerPreviewTrack(IBeatmapSetInfo beatmapSetInfo, ITrackStore trackManager, string customServerUrl)
+            public TrackManagerPreviewTrack(IBeatmapSetInfo beatmapSetInfo, ITrackStore trackManager, string serverUrl)
             {
                 this.beatmapSetInfo = beatmapSetInfo;
                 this.trackManager = trackManager;
-                this.customServerUrl = customServerUrl;
+                this.serverUrl = serverUrl;
             }
 
             protected override void LoadComplete()
@@ -138,12 +134,12 @@ namespace osu.Game.Audio
 
             protected override Track GetTrack()
             {
-                // Somtum custom sets (id >= 1e8) don't exist on b.ppy.sh — serve audio from the configured custom server.
-                const long somtumFloor = 100_000_000;
+                // Somtum custom sets (id >= 1e8) don't exist on b.ppy.sh, so their audio comes from the server.
+                const long somtum_set_floor = 100_000_000;
 
-                string url = beatmapSetInfo.OnlineID >= somtumFloor && !string.IsNullOrEmpty(customServerUrl)
-                    ? $"{customServerUrl}/api/private/audio/beatmapset/{beatmapSetInfo.OnlineID}"
-                    : $"https://b.ppy.sh/preview/{beatmapSetInfo.OnlineID}.mp3";
+                string url = beatmapSetInfo.OnlineID >= somtum_set_floor && !string.IsNullOrEmpty(serverUrl)
+                    ? $@"{serverUrl}/api/private/audio/beatmapset/{beatmapSetInfo.OnlineID}"
+                    : $@"https://b.ppy.sh/preview/{beatmapSetInfo.OnlineID}.mp3";
 
                 return trackManager.Get(url);
             }

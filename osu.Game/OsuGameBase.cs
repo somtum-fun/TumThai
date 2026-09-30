@@ -108,77 +108,23 @@ namespace osu.Game
 
         public virtual EndpointConfiguration CreateEndpoints()
         {
-            string customUrl = LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
-            customUrl = customUrl.Trim().TrimEnd('/');
+            // SomtumEndpointConfiguration owns every endpoint, for the built-in server and for a custom one
+            // alike, so there is a single place where a server change takes effect.
+            var config = new SomtumEndpointConfiguration(CustomApiServer);
 
-            // this client targets a private server, so osu!somtum is the baseline rather than
-            // the official production/development endpoints. a configured custom server overrides it below.
-            EndpointConfiguration config = new SomtumEndpointConfiguration();
-
-            if (!string.IsNullOrEmpty(customUrl))
-            {
-                // make sure that it has https:// or http:// since users typically enter a bare host.
-                if (!customUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !customUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                    customUrl = "https://" + customUrl;
-
-                config.APIUrl = customUrl;
-                // a separate website URL from the API URL where possible so chat/external links
-                // resolve against the website host rather than the (JSON-only) API host. 
-                // Falls back to the API URL when the host doesn't follow a recognised pattern.
-                config.WebsiteUrl = DeriveWebsiteUrlFromApiUrl(customUrl);
-                config.SpectatorUrl = $"{customUrl}/signalr/spectator";
-                config.MultiplayerUrl = $"{customUrl}/signalr/multiplayer";
-                config.MetadataUrl = $"{customUrl}/signalr/metadata";
-                config.BeatmapSubmissionServiceUrl = $"{customUrl}/beatmap-submission";
-            }
-
-            Logger.Log($"API endpoint resolved to {config.APIUrl} (custom server setting={(string.IsNullOrEmpty(customUrl) ? "<default>" : customUrl)})", LoggingTarget.Network);
+            Logger.Log($"API endpoint resolved to {config.APIUrl} (custom server setting={(string.IsNullOrWhiteSpace(CustomApiServer) ? "<default>" : CustomApiServer)})", LoggingTarget.Network);
 
             return config;
         }
 
         /// <summary>
-        /// Derive a website URL from a configured API URL. Two common private-server patterns are handled:
-        /// Falls back to the input URL when neither pattern matches (i.e. API and website are co-hosted).
+        /// The custom server the user has configured, or an empty string to use the built-in one.
         /// </summary>
-        public static string DeriveWebsiteUrlFromApiUrl(string apiUrl)
-        {
-            if (string.IsNullOrEmpty(apiUrl))
-                return apiUrl;
+        private string CustomApiServer => LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
 
-            try
-            {
-                var uri = new Uri(apiUrl);
-                string host = uri.Host;
-                string newHost = host;
-
-                if (host.Contains(@"-api.", StringComparison.OrdinalIgnoreCase))
-                    newHost = host.Replace(@"-api.", ".", StringComparison.OrdinalIgnoreCase);
-                else if (host.StartsWith(@"api.", StringComparison.OrdinalIgnoreCase))
-                    newHost = host.Substring(4);
-
-                if (newHost == host)
-                    return apiUrl;
-
-                return $"{uri.Scheme}://{newHost}";
-            }
-            catch (UriFormatException)
-            {
-                // fall back to the input.
-                return apiUrl;
-            }
-        }
-
-        protected override OnlineStore CreateOnlineStore()
-        {
-            // fall back to the default server's host so its asset subdomains stay trusted when no custom server is set.
-            string apiHost = LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(apiHost))
-                apiHost = SomtumEndpointConfiguration.API_HOST;
-
-            return new TrustedDomainOnlineStore(apiHost, LocalConfig?.Get<string>(OsuSetting.CustomAvatarUrl));
-        }
+        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore(
+            new SomtumEndpointConfiguration(CustomApiServer).APIUrl,
+            SomtumEndpointConfiguration.ResolveAvatarHost(CustomApiServer, LocalConfig?.Get<string>(OsuSetting.CustomAvatarUrl)));
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
 
