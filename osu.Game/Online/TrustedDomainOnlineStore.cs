@@ -11,9 +11,9 @@ namespace osu.Game.Online
     public sealed class TrustedDomainOnlineStore : OnlineStore
     {
         /// <summary>
-        /// An additional registrable domain (e.g. "freedomdive.dev") to trust alongside ppy.sh.
-        /// Derived from the configured custom server so its avatar/cover hosts (e.g. "a.freedomdive.dev")
-        /// are not blocked. Null when no custom server is configured.
+        /// An additional registrable domain (e.g. "sundei.eu") to trust alongside ppy.sh.
+        /// Derived from the configured server so its avatar/cover hosts (e.g. "a.sundei.eu")
+        /// are not blocked. Null when the value supplied is empty or a bare IP address.
         /// </summary>
         private readonly string? customDomain;
 
@@ -62,7 +62,7 @@ namespace osu.Game.Online
 
         /// <summary>
         /// Reduces a custom server value to its registrable domain (the last two labels, e.g.
-        /// "lazer.freedomdive.dev" -> "freedomdive.dev") so that any sibling subdomain hosting
+        /// "osu.sundei.eu" -> "sundei.eu") so that any sibling subdomain hosting
         /// avatars/covers is trusted. Returns null for empty input or bare IP addresses.
         /// </summary>
         private static string? getRegistrableDomain(string? customServer)

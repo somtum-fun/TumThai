@@ -35,6 +35,30 @@ namespace osu.Game.Configuration
         {
         }
 
+        /// <summary>
+        /// Server hosts that were previously shipped as defaults. Installs that still hold one of these
+        /// as an explicit value are moved back onto the current defaults, rather than being stranded on a
+        /// server this client no longer targets.
+        /// </summary>
+        private static readonly (OsuSetting setting, string legacyValue)[] legacy_server_defaults =
+        {
+            (OsuSetting.CustomApiUrl, @"lazer.freedomdive.dev"),
+            (OsuSetting.CustomAvatarUrl, @"a.freedomdive.dev"),
+        };
+
+        protected override void PerformLoad()
+        {
+            base.PerformLoad();
+
+            foreach ((OsuSetting setting, string legacyValue) in legacy_server_defaults)
+            {
+                var bindable = GetBindable<string>(setting);
+
+                if (string.Equals(bindable.Value?.Trim(), legacyValue, StringComparison.OrdinalIgnoreCase))
+                    bindable.SetDefault();
+            }
+        }
+
         protected override void InitialiseDefaults()
         {
             // UI/selection defaults
@@ -96,8 +120,9 @@ namespace osu.Game.Configuration
 
             SetDefault(OsuSetting.ShowOnlineExplicitContent, false);
 
-            SetDefault(OsuSetting.CustomApiUrl, @"lazer.freedomdive.dev");
-            SetDefault(OsuSetting.CustomAvatarUrl, @"a.freedomdive.dev");
+            // empty means "use the built-in osu!somtum endpoints"; see SomtumEndpointConfiguration.
+            SetDefault(OsuSetting.CustomApiUrl, string.Empty);
+            SetDefault(OsuSetting.CustomAvatarUrl, @"a.sundei.eu");
 
             SetDefault(OsuSetting.NotifyOnUsernameMentioned, true);
             SetDefault(OsuSetting.NotifyOnPrivateMessage, true);
@@ -497,7 +522,7 @@ namespace osu.Game.Configuration
 
         /// <summary>
         /// Host serving user avatars (used as the fallback when the API doesn't provide an avatar URL).
-        /// Avatars are looked up as <c>https://{host}/{userId}</c>. Defaults to <c>a.freedomdive.dev</c>.
+        /// Avatars are looked up as <c>https://{host}/{userId}</c>. Defaults to <c>a.sundei.eu</c>.
         /// </summary>
         CustomAvatarUrl,
     }

@@ -46,9 +46,9 @@ namespace osu.Game.Users.Drawables
 
         /// <summary>
         /// The host used to look up avatars when the API doesn't provide an explicit URL.
-        /// Configurable via <see cref="OsuSetting.CustomAvatarUrl"/>; defaults to <c>a.freedomdive.dev</c>.
+        /// Configurable via <see cref="OsuSetting.CustomAvatarUrl"/>; defaults to <c>a.sundei.eu</c>.
         /// </summary>
-        private const string default_avatar_host = @"a.freedomdive.dev";
+        private const string default_avatar_host = @"a.sundei.eu";
 
         private static string getAvatarHost(OsuConfigManager config)
         {

@@ -111,11 +111,9 @@ namespace osu.Game
             string customUrl = LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
             customUrl = customUrl.Trim().TrimEnd('/');
 
-            // temp: because freedomdive.dev (our dev server) does not use Development secret
-            // i have to force it to use Production secret or else it will gave "invalid_client" error
-            EndpointConfiguration config = UseDevelopmentServer && string.IsNullOrEmpty(customUrl)
-                ? new DevelopmentEndpointConfiguration()
-                : new ProductionEndpointConfiguration();
+            // this client targets a private server, so osu!somtum is the baseline rather than
+            // the official production/development endpoints. a configured custom server overrides it below.
+            EndpointConfiguration config = new SomtumEndpointConfiguration();
 
             if (!string.IsNullOrEmpty(customUrl))
             {
@@ -171,7 +169,16 @@ namespace osu.Game
             }
         }
 
-        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore(LocalConfig?.Get<string>(OsuSetting.CustomApiUrl), LocalConfig?.Get<string>(OsuSetting.CustomAvatarUrl));
+        protected override OnlineStore CreateOnlineStore()
+        {
+            // fall back to the default server's host so its asset subdomains stay trusted when no custom server is set.
+            string apiHost = LocalConfig?.Get<string>(OsuSetting.CustomApiUrl) ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(apiHost))
+                apiHost = SomtumEndpointConfiguration.API_HOST;
+
+            return new TrustedDomainOnlineStore(apiHost, LocalConfig?.Get<string>(OsuSetting.CustomAvatarUrl));
+        }
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
 
