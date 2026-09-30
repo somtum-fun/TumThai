@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Localisation;
@@ -120,9 +120,9 @@ namespace osu.Game.Localisation
         public static LocalisableString CustomAvatarUrl => new TranslatableString(getKey(@"custom_avatar_url"), @"Custom avatar URL");
 
         /// <summary>
-        /// "Host serving user avatars (e.g. "a.example.com"). Looked up as https://{host}/{userId}. Leave empty to use the default."
+        /// "Host serving user avatars (e.g. "a.example.com"). Looked up as https://{{host}}/{{userId}}. Leave empty to use the default."
         /// </summary>
-        public static LocalisableString CustomAvatarUrlTooltip => new TranslatableString(getKey(@"custom_avatar_url_tooltip"), @"Host serving user avatars (e.g. ""a.example.com""). Looked up as https://{host}/{userId}. Leave empty to use the default.");
+        public static LocalisableString CustomAvatarUrlTooltip => new TranslatableString(getKey(@"custom_avatar_url_tooltip"), @"Host serving user avatars (e.g. ""a.example.com""). Looked up as https://{{host}}/{{userId}}. Leave empty to use the default.");
 
         /// <summary>
         /// "Server"
