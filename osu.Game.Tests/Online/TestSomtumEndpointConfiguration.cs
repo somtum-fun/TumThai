@@ -24,6 +24,9 @@ namespace osu.Game.Tests.Online
             Assert.That(config.SpectatorUrl, Is.EqualTo("https://spectator.blueskychan.dev/spectator"));
             Assert.That(config.MultiplayerUrl, Is.EqualTo("https://spectator.blueskychan.dev/multiplayer"));
             Assert.That(config.MetadataUrl, Is.EqualTo("https://spectator.blueskychan.dev/metadata"));
+
+            // the editor only offers submission when this is set.
+            Assert.That(config.BeatmapSubmissionServiceUrl, Is.EqualTo("https://osu.blueskychan.dev/beatmap-submission"));
         }
 
         [Test]
@@ -74,6 +77,7 @@ namespace osu.Game.Tests.Online
             Assert.That(config.SpectatorUrl, Is.EqualTo("https://osu.example.com/signalr/spectator"));
             Assert.That(config.MultiplayerUrl, Is.EqualTo("https://osu.example.com/signalr/multiplayer"));
             Assert.That(config.MetadataUrl, Is.EqualTo("https://osu.example.com/signalr/metadata"));
+            Assert.That(config.BeatmapSubmissionServiceUrl, Is.EqualTo("https://osu.example.com/beatmap-submission"));
 
             // client credentials must be sent whichever server is in use.
             Assert.That(config.APIClientID, Is.EqualTo("5"));

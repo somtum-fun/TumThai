@@ -59,8 +59,8 @@ namespace osu.Game.Online
                 MultiplayerUrl = $@"https://{SPECTATOR_HOST}/multiplayer";
                 MetadataUrl = $@"https://{SPECTATOR_HOST}/metadata";
 
-                // the server does not host a beatmap submission service; null disables submission.
-                BeatmapSubmissionServiceUrl = null;
+                // the server hosts beatmap submission under the API host (TomYum's /beatmap-submission).
+                BeatmapSubmissionServiceUrl = $@"https://{API_HOST}/beatmap-submission";
                 return;
             }
 
