@@ -20,7 +20,7 @@ namespace osu.Game.Screens.Play
     public partial class SoloPlayer : SubmittingPlayer
     {
         [Cached(typeof(IGameplayLeaderboardProvider))]
-        private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider();
+        private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider { AllowPerformanceSort = true }; // osu!somtum
 
         public SoloPlayer([CanBeNull] PlayerConfiguration configuration = null)
             : base(configuration)

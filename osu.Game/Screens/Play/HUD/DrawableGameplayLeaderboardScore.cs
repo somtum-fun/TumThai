@@ -59,6 +59,12 @@ namespace osu.Game.Screens.Play.HUD
         public BindableBool HasQuit { get; } = new BindableBool();
         public Bindable<int?> ScorePosition { get; } = new Bindable<int?>();
         public Bindable<long> DisplayOrder { get; } = new Bindable<long>();
+        public BindableDouble PerformancePoints { get; } = new BindableDouble();
+
+        /// <summary>
+        /// osu!somtum: whether pp is shown in place of the total score.
+        /// </summary>
+        public readonly bool DisplayPerformance;
 
         private Func<ScoringMode, long>? getDisplayScoreFunction;
 
@@ -116,6 +122,8 @@ namespace osu.Game.Screens.Play.HUD
             HasQuit.BindTo(score.HasQuit);
             ScorePosition.BindTo(score.Position);
             DisplayOrder.BindTo(score.DisplayOrder);
+            PerformancePoints.BindTo(score.PerformancePoints);
+            DisplayPerformance = score.DisplayPerformance;
             GetDisplayScore = score.GetDisplayScore;
 
             if (score.TeamColour != null)
@@ -308,6 +316,7 @@ namespace osu.Game.Screens.Play.HUD
             scoreDisplayMode = config.GetBindable<ScoringMode>(OsuSetting.ScoreDisplayMode);
             scoreDisplayMode.BindValueChanged(_ => updateScore());
             TotalScore.BindValueChanged(_ => updateScore(), true);
+            PerformancePoints.BindValueChanged(_ => updateScore());
 
             Accuracy.BindValueChanged(v => accuracyText.Text = v.NewValue.FormatAccuracy(), true);
 
@@ -321,7 +330,17 @@ namespace osu.Game.Screens.Play.HUD
             FinishTransforms(true);
         }
 
-        private void updateScore() => scoreText.Text = (getDisplayScoreFunction?.Invoke(scoreDisplayMode.Value) ?? TotalScore.Value).ToString("N0");
+        private void updateScore()
+        {
+            // osu!somtum: pp-sorted boards show pp instead of score.
+            if (DisplayPerformance)
+            {
+                scoreText.Text = $@"{(int)Math.Round(PerformancePoints.Value, MidpointRounding.AwayFromZero):N0}pp";
+                return;
+            }
+
+            scoreText.Text = (getDisplayScoreFunction?.Invoke(scoreDisplayMode.Value) ?? TotalScore.Value).ToString("N0");
+        }
 
         private void onExpanded(ValueChangedEvent<bool> expanded)
         {

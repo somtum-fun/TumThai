@@ -349,8 +349,8 @@ namespace osu.Game.Screens.Play
             // - is a safety against potential unexpected screen transitions, making sure that the leaderboard
             //   displayed during gameplay definitely matches the beatmap and ruleset being played
             //   (as the solo gameplay leaderboard provider uses the global leaderboard manager to populate itself)
-            // - the sort mode is not specified and defaults to `Score` which is good because gameplay leaderboards only support sorting by score.
-            //   this may change at some point in the future, at which point specifying a sort mode should be considered.
+            // - osu!somtum: the sort is song select's (LeaderboardManager.SongSelectSorting), so a board sorted by pp gives a
+            //   gameplay leaderboard sorted by pp, also when retrying from the results screen (which fetches by score).
             refetchLeaderboard(force: false);
         }
 
@@ -360,7 +360,8 @@ namespace osu.Game.Screens.Play
                 Beatmap.Value.BeatmapInfo,
                 Ruleset.Value,
                 leaderboardManager?.CurrentCriteria?.Scope ?? BeatmapLeaderboardScope.Global,
-                leaderboardManager?.CurrentCriteria?.ExactMods), force);
+                leaderboardManager?.CurrentCriteria?.ExactMods,
+                leaderboardManager?.SongSelectSorting ?? LeaderboardSortMode.Score), force);
         }
 
         #region Screen handling

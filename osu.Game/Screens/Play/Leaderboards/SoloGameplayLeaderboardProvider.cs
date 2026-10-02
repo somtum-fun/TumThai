@@ -9,6 +9,7 @@ using osu.Framework.Caching;
 using osu.Framework.Graphics;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Scoring;
+using osu.Game.Screens.Play.HUD;
 
 namespace osu.Game.Screens.Play.Leaderboards
 {
@@ -23,8 +24,18 @@ namespace osu.Game.Screens.Play.Leaderboards
         [Resolved]
         private GameplayState? gameplayState { get; set; }
 
+        [Resolved]
+        private LivePerformanceTracker? livePerformance { get; set; }
+
+        /// <summary>
+        /// osu!somtum: whether this board may order by pp (when song select's board was sorted by pp).
+        /// Set for solo plays and replays, but not for spectating.
+        /// </summary>
+        public bool AllowPerformanceSort { get; init; }
+
         private readonly Cached sorting = new Cached();
         private bool isPartial;
+        private bool sortByPerformance;
 
         protected override void LoadComplete()
         {
@@ -34,24 +45,45 @@ namespace osu.Game.Screens.Play.Leaderboards
 
             isPartial = globalScores == null || globalScores.IsPartial;
 
+            // osu!somtum: follow a pp-sorted online board from song select (local scores mostly have no pp).
+            var criteria = leaderboardManager?.CurrentCriteria;
+            sortByPerformance = AllowPerformanceSort
+                                && livePerformance != null
+                                && criteria != null
+                                && criteria.Sorting == LeaderboardSortMode.PerformancePoints
+                                && criteria.Scope != BeatmapLeaderboardScope.Local;
+
+            if (sortByPerformance)
+                livePerformance!.Start();
+
             List<GameplayLeaderboardScore> newScores = new List<GameplayLeaderboardScore>();
 
             if (globalScores != null)
             {
-                foreach (var topScore in globalScores.AllScores.OrderByTotalScore())
+                var orderedScores = sortByPerformance
+                    ? globalScores.AllScores.OrderByCriteria(LeaderboardSortMode.PerformancePoints)
+                    : globalScores.AllScores.OrderByTotalScore();
+
+                foreach (var topScore in orderedScores)
                 {
-                    newScores.Add(new GameplayLeaderboardScore(topScore, false, GameplayLeaderboardScore.ComboDisplayMode.Highest));
+                    newScores.Add(new GameplayLeaderboardScore(topScore, false, GameplayLeaderboardScore.ComboDisplayMode.Highest)
+                    {
+                        DisplayPerformance = sortByPerformance,
+                    });
                 }
             }
 
             if (gameplayState != null)
             {
-                var localScore = new GameplayLeaderboardScore(gameplayState, tracked: true, GameplayLeaderboardScore.ComboDisplayMode.Highest)
+                var localScore = new GameplayLeaderboardScore(gameplayState, tracked: true, GameplayLeaderboardScore.ComboDisplayMode.Highest,
+                    sortByPerformance ? livePerformance?.Performance : null)
                 {
                     // Local score should always show lower than any existing scores in cases of ties.
-                    TotalScoreTiebreaker = long.MaxValue
+                    TotalScoreTiebreaker = long.MaxValue,
+                    DisplayPerformance = sortByPerformance,
                 };
                 localScore.TotalScore.BindValueChanged(_ => sorting.Invalidate());
+                localScore.PerformancePoints.BindValueChanged(_ => sorting.Invalidate());
                 newScores.Add(localScore);
             }
 
@@ -67,8 +99,10 @@ namespace osu.Game.Screens.Play.Leaderboards
             if (sorting.IsValid)
                 return;
 
-            var orderedByScore = scores
-                                 .OrderByDescending(i => i.TotalScore.Value)
+            // osu!somtum: on a pp board, order by pp first.
+            var orderedByScore = (sortByPerformance
+                                     ? scores.OrderByDescending(i => i.PerformancePoints.Value).ThenByDescending(i => i.TotalScore.Value)
+                                     : scores.OrderByDescending(i => i.TotalScore.Value))
                                  .ThenBy(i => i.TotalScoreTiebreaker)
                                  .ToList();
 

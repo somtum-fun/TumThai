@@ -290,6 +290,7 @@ namespace osu.Game.Screens.Select
                 // which makes GetScoresRequest send mode=osurx. Vanilla / unsupported combos keep the base ruleset.
                 var fetchRuleset = baseRuleset.ApplyVariant(effectiveVariant(baseRuleset));
                 var fetchSorting = Sorting.Value;
+                leaderboardManager.SongSelectSorting = fetchSorting;
 
                 // For now, we forcefully refresh to keep things simple.
                 // In the future, removing this requirement may be deemed useful, but will need ample testing of edge case scenarios
@@ -309,6 +310,10 @@ namespace osu.Game.Screens.Select
             }, initialFetchComplete && fetchScope != BeatmapLeaderboardScope.Local ? 300 : 0);
         }
 
+        // osu!somtum: set from the criteria of the scores being shown.
+        private bool showPerformance;
+        private bool calculateMissingPerformance;
+
         private void updateScores()
         {
             var scores = fetchedScores.Value;
@@ -320,6 +325,15 @@ namespace osu.Game.Screens.Select
             // in this case, ignore the incoming scores to avoid briefly flashing the wrong leaderboard.
             if (leaderboardManager.CurrentCriteria?.Beatmap?.Equals(beatmap.Value.BeatmapInfo) != true)
                 return;
+
+            // osu!somtum: show pp instead of score when the shown scores are sorted by pp.
+            // Uses the fetched criteria rather than `Sorting.Value`, since refetches are debounced.
+            // Online boards only when the map gives pp (Relax/Autopilot default to pp on every map), and missing pp is
+            // never calculated here: local scores are sorted by their stored pp, so calculated values would not match the order.
+            var criteria = leaderboardManager.CurrentCriteria;
+            showPerformance = criteria?.Sorting == LeaderboardSortMode.PerformancePoints
+                              && (criteria.Scope == BeatmapLeaderboardScope.Local || criteria.Beatmap?.Status.GrantsPerformancePoints() == true);
+            calculateMissingPerformance = false;
 
             if (scores.FailState != null)
                 SetState((LeaderboardState)scores.FailState);
@@ -354,6 +368,8 @@ namespace osu.Game.Screens.Select
                 {
                     Rank = i + 1,
                     Highlight = highlightType,
+                    ShowPerformance = showPerformance,
+                    CalculateMissingPerformance = calculateMissingPerformance,
                     SelectedMods = { BindTarget = mods },
                     Action = songSelect?.CanPresentScore == true
                         ? () => songSelect.PresentScore(s)
@@ -413,6 +429,8 @@ namespace osu.Game.Screens.Select
                 {
                     Highlight = BeatmapLeaderboardScore.HighlightType.Own,
                     Rank = userScore.Position,
+                    ShowPerformance = showPerformance,
+                    CalculateMissingPerformance = calculateMissingPerformance,
                     SelectedMods = { BindTarget = mods },
                     Action = () => onLeaderboardScoreClicked(userScore),
                 };

@@ -45,10 +45,26 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         [Resolved]
         private ScoreManager scoreManager { get; set; }
 
-        public TopScoreStatisticsSection()
+        // osu!somtum: when sorted by pp, pp takes the big total score slot and total score takes the small pp slot.
+        private readonly bool sortedByPerformance;
+
+        public TopScoreStatisticsSection(bool sortedByPerformance = false)
         {
+            this.sortedByPerformance = sortedByPerformance;
+
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
+
+            if (sortedByPerformance)
+            {
+                ppColumn = new TextColumn(BeatmapsetsStrings.ShowScoreboardHeaderspp, largeFont, top_columns_min_width);
+                totalScoreColumn = new TotalScoreColumn(BeatmapsetsStrings.ShowScoreboardHeadersScoreTotal, smallFont, bottom_columns_min_width);
+            }
+            else
+            {
+                totalScoreColumn = new TotalScoreColumn(BeatmapsetsStrings.ShowScoreboardHeadersScoreTotal, largeFont, top_columns_min_width);
+                ppColumn = new TextColumn(BeatmapsetsStrings.ShowScoreboardHeaderspp, smallFont, bottom_columns_min_width);
+            }
 
             InternalChild = new FillFlowContainer
             {
@@ -66,7 +82,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                         Spacing = new Vector2(margin, 0),
                         Children = new Drawable[]
                         {
-                            totalScoreColumn = new TotalScoreColumn(BeatmapsetsStrings.ShowScoreboardHeadersScoreTotal, largeFont, top_columns_min_width),
+                            sortedByPerformance ? ppColumn : totalScoreColumn,
                             accuracyColumn = new TextColumn(BeatmapsetsStrings.ShowScoreboardHeadersAccuracy, largeFont, top_columns_min_width),
                             maxComboColumn = new TextColumn(BeatmapsetsStrings.ShowScoreboardHeadersCombo, largeFont, top_columns_min_width)
                         }
@@ -86,7 +102,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                                 Direction = FillDirection.Horizontal,
                                 Spacing = new Vector2(margin, 0),
                             },
-                            ppColumn = new TextColumn(BeatmapsetsStrings.ShowScoreboardHeaderspp, smallFont, bottom_columns_min_width),
+                            sortedByPerformance ? totalScoreColumn : ppColumn,
                             modsColumn = new ModsInfoColumn(),
                         }
                     },
@@ -128,14 +144,17 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 accuracyColumn.Text = value.DisplayAccuracy;
                 maxComboColumn.Text = value.MaxCombo.ToLocalisableString(@"0\x");
 
-                ppColumn.Alpha = value.BeatmapInfo!.Status.GrantsPerformancePoints() ? 1 : 0;
+                // osu!somtum: the pp column is always shown when it holds the main value.
+                ppColumn.Alpha = sortedByPerformance || value.BeatmapInfo!.Status.GrantsPerformancePoints() ? 1 : 0;
+
+                var ppFont = sortedByPerformance ? largeFont : smallFont;
 
                 if (!value.Ranked)
                 {
                     ppColumn.Drawable = new SpriteTextWithTooltip
                     {
                         Text = "-",
-                        Font = smallFont,
+                        Font = ppFont,
                         TooltipText = ScoresStrings.StatusNoPp
                     };
                 }
@@ -144,7 +163,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                     ppColumn.Drawable = new SpriteIconWithTooltip
                     {
                         Icon = FontAwesome.Solid.Sync,
-                        Size = new Vector2(smallFont.Size),
+                        Size = new Vector2(ppFont.Size),
                         TooltipText = ScoresStrings.StatusProcessing,
                     };
                 }

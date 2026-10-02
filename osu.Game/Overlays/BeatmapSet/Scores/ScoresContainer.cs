@@ -17,6 +17,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Online.Leaderboards;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.Leaderboards;
@@ -39,8 +40,15 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         private readonly Bindable<LeaderboardVariant> variant = new Bindable<LeaderboardVariant>(LeaderboardVariant.Vanilla);
         private readonly LeaderboardVariantSelector variantSelector;
 
-        // Relax and Autopilot boards come ordered by pp; keep that order.
+        // osu!somtum: by pp or by score. Defaults to pp on Relax/Autopilot, score on Vanilla.
+        private readonly Bindable<LeaderboardSortMode> sort = new Bindable<LeaderboardSortMode>(LeaderboardSortMode.Score);
+        private readonly LeaderboardSortSelector sortSelector;
+
+        // Relax and Autopilot boards, and boards sorted by pp, come ordered by the server; keep that order.
         private bool keepServerOrder;
+
+        // osu!somtum: whether the last request asked for the board by pp.
+        private bool requestedByPerformance;
 
         private readonly Box background;
         private readonly ScoreTable scoreTable;
@@ -99,16 +107,21 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
                 var topScore = scores.First();
 
-                scoreTable.DisplayScores(scores, apiBeatmap.Status.GrantsPerformancePoints());
+                bool showPerformance = apiBeatmap.Status.GrantsPerformancePoints();
+
+                // osu!somtum: show pp in place of score when sorted by pp.
+                bool sortedByPerformance = showPerformance && requestedByPerformance;
+
+                scoreTable.DisplayScores(scores, showPerformance, sortedByPerformance);
                 scoreTable.Show();
 
                 var userScore = value.UserScore;
                 var userScoreInfo = userScore?.Score.ToScoreInfo(rulesets, beatmapInfo);
 
-                topScoresContainer.Add(new DrawableTopScore(topScore));
+                topScoresContainer.Add(new DrawableTopScore(topScore, sortedByPerformance: sortedByPerformance));
 
                 if (userScoreInfo != null && userScoreInfo.OnlineID != topScore.OnlineID)
-                    topScoresContainer.Add(new DrawableTopScore(userScoreInfo, userScore.Position));
+                    topScoresContainer.Add(new DrawableTopScore(userScoreInfo, userScore.Position, sortedByPerformance));
             });
         }
 
@@ -145,6 +158,13 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                                     Origin = Anchor.TopCentre,
                                     Alpha = 0,
                                     Current = { BindTarget = variant }
+                                },
+                                sortSelector = new LeaderboardSortSelector
+                                {
+                                    Anchor = Anchor.TopCentre,
+                                    Origin = Anchor.TopCentre,
+                                    Alpha = 0,
+                                    Current = { BindTarget = sort }
                                 },
                                 new LeaderboardScopeSelector
                                 {
@@ -232,7 +252,13 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             base.LoadComplete();
             scope.BindValueChanged(_ => getScores());
             ruleset.BindValueChanged(_ => getScores());
-            variant.BindValueChanged(_ => getScores());
+            variant.BindValueChanged(_ =>
+            {
+                // osu!somtum: a new variant starts on its default sort.
+                if (!resetSort())
+                    getScores();
+            });
+            sort.BindValueChanged(_ => getScores());
 
             modSelector.SelectedMods.CollectionChanged += (_, _) => getScores();
 
@@ -245,6 +271,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             var beatmapRuleset = beatmap.NewValue?.Ruleset;
 
             updateVariants(beatmapRuleset);
+            resetSort();
+            sortSelector.Alpha = beatmap.NewValue?.Status.GrantsPerformancePoints() == true ? 1 : 0;
 
             if (ruleset.Value?.OnlineID == beatmapRuleset?.OnlineID)
             {
@@ -266,6 +294,21 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
             variantSelector.Items = supported;
             variantSelector.Alpha = supported.Length > 1 ? 1 : 0;
+        }
+
+        /// <summary>
+        /// osu!somtum: sets the sort to the current variant's default.
+        /// </summary>
+        /// <returns>Whether the sort changed (which refetches the scores).</returns>
+        private bool resetSort()
+        {
+            var defaultSort = variant.Value == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
+
+            if (sort.Value == defaultSort)
+                return false;
+
+            sort.Value = defaultSort;
+            return true;
         }
 
         private void onUserChanged(ValueChangedEvent<APIUser> user)
@@ -314,8 +357,12 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             if (variant.Value != LeaderboardVariant.Vanilla && rulesets.GetRuleset(requestRuleset.OnlineID) is RulesetInfo baseRuleset)
                 requestRuleset = baseRuleset.ApplyVariant(variant.Value);
 
-            keepServerOrder = requestRuleset.IsSpecialRuleset();
-            getScoresRequest = new GetScoresRequest(Beatmap.Value, requestRuleset, scope.Value, modSelector.SelectedMods);
+            // osu!somtum: only ask for a sort on maps that give pp; otherwise the server's own order is used.
+            LeaderboardSortMode? requestSort = Beatmap.Value.Status.GrantsPerformancePoints() ? sort.Value : null;
+
+            requestedByPerformance = requestSort == LeaderboardSortMode.PerformancePoints;
+            keepServerOrder = requestedByPerformance || requestRuleset.IsSpecialRuleset();
+            getScoresRequest = new GetScoresRequest(Beatmap.Value, requestRuleset, scope.Value, modSelector.SelectedMods, requestSort);
             getScoresRequest.Success += scores =>
             {
                 Scores = scores;

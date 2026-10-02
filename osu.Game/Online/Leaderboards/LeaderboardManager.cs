@@ -34,6 +34,13 @@ namespace osu.Game.Online.Leaderboards
 
         public LeaderboardCriteria? CurrentCriteria { get; private set; }
 
+        /// <summary>
+        /// osu!somtum: the sort song select's leaderboard last asked for. The player loader refetches with it, so the
+        /// gameplay leaderboard follows song select's sort (a pp board stays a pp board, also on retry), while the
+        /// results screen keeps fetching by score.
+        /// </summary>
+        public LeaderboardSortMode SongSelectSorting { get; set; } = LeaderboardSortMode.Score;
+
         private IDisposable? localScoreSubscription;
         private GetScoresRequest? inFlightOnlineRequest;
 

@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
@@ -16,6 +18,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
@@ -60,6 +63,17 @@ namespace osu.Game.Screens.Select
         public HighlightType? Highlight { get; init; }
         public Action<ScoreInfo>? ShowReplay { get; init; }
 
+        /// <summary>
+        /// osu!somtum: show the score's pp instead of its total score (used when the leaderboard is sorted by pp).
+        /// </summary>
+        public bool ShowPerformance { get; init; }
+
+        /// <summary>
+        /// osu!somtum: when showing pp for a score with none stored, calculate it locally (local scores only).
+        /// Otherwise "-" is shown.
+        /// </summary>
+        public bool CalculateMissingPerformance { get; init; }
+
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
@@ -80,6 +94,12 @@ namespace osu.Game.Screens.Select
 
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapDifficultyCache? difficultyCache { get; set; }
+
+        private SpriteTextWithTooltip? performanceText;
+        private CancellationTokenSource? performanceCancellationSource;
 
         private const float expanded_right_content_width = 200;
         private const float grade_width = 35;
@@ -433,16 +453,28 @@ namespace osu.Game.Screens.Select
                                                 Spacing = new Vector2(0f, -2f),
                                                 Children = new Drawable[]
                                                 {
-                                                    new OsuSpriteText
-                                                    {
-                                                        Anchor = Anchor.TopRight,
-                                                        Origin = Anchor.TopRight,
-                                                        UseFullGlyphHeight = false,
-                                                        Current = scoreManager.GetBindableTotalScoreString(Score),
-                                                        Spacing = new Vector2(-1.5f),
-                                                        Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
-                                                        Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
-                                                    },
+                                                    // osu!somtum: pp in place of the total score when sorted by pp.
+                                                    ShowPerformance
+                                                        ? performanceText = new SpriteTextWithTooltip
+                                                        {
+                                                            Anchor = Anchor.TopRight,
+                                                            Origin = Anchor.TopRight,
+                                                            UseFullGlyphHeight = false,
+                                                            Text = "-",
+                                                            Spacing = new Vector2(-1.5f),
+                                                            Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
+                                                            Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
+                                                        }
+                                                        : new OsuSpriteText
+                                                        {
+                                                            Anchor = Anchor.TopRight,
+                                                            Origin = Anchor.TopRight,
+                                                            UseFullGlyphHeight = false,
+                                                            Current = scoreManager.GetBindableTotalScoreString(Score),
+                                                            Spacing = new Vector2(-1.5f),
+                                                            Font = OsuFont.Style.Subtitle.With(weight: FontWeight.Light, fixedWidth: true),
+                                                            Shear = sheared ? -OsuGame.SHEAR : Vector2.Zero,
+                                                        },
                                                     modsContainer = new FillFlowContainer<Drawable>
                                                     {
                                                         Anchor = Anchor.TopRight,
@@ -500,6 +532,53 @@ namespace osu.Game.Screens.Select
 
                 updateModDisplay();
             }, true);
+
+            updatePerformanceDisplay();
+        }
+
+        // osu!somtum: fills the pp text shown when sorted by pp.
+        private void updatePerformanceDisplay()
+        {
+            if (performanceText == null)
+                return;
+
+            if (Score.PP.HasValue)
+            {
+                performanceText.Text = FormatPerformance(Score.PP.Value);
+                return;
+            }
+
+            if (!CalculateMissingPerformance || difficultyCache == null)
+            {
+                // A ranked online score without pp is still being processed (or held during a pp rework).
+                performanceText.TooltipText = Score.Ranked && Score.OnlineID > 0 ? ScoresStrings.StatusProcessing : ScoresStrings.StatusNoPp;
+                return;
+            }
+
+            var text = performanceText;
+            var cache = difficultyCache;
+            performanceCancellationSource = new CancellationTokenSource();
+            var token = performanceCancellationSource.Token;
+
+            Task.Run(async () =>
+            {
+                double? pp = await CalculatePerformanceAsync(Score, cache, token).ConfigureAwait(false);
+
+                Schedule(() =>
+                {
+                    if (pp != null)
+                        text.Text = FormatPerformance(pp.Value);
+                    else
+                        text.TooltipText = ScoresStrings.StatusNoPp;
+                });
+            }, token);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            performanceCancellationSource?.Cancel();
+            performanceCancellationSource?.Dispose();
+            base.Dispose(isDisposing);
         }
 
         private void updateModDisplay()

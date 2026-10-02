@@ -4,26 +4,10 @@
 #nullable disable
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using JetBrains.Annotations;
 using osu.Framework.Allocation;
-using osu.Framework.Audio.Track;
-using osu.Framework.Extensions;
-using osu.Framework.Graphics.Textures;
-using osu.Game.Beatmaps;
+using osu.Framework.Bindables;
+using osu.Framework.Graphics;
 using osu.Game.Graphics.UserInterface;
-using osu.Game.Rulesets;
-using osu.Game.Rulesets.Difficulty;
-using osu.Game.Rulesets.Judgements;
-using osu.Game.Rulesets.Mods;
-using osu.Game.Rulesets.Objects;
-using osu.Game.Rulesets.Scoring;
-using osu.Game.Scoring;
-using osu.Game.Skinning;
 
 namespace osu.Game.Screens.Play.HUD
 {
@@ -31,129 +15,43 @@ namespace osu.Game.Screens.Play.HUD
     {
         public bool UsesFixedAnchor { get; set; }
 
-        [Resolved]
-        private ScoreProcessor scoreProcessor { get; set; }
+        // osu!somtum: the live pp is worked out by a LivePerformanceTracker shared with the gameplay leaderboard.
+        // Player provides one; when there is none (e.g. tests), the counter makes its own.
+        [Resolved(CanBeNull = true)]
+        private LivePerformanceTracker sharedTracker { get; set; }
 
-        [Resolved]
-        private GameplayState gameplayState { get; set; }
+        private LivePerformanceTracker tracker;
 
-        [CanBeNull]
-        private List<TimedDifficultyAttributes> timedAttributes;
-
-        private readonly CancellationTokenSource loadCancellationSource = new CancellationTokenSource();
-
-        private JudgementResult lastJudgement;
-        private PerformanceCalculator performanceCalculator;
-        private ScoreInfo scoreInfo;
-
-        private Mod[] clonedMods;
+        private readonly IBindable<double> performance = new BindableDouble();
+        private readonly IBindable<bool> trackerValid = new BindableBool();
 
         [BackgroundDependencyLoader]
-        private void load(BeatmapDifficultyCache difficultyCache)
+        private void load()
         {
-            if (gameplayState != null)
+            tracker = sharedTracker;
+
+            if (tracker == null)
             {
-                performanceCalculator = gameplayState.Ruleset.CreatePerformanceCalculator();
-                clonedMods = gameplayState.Mods.Select(m => m.DeepClone()).ToArray();
-
-                scoreInfo = new ScoreInfo(gameplayState.Score.ScoreInfo.BeatmapInfo, gameplayState.Score.ScoreInfo.Ruleset) { Mods = clonedMods };
-
-                var gameplayWorkingBeatmap = new GameplayWorkingBeatmap(gameplayState.Beatmap);
-                difficultyCache.GetTimedDifficultyAttributesAsync(gameplayWorkingBeatmap, gameplayState.Ruleset, clonedMods, loadCancellationSource.Token)
-                               .ContinueWith(task => Schedule(() =>
-                               {
-                                   timedAttributes = task.GetResultSafely();
-
-                                   IsValid = true;
-
-                                   if (lastJudgement != null)
-                                       onJudgementChanged(lastJudgement);
-                               }), TaskContinuationOptions.OnlyOnRanToCompletion);
+                AddInternal(tracker = new LivePerformanceTracker
+                {
+                    BypassAutoSizeAxes = Axes.Both,
+                });
             }
+
+            tracker.Start();
+
+            performance.BindTo(tracker.Performance);
+            trackerValid.BindTo(tracker.IsValid);
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
-            if (scoreProcessor != null)
-            {
-                scoreProcessor.NewJudgement += onJudgementChanged;
-                scoreProcessor.JudgementReverted += onJudgementChanged;
-            }
-
-            if (gameplayState?.LastJudgementResult.Value != null)
-                onJudgementChanged(gameplayState.LastJudgementResult.Value);
+            performance.BindValueChanged(p => Current.Value = (int)Math.Round(p.NewValue, MidpointRounding.AwayFromZero), true);
+            trackerValid.BindValueChanged(v => IsValid = v.NewValue, true);
         }
 
         public virtual bool IsValid { get; set; }
-
-        private void onJudgementChanged(JudgementResult judgement)
-        {
-            lastJudgement = judgement;
-
-            var attrib = getAttributeAtTime(judgement);
-
-            if (gameplayState == null || attrib == null || scoreProcessor == null)
-            {
-                IsValid = false;
-                return;
-            }
-
-            scoreProcessor.PopulateScore(scoreInfo);
-            Current.Value = (int)Math.Round(performanceCalculator?.Calculate(scoreInfo, attrib).Total ?? 0, MidpointRounding.AwayFromZero);
-            IsValid = true;
-        }
-
-        [CanBeNull]
-        private DifficultyAttributes getAttributeAtTime(JudgementResult judgement)
-        {
-            if (timedAttributes == null || timedAttributes.Count == 0)
-                return null;
-
-            int attribIndex = timedAttributes.BinarySearch(new TimedDifficultyAttributes(judgement.HitObject.GetEndTime(), null));
-            if (attribIndex < 0)
-                attribIndex = ~attribIndex - 1;
-
-            return timedAttributes[Math.Clamp(attribIndex, 0, timedAttributes.Count - 1)].Attributes;
-        }
-
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
-
-            if (scoreProcessor != null)
-            {
-                scoreProcessor.NewJudgement -= onJudgementChanged;
-                scoreProcessor.JudgementReverted -= onJudgementChanged;
-            }
-
-            loadCancellationSource?.Cancel();
-        }
-
-        // TODO: This class shouldn't exist, but requires breaking changes to allow DifficultyCalculator to receive an IBeatmap.
-        private class GameplayWorkingBeatmap : WorkingBeatmap
-        {
-            private readonly IBeatmap gameplayBeatmap;
-
-            public GameplayWorkingBeatmap(IBeatmap gameplayBeatmap)
-                : base(gameplayBeatmap.BeatmapInfo, null)
-            {
-                this.gameplayBeatmap = gameplayBeatmap;
-            }
-
-            public override IBeatmap GetPlayableBeatmap(IRulesetInfo ruleset, IReadOnlyList<Mod> mods, CancellationToken cancellationToken)
-                => gameplayBeatmap;
-
-            protected override IBeatmap GetBeatmap() => gameplayBeatmap;
-
-            public override Texture GetBackground() => throw new NotImplementedException();
-
-            protected override Track GetBeatmapTrack() => throw new NotImplementedException();
-
-            protected internal override ISkin GetSkin() => throw new NotImplementedException();
-
-            public override Stream GetStream(string storagePath) => throw new NotImplementedException();
-        }
     }
 }

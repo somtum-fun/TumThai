@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -289,25 +288,22 @@ namespace osu.Game.Screens.Select
                         return;
                     }
 
+                    // osu!somtum: calculation moved to a shared helper (BeatmapLeaderboardScore.Performance.cs).
                     Task.Run(async () =>
                     {
-                        var attributes = await difficultyCache.GetDifficultyAsync(score.BeatmapInfo!, score.Ruleset, score.Mods, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-                        var performanceCalculator = score.Ruleset.CreateInstance().CreatePerformanceCalculator();
+                        double? pp = await CalculatePerformanceAsync(score, difficultyCache, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
-                        // Performance calculation requires the beatmap and ruleset to be locally available. If not, return a default value.
-                        if (attributes?.DifficultyAttributes == null || performanceCalculator == null)
+                        // Performance calculation requires the beatmap and ruleset to be locally available. If not, keep the default value.
+                        if (pp == null)
                             return;
 
-                        var result = await performanceCalculator.CalculateAsync(score, attributes.Value.DifficultyAttributes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-
-                        Schedule(() => setPerformanceValue(score, result.Total));
+                        Schedule(() => setPerformanceValue(score, pp.Value));
                     }, cancellationToken ?? CancellationToken.None);
                 }
 
                 private void setPerformanceValue(ScoreInfo scoreInfo, double pp)
                 {
-                    int ppValue = (int)Math.Round(pp, MidpointRounding.AwayFromZero);
-                    ValueText.Text = LocalisableString.Interpolate(@$"{ppValue:N0}pp");
+                    ValueText.Text = FormatPerformance(pp);
 
                     if (!scoreInfo.BeatmapInfo!.Status.GrantsPerformancePoints() || hasUnrankedMods(scoreInfo))
                         Alpha = 0.5f;
@@ -322,8 +318,6 @@ namespace osu.Game.Screens.Select
                     if (scoreInfo.IsLegacyScore)
                         modsToCheck = modsToCheck.Where(m => m is not ModClassic);
 
-                    // osu!somtum: Relax and Autopilot give pp here (Akatsuki's, on their own leaderboards).
-                    modsToCheck = modsToCheck.Where(m => m is not ModRelax && m.Acronym != "AP");
 
                     return modsToCheck.Any(m => !m.Ranked);
                 }

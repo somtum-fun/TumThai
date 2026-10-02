@@ -34,6 +34,7 @@ using osu.Game.Rulesets.UI;
 using osu.Game.Rulesets.UI.Scrolling;
 using osu.Game.Scoring;
 using osu.Game.Scoring.Legacy;
+using osu.Game.Screens.Play.HUD;
 using osu.Game.Screens.Ranking;
 using osu.Game.Skinning;
 using osu.Game.Users;
@@ -285,6 +286,11 @@ namespace osu.Game.Screens.Play
             Score.ScoreInfo.Mods = gameplayMods;
 
             dependencies.CacheAs(GameplayState = new GameplayState(playableBeatmap, ruleset, gameplayMods, Score, ScoreProcessor, HealthProcessor, Beatmap.Value.Storyboard, PlayingState));
+
+            // osu!somtum: one live pp calculation, shared by the pp counter and the gameplay leaderboard.
+            var livePerformance = new LivePerformanceTracker();
+            AddInternal(livePerformance);
+            dependencies.CacheAs(livePerformance);
 
             var rulesetSkinProvider = new RulesetSkinProvidingContainer(ruleset, playableBeatmap, Beatmap.Value.Skin);
             config.BindWith(OsuSetting.BeatmapSkins, rulesetSkinProvider.BeatmapSkins);

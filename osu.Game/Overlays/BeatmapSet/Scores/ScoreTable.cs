@@ -65,14 +65,18 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
         private bool showPerformancePoints;
 
-        public void DisplayScores(IReadOnlyList<ScoreInfo> scores, bool showPerformanceColumn)
+        // osu!somtum: the score column shows pp instead, and the separate pp column is dropped.
+        private bool sortedByPerformance;
+
+        public void DisplayScores(IReadOnlyList<ScoreInfo> scores, bool showPerformanceColumn, bool sortedByPerformance = false)
         {
             ClearScores();
 
             if (!scores.Any())
                 return;
 
-            showPerformancePoints = showPerformanceColumn;
+            this.sortedByPerformance = sortedByPerformance;
+            showPerformancePoints = showPerformanceColumn && !sortedByPerformance;
             statisticResultNames.Clear();
 
             for (int i = 0; i < scores.Count; i++)
@@ -94,7 +98,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             {
                 new TableColumn(BeatmapsetsStrings.ShowScoreboardHeadersRank, Anchor.CentreRight, new Dimension(GridSizeMode.AutoSize)),
                 new TableColumn("", Anchor.Centre, new Dimension(GridSizeMode.Absolute, 70)), // grade
-                new TableColumn(BeatmapsetsStrings.ShowScoreboardHeadersScore, Anchor.CentreLeft, new Dimension(GridSizeMode.AutoSize)),
+                new TableColumn(sortedByPerformance ? BeatmapsetsStrings.ShowScoreboardHeaderspp : BeatmapsetsStrings.ShowScoreboardHeadersScore, Anchor.CentreLeft, new Dimension(GridSizeMode.AutoSize)),
                 new TableColumn(BeatmapsetsStrings.ShowScoreboardHeadersAccuracy, Anchor.CentreLeft, new Dimension(GridSizeMode.Absolute, minSize: 60, maxSize: 70)),
                 new TableColumn("", Anchor.CentreLeft, new Dimension(GridSizeMode.Absolute, 25)), // flag
                 new TableColumn(BeatmapsetsStrings.ShowScoreboardHeadersPlayer, Anchor.CentreLeft, new Dimension(minSize: 125)),
@@ -145,12 +149,14 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 {
                     Size = new Vector2(28, 14)
                 },
-                new OsuSpriteText
-                {
-                    Margin = new MarginPadding { Right = horizontal_inset },
-                    Current = scoreManager.GetBindableTotalScoreString(score),
-                    Font = OsuFont.GetFont(size: text_size, weight: index == 0 ? FontWeight.Bold : FontWeight.Medium)
-                },
+                sortedByPerformance
+                    ? createPerformanceContent(score, OsuFont.GetFont(size: text_size, weight: index == 0 ? FontWeight.Bold : FontWeight.Medium)).With(d => d.Margin = new MarginPadding { Right = horizontal_inset })
+                    : new OsuSpriteText
+                    {
+                        Margin = new MarginPadding { Right = horizontal_inset },
+                        Current = scoreManager.GetBindableTotalScoreString(score),
+                        Font = OsuFont.GetFont(size: text_size, weight: index == 0 ? FontWeight.Bold : FontWeight.Medium)
+                    },
                 new StatisticText(score.Accuracy, 1, showTooltip: false)
                 {
                     Margin = new MarginPadding { Right = horizontal_inset },
@@ -203,28 +209,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             // TODO: all this should be using the same sort of logic as `DrawableProfileScore` is, but that's not easily done
             // unless the ENTIRE overlay can be weaned off of `ScoreInfo` and use `SoloScoreInfo` instead
             if (showPerformancePoints)
-            {
-                if (!score.Ranked)
-                {
-                    content.Add(new SpriteTextWithTooltip
-                    {
-                        Text = "-",
-                        Font = OsuFont.GetFont(size: text_size),
-                        TooltipText = ScoresStrings.StatusNoPp
-                    });
-                }
-                else if (score.PP == null)
-                {
-                    content.Add(new SpriteIconWithTooltip
-                    {
-                        Icon = FontAwesome.Solid.Sync,
-                        Size = new Vector2(text_size),
-                        TooltipText = ScoresStrings.StatusProcessing,
-                    });
-                }
-                else
-                    content.Add(new StatisticText(score.PP, format: @"N0"));
-            }
+                content.Add(createPerformanceContent(score, OsuFont.GetFont(size: text_size)));
 
             content.Add(new ScoreboardTime(score.Date, text_size)
             {
@@ -244,6 +229,31 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             });
 
             return content.ToArray();
+        }
+
+        private static Drawable createPerformanceContent(ScoreInfo score, FontUsage font)
+        {
+            if (!score.Ranked)
+            {
+                return new SpriteTextWithTooltip
+                {
+                    Text = "-",
+                    Font = font,
+                    TooltipText = ScoresStrings.StatusNoPp
+                };
+            }
+
+            if (score.PP == null)
+            {
+                return new SpriteIconWithTooltip
+                {
+                    Icon = FontAwesome.Solid.Sync,
+                    Size = new Vector2(text_size),
+                    TooltipText = ScoresStrings.StatusProcessing,
+                };
+            }
+
+            return new StatisticText(score.PP, format: @"N0") { Font = font };
         }
 
         protected override Drawable CreateHeader(int index, TableColumn column) => new HeaderText(column?.Header ?? default);

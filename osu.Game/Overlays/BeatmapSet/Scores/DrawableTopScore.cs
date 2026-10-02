@@ -19,7 +19,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
     {
         private readonly Box background;
 
-        public DrawableTopScore(ScoreInfo score, int? position = 1)
+        // osu!somtum: sortedByPerformance shows pp in the big score slot.
+        public DrawableTopScore(ScoreInfo score, int? position = 1, bool sortedByPerformance = false)
         {
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
@@ -67,7 +68,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                                         ScorePosition = position,
                                     },
                                     null,
-                                    new TopScoreStatisticsSection
+                                    new TopScoreStatisticsSection(sortedByPerformance)
                                     {
                                         Anchor = Anchor.CentreRight,
                                         Origin = Anchor.CentreRight,
