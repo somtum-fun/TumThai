@@ -20,6 +20,7 @@ using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.Leaderboards;
+using osu.Game.Screens.Select;
 using osuTK;
 using APIUser = osu.Game.Online.API.Requests.Responses.APIUser;
 
@@ -33,6 +34,13 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         private readonly Bindable<IRulesetInfo> ruleset = new Bindable<IRulesetInfo>();
         private readonly Bindable<BeatmapLeaderboardScope> scope = new Bindable<BeatmapLeaderboardScope>(BeatmapLeaderboardScope.Global);
         private readonly IBindable<APIUser> user = new Bindable<APIUser>();
+
+        // osu!somtum: the vanilla, Relax or Autopilot leaderboard.
+        private readonly Bindable<LeaderboardVariant> variant = new Bindable<LeaderboardVariant>(LeaderboardVariant.Vanilla);
+        private readonly LeaderboardVariantSelector variantSelector;
+
+        // Relax and Autopilot boards come ordered by pp; keep that order.
+        private bool keepServerOrder;
 
         private readonly Box background;
         private readonly ScoreTable scoreTable;
@@ -84,7 +92,11 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                     MD5Hash = apiBeatmap.MD5Hash
                 };
 
-                var scores = value.Scores.Select(s => s.ToScoreInfo(rulesets, beatmapInfo)).OrderByTotalScore().ToArray();
+                var scores = value.Scores.Select(s => s.ToScoreInfo(rulesets, beatmapInfo)).ToArray();
+
+                if (!keepServerOrder)
+                    scores = scores.OrderByTotalScore().ToArray();
+
                 var topScore = scores.First();
 
                 scoreTable.DisplayScores(scores, apiBeatmap.Status.GrantsPerformancePoints());
@@ -127,6 +139,13 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                             Spacing = new Vector2(0, spacing),
                             Children = new Drawable[]
                             {
+                                variantSelector = new LeaderboardVariantSelector
+                                {
+                                    Anchor = Anchor.TopCentre,
+                                    Origin = Anchor.TopCentre,
+                                    Alpha = 0,
+                                    Current = { BindTarget = variant }
+                                },
                                 new LeaderboardScopeSelector
                                 {
                                     Anchor = Anchor.TopCentre,
@@ -213,6 +232,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             base.LoadComplete();
             scope.BindValueChanged(_ => getScores());
             ruleset.BindValueChanged(_ => getScores());
+            variant.BindValueChanged(_ => getScores());
 
             modSelector.SelectedMods.CollectionChanged += (_, _) => getScores();
 
@@ -224,6 +244,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         {
             var beatmapRuleset = beatmap.NewValue?.Ruleset;
 
+            updateVariants(beatmapRuleset);
+
             if (ruleset.Value?.OnlineID == beatmapRuleset?.OnlineID)
             {
                 modSelector.DeselectAll();
@@ -233,6 +255,17 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 ruleset.Value = beatmapRuleset;
 
             scope.Value = BeatmapLeaderboardScope.Global;
+        }
+
+        private void updateVariants(IRulesetInfo beatmapRuleset)
+        {
+            var supported = beatmapRuleset.SupportedVariants();
+
+            if (!supported.Contains(variant.Value))
+                variant.Value = LeaderboardVariant.Vanilla;
+
+            variantSelector.Items = supported;
+            variantSelector.Alpha = supported.Length > 1 ? 1 : 0;
         }
 
         private void onUserChanged(ValueChangedEvent<APIUser> user)
@@ -276,7 +309,13 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             Show();
             loading.Show();
 
-            getScoresRequest = new GetScoresRequest(Beatmap.Value, Beatmap.Value.Ruleset, scope.Value, modSelector.SelectedMods);
+            IRulesetInfo requestRuleset = Beatmap.Value.Ruleset;
+
+            if (variant.Value != LeaderboardVariant.Vanilla && rulesets.GetRuleset(requestRuleset.OnlineID) is RulesetInfo baseRuleset)
+                requestRuleset = baseRuleset.ApplyVariant(variant.Value);
+
+            keepServerOrder = requestRuleset.IsSpecialRuleset();
+            getScoresRequest = new GetScoresRequest(Beatmap.Value, requestRuleset, scope.Value, modSelector.SelectedMods);
             getScoresRequest.Success += scores =>
             {
                 Scores = scores;

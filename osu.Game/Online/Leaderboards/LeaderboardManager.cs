@@ -143,16 +143,20 @@ namespace osu.Game.Online.Leaderboards
                         if (inFlightOnlineRequest != null && !newRequest.Equals(inFlightOnlineRequest))
                             return;
 
+                        var fetched = response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap));
+
+                        // osu!somtum: Relax and Autopilot boards come ordered by pp; keep that order.
+                        if (!newCriteria.Ruleset.IsSpecialRuleset())
+                            fetched = fetched.OrderByTotalScore();
+
                         var result = LeaderboardScores.Success
                         (
-                            response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap))
-                                    .OrderByTotalScore()
-                                    .Select((s, idx) =>
-                                    {
-                                        s.Position = idx + 1;
-                                        return s;
-                                    })
-                                    .ToArray(),
+                            fetched.Select((s, idx) =>
+                                   {
+                                       s.Position = idx + 1;
+                                       return s;
+                                   })
+                                   .ToArray(),
                             scoresRequested: newRequest.ScoresRequested,
                             totalScores: response.ScoresCount,
                             response.UserScore?.CreateScoreInfo(rulesets, newCriteria.Beatmap)
