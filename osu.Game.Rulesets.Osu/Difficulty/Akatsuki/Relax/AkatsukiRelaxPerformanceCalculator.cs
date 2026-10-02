@@ -61,14 +61,22 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
             {
                 this.attributes = attributes;
                 this.combo = combo;
+
+                nObjects = (uint)attributes.ObjectCount;
+
+                // osu!somtum: no more hits than the attributes have objects, as the server clamps them (the in-game
+                // counter can be a slider ahead of its attributes, and the accuracy part is raised to the 24th power).
+                nMisses = Math.Min(nMisses, nObjects);
+                n100 = Math.Min(n100, nObjects);
+                n50 = Math.Min(n50, nObjects);
+                n300 = Math.Min(n300, saturatingSub(nObjects, n100 + n50 + nMisses));
+
                 this.nMisses = nMisses;
 
                 hd = mods.Any(m => m is OsuModHidden);
                 fl = mods.Any(m => m is OsuModFlashlight);
                 so = mods.Any(m => m is OsuModSpunOut);
                 td = mods.Any(m => m is OsuModTouchDevice);
-
-                nObjects = (uint)attributes.ObjectCount;
 
                 // assert_hitresults (all of n300/n100/n50 are given)
                 uint remaining = saturatingSub(saturatingSub(saturatingSub(saturatingSub(nObjects, n300), n100), n50), nMisses);
