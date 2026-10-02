@@ -99,6 +99,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Statistics
             if (scoreInfo.IsLegacyScore)
                 modsToCheck = modsToCheck.Where(m => m is not ModClassic);
 
+            // osu!somtum: Relax and Autopilot give pp here (Akatsuki's, on their own leaderboards).
+            modsToCheck = modsToCheck.Where(m => m is not ModRelax && m.Acronym != "AP");
+
             return modsToCheck.Any(m => !m.Ranked);
         }
 
