@@ -142,21 +142,32 @@ namespace osu.Game.Screens.Select
 
                 scopeDropdown.Current.BindValueChanged(scope =>
                 {
-                    sortDropdown.Current.Disabled = false;
-
                     if (scope.NewValue == BeatmapLeaderboardScope.Local)
                     {
+                        sortDropdown.Items = Enum.GetValues<LeaderboardSortMode>();
                         sortDropdown.Current.BindTo(configLeaderboardSortMode);
                     }
                     else
                     {
-                        // future implementation when we have web-side support.
+                        // osu!somtum: online boards are ordered by the server, by pp or by score.
                         sortDropdown.Current.UnbindFrom(configLeaderboardSortMode);
-                        sortDropdown.Current.Value = LeaderboardSortMode.Score;
-                        sortDropdown.Current.Disabled = true;
+                        sortDropdown.Items = online_sort_modes;
+                        sortDropdown.Current.Value = defaultOnlineSort(variantDropdown.Current.Value);
                     }
                 }, true);
+
+                // Each online board starts in its own order: pp for Relax/Autopilot, score for vanilla.
+                variantDropdown.Current.BindValueChanged(variant =>
+                {
+                    if (scopeDropdown.Current.Value != BeatmapLeaderboardScope.Local)
+                        sortDropdown.Current.Value = defaultOnlineSort(variant.NewValue);
+                });
             }
+
+            private static readonly LeaderboardSortMode[] online_sort_modes = { LeaderboardSortMode.PerformancePoints, LeaderboardSortMode.Score };
+
+            private static LeaderboardSortMode defaultOnlineSort(LeaderboardVariant variant)
+                => variant == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
 
             private void updateVariantOptions(RulesetInfo? rulesetInfo)
             {

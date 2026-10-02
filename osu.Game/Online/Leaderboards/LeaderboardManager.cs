@@ -91,7 +91,8 @@ namespace osu.Game.Online.Leaderboards
 
                 default:
                 {
-                    if (newCriteria.Sorting != LeaderboardSortMode.Score)
+                    // osu!somtum: online boards are ordered by score or by pp (by the server).
+                    if (newCriteria.Sorting != LeaderboardSortMode.Score && newCriteria.Sorting != LeaderboardSortMode.PerformancePoints)
                         throw new NotSupportedException($@"Requesting online scores with a {nameof(LeaderboardSortMode)} other than {nameof(LeaderboardSortMode.Score)} is not supported");
 
                     if (!api.IsLoggedIn)
@@ -137,7 +138,7 @@ namespace osu.Game.Online.Leaderboards
                             requestMods = newCriteria.ExactMods;
                     }
 
-                    var newRequest = new GetScoresRequest(newCriteria.Beatmap, newCriteria.Ruleset, newCriteria.Scope, requestMods);
+                    var newRequest = new GetScoresRequest(newCriteria.Beatmap, newCriteria.Ruleset, newCriteria.Scope, requestMods, newCriteria.Sorting);
                     newRequest.Success += response =>
                     {
                         if (inFlightOnlineRequest != null && !newRequest.Equals(inFlightOnlineRequest))
@@ -145,8 +146,8 @@ namespace osu.Game.Online.Leaderboards
 
                         var fetched = response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap));
 
-                        // osu!somtum: Relax and Autopilot boards come ordered by pp; keep that order.
-                        if (!newCriteria.Ruleset.IsSpecialRuleset())
+                        // osu!somtum: the server orders the board (by pp or by score, as asked); keep that order.
+                        if (newCriteria.Sorting == LeaderboardSortMode.Score && !newCriteria.Ruleset.IsSpecialRuleset())
                             fetched = fetched.OrderByTotalScore();
 
                         var result = LeaderboardScores.Success

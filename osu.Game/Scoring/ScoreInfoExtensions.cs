@@ -44,6 +44,9 @@ namespace osu.Game.Scoring
                 case LeaderboardSortMode.Score:
                     return scores.OrderByDescending(s => s.TotalScore);
 
+                case LeaderboardSortMode.PerformancePoints:
+                    return scores.OrderByDescending(s => s.PP ?? 0).ThenByDescending(s => s.TotalScore);
+
                 case LeaderboardSortMode.Accuracy:
                     return scores.OrderByDescending(s => s.Accuracy).ThenByDescending(s => s.TotalScore);
 

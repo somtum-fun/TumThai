@@ -289,7 +289,7 @@ namespace osu.Game.Screens.Select
                 // Apply the RX/AP variant by switching to the corresponding special ruleset (e.g. osurx),
                 // which makes GetScoresRequest send mode=osurx. Vanilla / unsupported combos keep the base ruleset.
                 var fetchRuleset = baseRuleset.ApplyVariant(effectiveVariant(baseRuleset));
-                var fetchSorting = fetchScope == BeatmapLeaderboardScope.Local ? Sorting.Value : LeaderboardSortMode.Score;
+                var fetchSorting = Sorting.Value;
 
                 // For now, we forcefully refresh to keep things simple.
                 // In the future, removing this requirement may be deemed useful, but will need ample testing of edge case scenarios

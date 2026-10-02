@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Linq;
 using osu.Framework.IO.Network;
 using osu.Game.Extensions;
+using osu.Game.Online.Leaderboards;
 using osu.Game.Screens.Play.Leaderboards;
 
 namespace osu.Game.Online.API.Requests
@@ -26,8 +27,11 @@ namespace osu.Game.Online.API.Requests
         private readonly BeatmapLeaderboardScope scope;
         private readonly IRulesetInfo ruleset;
         private readonly IEnumerable<IMod> mods;
+        private readonly LeaderboardSortMode? sort;
 
-        public GetScoresRequest(IBeatmapInfo beatmapInfo, IRulesetInfo ruleset, BeatmapLeaderboardScope scope = BeatmapLeaderboardScope.Global, IEnumerable<IMod>? mods = null)
+        // osu!somtum: sort is by pp or by score; null for the board's own order (pp for Relax/Autopilot, score otherwise).
+        public GetScoresRequest(IBeatmapInfo beatmapInfo, IRulesetInfo ruleset, BeatmapLeaderboardScope scope = BeatmapLeaderboardScope.Global, IEnumerable<IMod>? mods = null,
+                                LeaderboardSortMode? sort = null)
         {
             if (beatmapInfo.OnlineID <= 0)
                 throw new InvalidOperationException($"Cannot lookup a beatmap's scores without having a populated {nameof(IBeatmapInfo.OnlineID)}.");
@@ -39,6 +43,7 @@ namespace osu.Game.Online.API.Requests
             this.scope = scope;
             this.ruleset = ruleset ?? throw new ArgumentNullException(nameof(ruleset));
             this.mods = mods ?? Array.Empty<IMod>();
+            this.sort = sort;
 
             ScoresRequested = this.scope.RequiresSupporter(this.mods.Any()) ? MAX_SCORES_PER_REQUEST : DEFAULT_SCORES_PER_REQUEST;
         }
@@ -55,6 +60,9 @@ namespace osu.Game.Online.API.Requests
             foreach (var mod in mods)
                 req.AddParameter(@"mods[]", mod.Acronym);
 
+            if (sort != null)
+                req.AddParameter(@"sort", sort == LeaderboardSortMode.PerformancePoints ? @"pp" : @"score");
+
             req.AddParameter(@"limit", ScoresRequested.ToString(CultureInfo.InvariantCulture));
             return req;
         }
@@ -67,7 +75,8 @@ namespace osu.Game.Online.API.Requests
             return beatmapInfo.Equals(other.beatmapInfo)
                    && scope == other.scope
                    && ruleset.Equals(other.ruleset)
-                   && mods.SequenceEqual(other.mods);
+                   && mods.SequenceEqual(other.mods)
+                   && sort == other.sort;
         }
     }
 }
