@@ -88,7 +88,8 @@ namespace osu.Game.Rulesets.Osu.Tests
         {
             var mods = createMods(legacyMods, lazer);
             var workingBeatmap = GetBeatmap(name);
-            var calculator = CreateDifficultyCalculator(workingBeatmap);
+            // Through the ruleset, as the game does: it hands Autopilot plays to Akatsuki's calculators.
+            var calculator = new OsuRuleset().CreateDifficultyCalculator(workingBeatmap);
 
             var attributes = (AkatsukiAutopilotDifficultyAttributes)calculator.Calculate(mods);
             Assert.That(attributes.StarRating, Is.EqualTo(expectedStarRating).Within(star_tolerance), "star rating");
@@ -131,7 +132,7 @@ namespace osu.Game.Rulesets.Osu.Tests
                 Statistics = statistics,
             };
 
-            var performance = (OsuPerformanceAttributes)new AkatsukiAutopilotPerformanceCalculator().Calculate(score, attributes);
+            var performance = (OsuPerformanceAttributes)new OsuRuleset().CreatePerformanceCalculator()!.Calculate(score, attributes);
 
             Assert.That(performance.Aim, Is.Zero, "aim pp");
             Assert.That(performance.Total, Is.EqualTo(expectedPerformance).Within(Math.Max(expectedPerformance * pp_relative_tolerance, 0.001)), "pp");

@@ -161,6 +161,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki
             return skills.ToArray();
         }
 
+        // For OsuDifficultyCalculator, which hands Relax/Autopilot plays to this one.
+        internal IEnumerable<DifficultyHitObject> HitObjectsFor(IBeatmap beatmap, Mod[] mods) => CreateDifficultyHitObjects(beatmap, mods);
+
+        internal Skill[] SkillsFor(IBeatmap beatmap, Mod[] mods) => CreateSkills(beatmap, mods);
+
+        internal DifficultyAttributes AttributesFor(IBeatmap beatmap, Mod[] mods, Skill[] skills) => CreateDifficultyAttributes(beatmap, mods, skills);
+
         protected override Mod[] DifficultyAdjustmentMods => new Mod[]
         {
             new OsuModTouchDevice(),

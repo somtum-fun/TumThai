@@ -48,7 +48,8 @@ namespace osu.Game.Rulesets.Osu.Tests
         {
             var working = getBeatmap(beatmapId);
             var mods = ruleset.ConvertFromLegacyMods((LegacyMods)legacyMods).ToArray();
-            var calculator = new AkatsukiRelaxDifficultyCalculator(ruleset.RulesetInfo, working);
+            // Through the ruleset, as the game does: it hands Relax plays to Akatsuki's calculators.
+            var calculator = ruleset.CreateDifficultyCalculator(working);
 
             AkatsukiRelaxDifficultyAttributes attributes;
 
@@ -75,7 +76,7 @@ namespace osu.Game.Rulesets.Osu.Tests
                 }
             };
 
-            var performance = new AkatsukiRelaxPerformanceCalculator().Calculate(score, attributes);
+            var performance = ruleset.CreatePerformanceCalculator()!.Calculate(score, attributes);
 
             Assert.That(attributes.StarRating, Is.EqualTo(expectedStars).Within(star_tolerance));
             Assert.That(performance.Total, Is.EqualTo(expectedPp).Within(pp_tolerance));
