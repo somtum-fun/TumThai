@@ -7,6 +7,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Game.Extensions;
+using osu.Game.Screens.Select;
 using osu.Game.Online.API;
 using osu.Game.Online.Spectator;
 using osu.Game.Scoring;
@@ -69,7 +70,8 @@ namespace osu.Game.Online
             if (!watchedScores.Remove(scoreId, out var scoreInfo))
                 return;
 
-            statisticsProvider.RefetchStatistics(scoreInfo.Ruleset, u => Schedule(() =>
+            // osu!somtum: an RX/AP play counts in that variant's statistics (osurx, ...), not vanilla's.
+            statisticsProvider.RefetchStatistics(scoreInfo.Ruleset.ForMods(scoreInfo.Mods), u => Schedule(() =>
             {
                 if (u.OldStatistics != null)
                     latestUpdate.Value = new ScoreBasedUserStatisticsUpdate(scoreInfo, u.OldStatistics, u.NewStatistics);

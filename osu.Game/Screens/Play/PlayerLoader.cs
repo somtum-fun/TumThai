@@ -34,6 +34,7 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Overlays.Volume;
 using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
+using osu.Game.Screens.Select;
 using osu.Game.Screens.Footer;
 using osu.Game.Screens.Menu;
 using osu.Game.Screens.Play.HUD;
@@ -358,7 +359,9 @@ namespace osu.Game.Screens.Play
         {
             leaderboardManager?.FetchWithCriteria(new LeaderboardCriteria(
                 Beatmap.Value.BeatmapInfo,
-                Ruleset.Value,
+                // osu!somtum: with RX/AP the board is that variant's (osurx, ...), as song select fetched it;
+                // the base ruleset here swapped in the vanilla board as play started.
+                Ruleset.Value.ForMods(Mods.Value),
                 leaderboardManager?.CurrentCriteria?.Scope ?? BeatmapLeaderboardScope.Global,
                 leaderboardManager?.CurrentCriteria?.ExactMods,
                 leaderboardManager?.SongSelectSorting ?? LeaderboardSortMode.Score), force);

@@ -8,6 +8,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Extensions;
+using osu.Game.Screens.Select;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
@@ -69,12 +70,18 @@ namespace osu.Game.Online
                 return;
 
             foreach (var ruleset in rulesets.AvailableRulesets.Where(r => r.IsLegacyRuleset()))
+            {
                 RefetchStatistics(ruleset);
+
+                // osu!somtum: Relax/Autopilot statistics too, so the first RX/AP play has some to compare with.
+                foreach (var variant in ruleset.SupportedVariants().Where(v => v != LeaderboardVariant.Vanilla))
+                    RefetchStatistics(ruleset.ApplyVariant(variant));
+            }
         }
 
         public void RefetchStatistics(RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
         {
-            if (!ruleset.IsLegacyRuleset())
+            if (!ruleset.IsLegacyRuleset() && !ruleset.IsSpecialRuleset())
                 throw new InvalidOperationException($@"Retrieving statistics is not supported for ruleset {ruleset.ShortName}");
 
             var request = new GetUserRequest(api.LocalUser.Value.Id, ruleset);

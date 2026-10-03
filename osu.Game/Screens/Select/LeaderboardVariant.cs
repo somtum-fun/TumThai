@@ -1,8 +1,11 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Collections.Generic;
+using System.Linq;
 using osu.Game.Extensions;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Mods;
 
 namespace osu.Game.Screens.Select
 {
@@ -70,5 +73,25 @@ namespace osu.Game.Screens.Select
                     return new[] { LeaderboardVariant.Vanilla };
             }
         }
+
+        /// <summary>
+        /// osu!somtum: the variant a play with these mods counts in: Autopilot with AP, Relax with RX, else vanilla.
+        /// </summary>
+        public static LeaderboardVariant VariantFor(IEnumerable<IMod> mods)
+        {
+            var acronyms = mods.Select(m => m.Acronym).ToList();
+
+            if (acronyms.Contains("AP"))
+                return LeaderboardVariant.Autopilot;
+
+            return acronyms.Contains("RX") ? LeaderboardVariant.Relax : LeaderboardVariant.Vanilla;
+        }
+
+        /// <summary>
+        /// osu!somtum: the ruleset whose leaderboard and statistics a play with these mods belongs to
+        /// (e.g. <c>osurx</c> for osu! with RX); the base ruleset for vanilla plays and unsupported combinations.
+        /// </summary>
+        public static RulesetInfo ForMods(this RulesetInfo baseRuleset, IEnumerable<IMod> mods)
+            => baseRuleset.ApplyVariant(VariantFor(mods));
     }
 }
