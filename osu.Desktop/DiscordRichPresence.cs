@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using DiscordRPC;
 using DiscordRPC.Message;
@@ -29,7 +30,9 @@ namespace osu.Desktop
 {
     internal partial class DiscordRichPresence : Component
     {
-        private const string client_id = "1216669957799018608";
+        // osu!somtum's own Discord application (not ppy's), so the presence reads "osu!somtum" and the
+        // discord-<id> URI scheme registered below does not take over the one real osu!lazer registers.
+        private const string client_id = "1509236899632517321";
 
         private DiscordRpcClient client = null!;
 
@@ -166,28 +169,14 @@ namespace osu.Desktop
             {
                 presence.State = clampLength(userActivity.Value.GetStatus(hideIdentifiableInformation));
                 presence.Details = clampLength(userActivity.Value.GetDetails(hideIdentifiableInformation) ?? string.Empty);
-
-                if (userActivity.Value.GetBeatmapID(hideIdentifiableInformation) is int beatmapId && beatmapId > 0)
-                {
-                    presence.Buttons = new[]
-                    {
-                        new Button
-                        {
-                            Label = "View beatmap",
-                            Url = $@"{api.Endpoints.WebsiteUrl}/beatmaps/{beatmapId}?mode={ruleset.Value.ShortName}"
-                        }
-                    };
-                }
-                else
-                {
-                    presence.Buttons = null;
-                }
             }
             else
             {
                 presence.State = "Idle";
                 presence.Details = string.Empty;
             }
+
+            presence.Buttons = createButtons(hideIdentifiableInformation);
 
             // user party
             if (!hideIdentifiableInformation && multiplayerClient.Room != null && !multiplayerClient.Room.Settings.MatchType.IsMatchmakingType())
@@ -250,8 +239,8 @@ namespace osu.Desktop
 
             Logger.Log($"Received room secret from Discord RPC Client: \"{args.Secret}\"", LoggingTarget.Network, LogLevel.Debug);
 
-            // Stable and lazer share the same Discord client ID, meaning they can accept join requests from each other.
-            // Since they aren't compatible in multi, see if stable's format is being used and log to avoid confusion.
+            // Join secrets are only ever sent by this client's Discord application, but make sure the format is ours
+            // (stable's is not JSON) and log to avoid confusion otherwise.
             if (args.Secret[0] != '{' || !tryParseRoomSecret(args.Secret, out long roomId, out string? password))
             {
                 Logger.Log("Could not join multiplayer room, invitation is invalid or incompatible.", LoggingTarget.Network, LogLevel.Important);
@@ -266,6 +255,41 @@ namespace osu.Desktop
             request.Failure += _ => Logger.Log($"Could not join multiplayer room, room could not be found (room ID: {roomId}).", LoggingTarget.Network, LogLevel.Important);
             api.Queue(request);
         });
+
+        private Button[]? createButtons(bool hideIdentifiableInformation)
+        {
+            var buttons = new List<Button>();
+
+            // Discord shows at most two buttons.
+            if (userActivity.Value?.GetBeatmapID(hideIdentifiableInformation) is int beatmapId && beatmapId > 0)
+            {
+                addButton(buttons, "View beatmap", $@"{api.Endpoints.WebsiteUrl}/beatmaps/{beatmapId}?mode={ruleset.Value.ShortName}");
+            }
+
+            if (!hideIdentifiableInformation && user?.Value.Id > 1)
+            {
+                addButton(buttons, "View profile", $@"{api.Endpoints.WebsiteUrl}/users/{user.Value.Id}");
+            }
+
+            return buttons.Count > 0 ? buttons.ToArray() : null;
+        }
+
+        private static void addButton(List<Button> buttons, string label, string url)
+        {
+            // Button's setters throw on a URL that isn't absolute or is over 512 characters, which a custom server
+            // address could produce. Skip the button rather than take the game down from the update thread.
+            if (url.Length > 512 || !Uri.TryCreate(url, UriKind.Absolute, out _))
+                return;
+
+            try
+            {
+                buttons.Add(new Button { Label = label, Url = url });
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Skipped a Discord Rich Presence button ({label}): {ex.Message}", LoggingTarget.Network, LogLevel.Debug);
+            }
+        }
 
         private static readonly int ellipsis_length = Encoding.UTF8.GetByteCount(new[] { '…' });
 
