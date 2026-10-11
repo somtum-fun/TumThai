@@ -1,7 +1,10 @@
 ﻿<Project>
   <PropertyGroup>
     <SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
-    <RuntimeIdentifiers>android-x86;android-arm;android-arm64</RuntimeIdentifiers>
+    <!-- TumThai: release builds pass TumThaiAndroidAbis=android-arm64 (RuntimeIdentifiers itself can't be set from the
+         command line: it would reach the referenced projects too). -->
+    <TumThaiAndroidAbis Condition=" '$(TumThaiAndroidAbis)' == '' ">android-x86;android-arm;android-arm64</TumThaiAndroidAbis>
+    <RuntimeIdentifiers>$(TumThaiAndroidAbis)</RuntimeIdentifiers>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <MandroidI18n>CJK;Mideast;Rare;West;Other;</MandroidI18n>
     <AndroidHttpClientHandlerType>Xamarin.Android.Net.AndroidMessageHandler</AndroidHttpClientHandlerType>

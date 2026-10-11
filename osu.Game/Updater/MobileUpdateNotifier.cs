@@ -2,10 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.Sprites;
@@ -38,73 +38,70 @@ namespace osu.Game.Updater
             stream = Enum.TryParse(game.Version.Split('-').Last(), true, out ReleaseStream s) ? s : Configuration.ReleaseStream.Lazer;
         }
 
+        // TumThai: our releases are listed in dl.blueskychan.dev's manifest (the website's download page uses it too),
+        // not on ppy/osu's GitHub.
+        private const string manifest_url = @"https://dl.blueskychan.dev/manifest.json";
+
+        private const string download_page_url = @"https://osu.blueskychan.dev/home/download";
+
         protected override async Task<bool> PerformUpdateCheck(CancellationToken cancellationToken)
         {
             try
             {
-                bool includePrerelease = stream == Configuration.ReleaseStream.Tachyon;
+                var manifestRequest = new OsuJsonWebRequest<DownloadManifest>(manifest_url);
+                await manifestRequest.PerformAsync(cancellationToken).ConfigureAwait(false);
 
-                OsuJsonWebRequest<GitHubRelease[]> releasesRequest = new OsuJsonWebRequest<GitHubRelease[]>("https://api.github.com/repos/ppy/osu/releases?per_page=10&page=1");
-                await releasesRequest.PerformAsync(cancellationToken).ConfigureAwait(false);
+                var lazer = manifestRequest.ResponseObject?.Lazer;
+                string? latestVersion = lazer?.Version;
 
-                GitHubRelease[] releases = releasesRequest.ResponseObject;
-                GitHubRelease? latest = releases.OrderByDescending(r => r.PublishedAt).FirstOrDefault(r => includePrerelease || !r.Prerelease);
-
-                if (latest == null)
+                if (string.IsNullOrEmpty(latestVersion) || latestVersion == version)
                     return false;
 
-                string latestTagName = latest.TagName.Split('-').First();
+                string? url = RuntimeInfo.OS == RuntimeInfo.Platform.Android ? lazer?.Android?.Url : null;
 
-                if (latestTagName != version && tryGetBestUrl(latest, out string? url))
+                if (url == null)
+                    return false;
+
+                Notifications.Post(new UpdateAvailableNotification(cancellationToken)
                 {
-                    Notifications.Post(new UpdateAvailableNotification(cancellationToken)
+                    Text = LocalisableString.Interpolate($"{NotificationsStrings.UpdateAvailable(version, latestVersion)}\n\n{NotificationsStrings.UpdateAvailableManualInstall}"),
+                    Icon = FontAwesome.Solid.Download,
+                    Activated = () =>
                     {
-                        Text = LocalisableString.Interpolate($"{NotificationsStrings.UpdateAvailable(version, latestTagName)}\n\n{NotificationsStrings.UpdateAvailableManualInstall}"),
-                        Icon = FontAwesome.Solid.Download,
-                        Activated = () =>
-                        {
-                            host.OpenUrlExternally(url);
-                            return true;
-                        }
-                    });
+                        // the download page, as opening the .apk directly can make the download disappear on some devices.
+                        host.OpenUrlExternally(download_page_url);
+                        return true;
+                    }
+                });
 
-                    return true;
-                }
+                return true;
             }
             catch
             {
                 // we shouldn't crash on a web failure. or any failure for the matter.
                 return true;
             }
-
-            return false;
         }
 
-        private bool tryGetBestUrl(GitHubRelease release, [NotNullWhen(true)] out string? url)
+        private class DownloadManifest
         {
-            url = null;
-            GitHubAsset? bestAsset = null;
+            [JsonProperty(@"lazer")]
+            public LazerRelease? Lazer { get; set; }
+        }
 
-            switch (RuntimeInfo.OS)
-            {
-                case RuntimeInfo.Platform.iOS:
-                    if (release.Assets?.Exists(f => f.Name.EndsWith(".ipa", StringComparison.Ordinal)) == true)
-                        // iOS releases are available via testflight. this link seems to work well enough for now.
-                        // see https://stackoverflow.com/a/32960501
-                        url = "itms-beta://beta.itunes.apple.com/v1/app/1447765923";
+        private class LazerRelease
+        {
+            [JsonProperty(@"version")]
+            public string? Version { get; set; }
 
-                    break;
+            [JsonProperty(@"android")]
+            public LazerDownload? Android { get; set; }
+        }
 
-                case RuntimeInfo.Platform.Android:
-                    if (release.Assets?.Exists(f => f.Name.EndsWith(".apk", StringComparison.Ordinal)) == true)
-                        // on our testing device using the .apk URL causes the download to magically disappear.
-                        url = release.HtmlUrl;
-
-                    break;
-            }
-
-            url ??= bestAsset?.BrowserDownloadUrl;
-            return url != null;
+        private class LazerDownload
+        {
+            [JsonProperty(@"url")]
+            public string? Url { get; set; }
         }
     }
 }
