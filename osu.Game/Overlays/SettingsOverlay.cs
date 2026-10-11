@@ -68,18 +68,21 @@ namespace osu.Game.Overlays
         protected override float ExpandedPosition => lastOpenedSubPanel?.State.Value == Visibility.Visible ? -PANEL_WIDTH : base.ExpandedPosition;
 
         [BackgroundDependencyLoader]
-        private void load(RulesetStore rulesets)
+        private void load(RulesetStore rulesets, OsuGameBase game)
         {
             var sections = new List<SettingsSection>
             {
                 // This list should be kept in sync with ScreenBehaviour.
-                new ServerSection(),
                 new GeneralSection(),
                 new SkinSection(),
                 new InputSection(createSubPanel(new KeyBindingPanel())),
                 new UserInterfaceSection(),
                 new GameplaySection()
             };
+
+            // TumThai: choosing another server is for development; released builds always connect to somtum.fun.
+            if (!game.IsDeployedBuild)
+                sections.Insert(0, new ServerSection());
 
             foreach (Ruleset ruleset in rulesets.AvailableRulesets.Select(info => info.CreateInstance()))
             {
