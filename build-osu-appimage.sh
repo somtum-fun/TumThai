@@ -157,7 +157,7 @@ dotnet publish "$SRCDIR/$PROJECT" \
   -p:DebugSymbols=false \
   --output "$PUBLISHDIR"
 
-[[ -f "$PUBLISHDIR/osu!" ]] || die "expected launcher '$PUBLISHDIR/osu!' not found after publish"
+[[ -f "$PUBLISHDIR/tumthai" ]] || die "expected launcher '$PUBLISHDIR/tumthai' not found after publish"
 
 # ----------------------------------------------------------------------------
 # Normalise Nix store references so the AppImage is portable
@@ -167,7 +167,7 @@ dotnet publish "$SRCDIR/$PROJECT" \
 # exist only on the machine that built them, so an AppImage produced this way
 # would refuse to start anywhere else. Point them back at the standard loader
 # and drop the store directories from RPATH.
-if patchelf --print-interpreter "$PUBLISHDIR/osu!" 2>/dev/null | grep -q '^/nix/store/'; then
+if patchelf --print-interpreter "$PUBLISHDIR/tumthai" 2>/dev/null | grep -q '^/nix/store/'; then
   log "Normalising Nix store references for portability"
   need patchelf
 
@@ -196,7 +196,7 @@ if patchelf --print-interpreter "$PUBLISHDIR/osu!" 2>/dev/null | grep -q '^/nix/
   done < <(find "$PUBLISHDIR" -type f -print0)
 
   # nothing should reference the store any more.
-  if patchelf --print-interpreter "$PUBLISHDIR/osu!" | grep -q '^/nix/store/'; then
+  if patchelf --print-interpreter "$PUBLISHDIR/tumthai" | grep -q '^/nix/store/'; then
     die "failed to normalise the launcher's ELF interpreter"
   fi
 fi
@@ -227,13 +227,13 @@ cp "$ICON_DST" "$APPDIR/osu.png"
 cat > "$APPDIR/usr/share/applications/osu.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
-Name=osu!
-Comment=osu! - rhythm is just a *click* away
-Exec=osu!
+Name=TumThai
+Comment=TumThai, the somtum.fun client (not affiliated with ppy Pty Ltd)
+Exec=tumthai
 Icon=osu
 Categories=Game;
 Terminal=false
-StartupWMClass=osu!
+StartupWMClass=tumthai
 MimeType=application/x-osu-beatmap-archive;application/x-osu-skin-archive;x-scheme-handler/osu;
 EOF
 cp "$APPDIR/usr/share/applications/osu.desktop" "$APPDIR/osu.desktop"
@@ -244,7 +244,7 @@ cat > "$APPDIR/AppRun" <<'EOF'
 HERE="$(dirname "$(readlink -f "${0}")")"
 export PATH="${HERE}/usr/bin:${PATH}"
 export LD_LIBRARY_PATH="${HERE}/usr/bin:${LD_LIBRARY_PATH:-}"
-exec "${HERE}/usr/bin/osu!" "$@"
+exec "${HERE}/usr/bin/tumthai" "$@"
 EOF
 chmod +x "$APPDIR/AppRun"
 

@@ -1,28 +1,30 @@
 <p align="center">
-  <img width="500" alt="osu! logo" src="assets/lazer.png">
+  <img width="400" alt="TumThai logo" src="assets/lazer.png">
 </p>
 
-# osu!tumthai
+# TumThai
 
-The community client for the **osu!somtum** private server — a fork of [osu!](https://github.com/ppy/osu) (*lazer*) built and tuned for playing on osu!somtum.
+The client for the **somtum.fun** private server: a fork of [osu!](https://github.com/ppy/osu) (*lazer*), built and tuned for playing on somtum.fun.
 
-> 🚧 **Work in progress.** This client is under active development. Expect bugs, breaking changes, and features that are still being built. Please report issues and don't rely on it being stable yet.
+> TumThai is a fan-made, unofficial client. It is not affiliated with, endorsed by or connected to ppy Pty Ltd or the osu! team. osu! is a trademark of ppy Pty Ltd.
 
-It's the same osu! game you know, optimized for osu!somtum:
+> 🚧 **Work in progress.** Expect bugs, breaking changes, and features that are still being built. Please report issues and don't rely on it being stable yet.
 
-- **Connects to osu!somtum out of the box** — preconfigured to the osu!somtum server, no setup needed to start playing.
-- **Relax / Autopilot (RX/AP) support** — browse RX/AP leaderboards on song select, view RX/AP profiles and rankings, and submit RX/AP scores.
-- **Configurable server & avatar host** — advanced users can point the client at another compatible private server (e.g. a [g0v0-server](https://github.com/GooGuTeam/g0v0-server) instance) from in-game settings, no rebuild required.
+It's the osu! game you know, set up for somtum.fun:
+
+- **Connects to somtum.fun out of the box**: no setup needed to start playing.
+- **Relax / Autopilot (RX/AP)**: RX/AP leaderboards on song select, RX/AP profiles and rankings, and RX/AP score submission.
+- **Configurable server & avatar host**: advanced users can point the client at another compatible private server from in-game settings, no rebuild required.
 
 ---
 
-## ⚠️ Important — please read before using
+## ⚠️ Important: please read before using
 
 ### Support osu! first
 
-This is a **community fork** that builds on top of the work done by [ppy](https://github.com/ppy) and the osu! team. **Please support official osu! first:**
+TumThai is a **community fork** that builds on the work of [ppy](https://github.com/ppy) and the osu! team. **Please support official osu! first:**
 
-- Play and support the official client at **[osu.ppy.sh](https://osu.ppy.sh)**.
+- Play and support the official game at **[osu.ppy.sh](https://osu.ppy.sh)**.
 - Consider buying [osu!supporter](https://osu.ppy.sh/home/support) to back the people who make all of this possible.
 - This fork would not exist without the original osu! project. All credit for the game itself goes to ppy and the osu! contributors.
 
@@ -30,29 +32,31 @@ This is a **community fork** that builds on top of the work done by [ppy](https:
 
 > **Do NOT use this client to connect to `osu.ppy.sh` or `dev.ppy.sh`.**
 
-This is a **third-party client** intended **only** for private servers. Connecting it to the official osu! servers (`osu.ppy.sh` / `dev.ppy.sh`) is against the [osu! rules](https://osu.ppy.sh/wiki/en/Rules) and **will get your official account restricted or banned.**
+TumThai is a **third-party client** meant **only** for private servers. Connecting it to the official osu! servers (`osu.ppy.sh` / `dev.ppy.sh`) is against the [osu! rules](https://osu.ppy.sh/wiki/en/Rules) and **will get your official account restricted or banned.**
 
-Use this client **only** with private servers you are permitted to play on. You are responsible for how you use it.
+Use it **only** with private servers you are allowed to play on. You are responsible for how you use it.
 
 ---
 
 ## Running
 
-Grab a build for your platform from the [Releases](https://github.com/osu-somtum/osu-tumthai/releases) page.
+Download TumThai from **[dl.blueskychan.dev/lazer](https://dl.blueskychan.dev/lazer/)**:
 
-On Linux, the release ships as an **AppImage** — make it executable and run it:
+- **Windows installer** (`TumThai-<version>-win-Setup.exe`): installs TumThai, adds it to the Start menu and keeps it up to date.
+- **Windows portable** (`TumThai-<version>-win-Portable.zip`): unzip anywhere and run `tumthai.exe`. Nothing is installed.
+- **Linux AppImage** (`TumThai-<version>-x86_64.AppImage`): make it executable and run it:
 
 ```shell
-chmod +x osu-tumthai-x86_64.AppImage
-./osu-tumthai-x86_64.AppImage
+chmod +x TumThai-*-x86_64.AppImage
+./TumThai-*-x86_64.AppImage
 ```
 
 ### Choosing a server
 
-By default the client connects to **osu!somtum** — no configuration needed. To play on a different compatible private server, open **Settings → Online → Connection** and set:
+By default the client connects to **somtum.fun**, no configuration needed. To play on a different compatible private server, open **Settings → Online → Connection** and set:
 
-- **Custom server URL** — the host of the private server (e.g. `osu.example.com`). Leave empty to use osu!somtum. A restart is required.
-- **Custom avatar URL** — the host serving user avatars (avatars are looked up as `https://{host}/{userId}`). Leave empty to use the default.
+- **Custom server URL**: the host of the private server (e.g. `osu.example.com`). Leave empty to use somtum.fun. A restart is required.
+- **Custom avatar URL**: the host serving user avatars (avatars are looked up as `https://{host}/{userId}`). Leave empty to use the default.
 
 ---
 
@@ -67,8 +71,8 @@ An IDE with C# support is recommended: [JetBrains Rider](https://www.jetbrains.c
 ### Get the source
 
 ```shell
-git clone https://github.com/osu-somtum/osu-tumthai
-cd osu-tumthai
+git clone https://github.com/somtum-fun/TumThai
+cd TumThai
 ```
 
 ### Run
@@ -81,16 +85,15 @@ For performance testing or producing a build, add `-c Release`. If a build fails
 
 ### Building a Linux AppImage
 
-Publish a self-contained build, then package it with [`appimagetool`](https://github.com/AppImage/appimagetool):
-
 ```shell
-# 1. publish (bundles the .NET runtime — no install needed to run)
-dotnet publish osu.Desktop -c Release -r linux-x64 --self-contained -f net10.0 \
-  -o "osu!.AppDir/usr/bin"
-
-# 2. add AppRun, an osu!.desktop entry and an icon to osu!.AppDir/ , then:
-ARCH=x86_64 appimagetool osu!.AppDir osu-tumthai-x86_64.AppImage
+./build-osu-appimage.sh -o dist
 ```
+
+This publishes a self-contained build (the .NET runtime is bundled) and packages it with [`appimagetool`](https://github.com/AppImage/appimagetool).
+
+### Logo and icons
+
+TumThai's logo is `assets/tumthai/logo.png`. After changing it, run `python3 assets/tumthai/make-textures.py` (needs Pillow): it remakes the in-game logo textures (`osu.Game/Resources/Textures`, which take the place of ppy's), `assets/lazer.png` and `osu.Desktop/lazer.ico`.
 
 ---
 
@@ -102,10 +105,10 @@ Issues and pull requests are welcome. For game-engine or gameplay changes that a
 
 This fork, like upstream osu!, is licensed under the [MIT licence](https://opensource.org/licenses/MIT). See [the licence file](LICENCE) for details. [tl;dr](https://tldrlegal.com/license/mit-license): do what you want, as long as you include the original copyright and licence notice.
 
-This **does not** cover the "osu!" or "ppy" branding (software, resources, advertising, or promotion), which is protected by trademark law. Game resources are covered by a separate licence — see [ppy/osu-resources](https://github.com/ppy/osu-resources).
+This **does not** cover the "osu!" or "ppy" branding (software, resources, advertising, or promotion), which is protected by trademark law. ppy's game resources are covered by a separate licence: see [ppy/osu-resources](https://github.com/ppy/osu-resources). The TumThai logo and icons belong to somtum.fun.
 
 ## Credits
 
-- [osu!](https://github.com/ppy/osu) by [ppy](https://github.com/ppy) and contributors — the game this is built on. ❤️
-- [torii-osu](https://github.com/ShikkesoraSIM/torii-osu) (the Torii client) — reference for the Relax / Autopilot private-server integration.
-- [g0v0-server](https://github.com/GooGuTeam/g0v0-server) — the private-server software this client targets.
+- [osu!](https://github.com/ppy/osu) by [ppy](https://github.com/ppy) and contributors: the game this is built on. ❤️
+- [torii-osu](https://github.com/ShikkesoraSIM/torii-osu) (the Torii client): reference for the Relax / Autopilot private-server integration.
+- [g0v0-server](https://github.com/GooGuTeam/g0v0-server): reference for lazer private-server support.

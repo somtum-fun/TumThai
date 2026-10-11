@@ -30,6 +30,11 @@ namespace osu.Game.Online
         public const string AVATAR_HOST = @"a.blueskychan.dev";
 
         /// <summary>
+        /// Where installed TumThai builds look for updates (a Velopack feed made by <c>vpk pack</c>).
+        /// </summary>
+        public const string UPDATE_URL = @"https://dl.blueskychan.dev/lazer/releases";
+
+        /// <summary>
         /// Endpoints for the built-in server.
         /// </summary>
         public SomtumEndpointConfiguration()

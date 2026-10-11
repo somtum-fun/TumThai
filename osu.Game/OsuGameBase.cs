@@ -78,9 +78,9 @@ namespace osu.Game
     public partial class OsuGameBase : Framework.Game, ICanAcceptFiles, IBeatSyncProvider
     {
 #if DEBUG
-        public const string GAME_NAME = "osu! (development)";
+        public const string GAME_NAME = "TumThai (development)";
 #else
-        public const string GAME_NAME = "osu!";
+        public const string GAME_NAME = "TumThai";
 #endif
 
         public const string OSU_PROTOCOL = "osu://";
@@ -298,6 +298,8 @@ namespace osu.Game
                 VersionHash = $"{Version}-{RuntimeInfo.OS}".ComputeMD5Hash();
             }
 
+            // TumThai: our own art (osu.Game/Resources) is looked up before ppy's resources, so it replaces theirs.
+            Resources.AddStore(new NamespacedResourceStore<byte[]>(new DllResourceStore(typeof(OsuGameBase).Assembly), @"Resources"));
             Resources.AddStore(new DllResourceStore(OsuResources.ResourceAssembly));
 
             dependencies.Cache(realm = new RealmAccess(Storage, CLIENT_DATABASE_FILENAME, Host.UpdateThread));

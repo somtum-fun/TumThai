@@ -8,6 +8,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game;
+using osu.Game.Online;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Screens.Play;
@@ -55,7 +56,8 @@ namespace osu.Desktop.Updater
 
             try
             {
-                IUpdateSource updateSource = new GithubSource(@"https://github.com/ppy/osu", null, ReleaseStream.Value == Game.Configuration.ReleaseStream.Tachyon);
+                // TumThai: our own feed; ppy's releases would replace TumThai with official lazer.
+                IUpdateSource updateSource = new SimpleWebSource(SomtumEndpointConfiguration.UPDATE_URL);
                 Velopack.UpdateManager updateManager = new Velopack.UpdateManager(updateSource, new UpdateOptions
                 {
                     AllowVersionDowngrade = true

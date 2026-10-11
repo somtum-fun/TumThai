@@ -47,14 +47,29 @@ namespace osu.Game.Overlays.Settings
                 {
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.TopCentre,
-                    Text = game.Name,
+                    // TumThai: our own name, not osu!'s.
+                    Text = @"TumThai Client",
                     Font = OsuFont.GetFont(size: 18, weight: FontWeight.Bold),
                 },
                 new BuildDisplay(game.Version)
                 {
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.TopCentre,
-                }
+                },
+                new OsuTextFlowContainer(t =>
+                {
+                    t.Font = OsuFont.GetFont(size: 12);
+                    t.Colour = Color4.Gray;
+                })
+                {
+                    Anchor = Anchor.TopCentre,
+                    Origin = Anchor.TopCentre,
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    TextAnchor = Anchor.TopCentre,
+                    Padding = new MarginPadding { Top = 10 },
+                    Text = @"Not affiliated with ppy Pty Ltd. osu! is a trademark of ppy Pty Ltd.",
+                },
             };
 
             foreach (var ruleset in rulesets.AvailableRulesets)
