@@ -35,7 +35,16 @@ namespace osu.Game.Screens
         private LoadingSpinner spinner;
         private ScheduledDelegate spinnerShow;
 
-        protected virtual OsuScreen CreateLoadableScreen() => getIntroSequence();
+        // TumThai: released builds open with the disclaimer (what TumThai is, and that it isn't osu!).
+        private bool showDisclaimer;
+
+        protected virtual OsuScreen CreateLoadableScreen()
+        {
+            if (showDisclaimer)
+                return new Disclaimer(getIntroSequence());
+
+            return getIntroSequence();
+        }
 
         private IntroScreen getIntroSequence()
         {
@@ -106,8 +115,9 @@ namespace osu.Game.Screens
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuConfigManager config)
+        private void load(OsuGameBase game, OsuConfigManager config)
         {
+            showDisclaimer = game.IsDeployedBuild;
             introSequence = config.Get<IntroSequence>(OsuSetting.IntroSequence);
         }
 
