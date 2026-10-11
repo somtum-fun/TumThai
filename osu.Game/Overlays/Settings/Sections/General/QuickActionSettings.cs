@@ -11,6 +11,7 @@ using osu.Framework.Platform;
 using osu.Framework.Statistics;
 using osu.Game.Graphics;
 using osu.Game.IO;
+using osu.Game.Online.API;
 using osu.Game.Localisation;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays.Notifications;
@@ -28,6 +29,9 @@ namespace osu.Game.Overlays.Settings.Sections.General
 
         [Resolved(CanBeNull = true)]
         private OsuGame? game { get; set; }
+
+        [Resolved]
+        private IAPIProvider api { get; set; } = null!;
 
         protected override LocalisableString Header => GeneralSettingsStrings.QuickActionsHeader;
 
@@ -55,7 +59,8 @@ namespace osu.Game.Overlays.Settings.Sections.General
                     Text = GeneralSettingsStrings.ReportIssue,
                     TooltipText = GeneralSettingsStrings.ReportIssueTooltip,
                     BackgroundColour = colours.YellowDarker,
-                    Action = () => game?.OpenUrlExternally(@"https://osu.ppy.sh/community/forums/topics/create?forum_id=5", LinkWarnMode.NeverWarn)
+                    // TumThai: our own forum's Help (also forum 5), not osu!'s.
+                    Action = () => game?.OpenUrlExternally($@"{api.Endpoints.WebsiteUrl}/community/forums/topics/create?forum_id=5", LinkWarnMode.NeverWarn)
                 },
             });
 
