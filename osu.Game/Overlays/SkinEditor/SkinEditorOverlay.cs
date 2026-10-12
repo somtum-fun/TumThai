@@ -172,14 +172,16 @@ namespace osu.Game.Overlays.SkinEditor
                 if (State.Value != Visibility.Visible)
                     return;
 
-                if (beatmap.Value is DummyWorkingBeatmap)
+                // TumThai: the game starts silent when the player had no beatmaps yet (there's no intro track), so like the
+                // intro case below, first try a beatmap they've imported since.
+                if (beatmap.Value is DummyWorkingBeatmap && attemptedBeatmapSwitch)
                 {
                     // presume we don't have anything good to play and just bail.
                     return;
                 }
 
                 // If we're playing the intro, switch away to another beatmap.
-                if (beatmap.Value.BeatmapSetInfo.Protected)
+                if (beatmap.Value is DummyWorkingBeatmap || beatmap.Value.BeatmapSetInfo.Protected)
                 {
                     if (!attemptedBeatmapSwitch)
                     {
