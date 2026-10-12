@@ -10,6 +10,8 @@ permissions:
 
 jobs:
   sentry_release:
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

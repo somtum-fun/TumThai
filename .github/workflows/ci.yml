@@ -11,6 +11,8 @@ permissions:
 jobs:
   inspect-code:
     name: Code Quality
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -62,6 +64,8 @@ jobs:
 
   test:
     name: Test
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: ${{matrix.os.fullname}}
     env:
       OSU_EXECUTION_MODE: ${{matrix.threadingMode}}
@@ -104,7 +108,8 @@ jobs:
     runs-on: ubuntu-latest
     # we want to wait for the `test` job to complete, but run regardless of whether it succeeds or fails
     # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-not-requiring-successful-dependent-jobs
-    if: ${{ !cancelled() }}
+    # TumThai: only on ppy/osu, like the jobs above.
+    if: ${{ !cancelled() && github.repository == 'ppy/osu' }}
     needs: test
     timeout-minutes: 5
     steps:
@@ -129,6 +134,8 @@ jobs:
 
   build-only-android:
     name: Build only (Android)
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -154,6 +161,8 @@ jobs:
 
   build-only-ios:
     name: Build only (iOS)
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: xcode-27
     timeout-minutes: 60
     steps:

@@ -8,6 +8,8 @@ on:
 
 jobs:
   notify_pending_production_deploy:
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: ubuntu-latest
     steps:
       - name: Submit pending deployment notification
@@ -40,6 +42,8 @@ jobs:
 
   pack:
     name: Pack
+    # TumThai: ppy's job, skipped on our fork (it needs ppy's secrets or runners, or would use up our Actions minutes).
+    if: github.repository == 'ppy/osu'
     runs-on: ubuntu-latest
     environment: production
     steps:
