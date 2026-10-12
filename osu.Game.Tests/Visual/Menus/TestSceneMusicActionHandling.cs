@@ -48,6 +48,17 @@ namespace osu.Game.Tests.Visual.Menus
                 });
             });
 
+            // TumThai: the game no longer starts on osu!'s theme track (it starts silent), and this test needs a long track
+            // that isn't in the playlist to start from, so play the protected circles track as osu!'s intro used to.
+            AddStep("play protected track", () =>
+            {
+                var intro = Game.BeatmapManager.Import(new ImportTask(Game.Resources.GetStream(@"Tracks/circles.osz"), @"circles.osz")).GetResultSafely();
+                intro!.PerformWrite(s => s.Protected = true);
+                intro.PerformRead(s => Game.Beatmap.Value = Game.BeatmapManager.GetWorkingBeatmap(s.Beatmaps.First()));
+                Game.MusicController.Play(requestedByUser: true);
+            });
+            AddUntilStep("wait for playback", () => Game.MusicController.IsPlaying);
+
             AddStep("bind to track change", () =>
             {
                 trackChangeQueue = new Queue<(IWorkingBeatmap, TrackChangeDirection)>();
@@ -97,6 +108,10 @@ namespace osu.Game.Tests.Visual.Menus
                 foreach (var beatmap in r.All<BeatmapInfo>().Where(b => b.Length == 0))
                     beatmap.Length = 60_000;
             }));
+
+            // TumThai: the game starts silent (no osu! theme track), so start one of the imported beatmaps.
+            AddStep("play an imported beatmap", () => Game.MusicController.NextTrack());
+            AddUntilStep("wait for imported beatmap", () => Game.Beatmap.Value is not DummyWorkingBeatmap);
 
             AddStep("bind to track change", () =>
             {

@@ -152,7 +152,8 @@ namespace osu.Game.Overlays
                     return;
 
                 Logger.Log($"{nameof(MusicController)} skipping next track to {nameof(EnsurePlayingSomething)}");
-                NextTrack(allowProtectedTracks: true);
+                // TumThai: protected beatmaps are osu!'s intro tracks (left over in older installs); never play them.
+                NextTrack(allowProtectedTracks: false);
             }
             else if (!IsPlaying)
             {
@@ -543,8 +544,9 @@ namespace osu.Game.Overlays
 
         private void onTrackCompleted()
         {
+            // TumThai: never move on to osu!'s intro tracks (see EnsurePlayingSomething).
             if (!CurrentTrack.Looping && !beatmap.Disabled && AllowTrackControl.Value)
-                NextTrack(allowProtectedTracks: true);
+                NextTrack(allowProtectedTracks: false);
         }
 
         private bool applyModTrackAdjustments;

@@ -33,27 +33,8 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
                     Caption = UserInterfaceStrings.ShowMenuTips,
                     Current = config.GetBindable<bool>(OsuSetting.MenuTips)
                 }),
-                new SettingsItemV2(new FormCheckBox
-                {
-                    Caption = UserInterfaceStrings.InterfaceVoices,
-                    Current = config.GetBindable<bool>(OsuSetting.MenuVoice)
-                })
-                {
-                    Keywords = new[] { "intro", "welcome" },
-                },
-                new SettingsItemV2(new FormCheckBox
-                {
-                    Caption = UserInterfaceStrings.OsuMusicTheme,
-                    Current = config.GetBindable<bool>(OsuSetting.MenuMusic)
-                })
-                {
-                    Keywords = new[] { "intro", "welcome" },
-                },
-                new SettingsItemV2(new FormEnumDropdown<IntroSequence>
-                {
-                    Caption = UserInterfaceStrings.IntroSequence,
-                    Current = config.GetBindable<IntroSequence>(OsuSetting.IntroSequence),
-                }),
+                // TumThai: no "Interface voices", "osu! music theme" or "Intro sequence": TumThai has no intro, voices or
+                // theme music (the menu plays the player's own beatmaps).
                 new SettingsItemV2(new FormEnumDropdown<BackgroundSource>
                 {
                     Caption = UserInterfaceStrings.BackgroundSource,

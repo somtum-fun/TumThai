@@ -68,6 +68,13 @@ namespace osu.Game.Screens.Menu
 
         protected virtual string SeeyaSampleName => "Intro/seeya";
 
+        /// <summary>
+        /// TumThai: whether this intro plays osu!'s own audio: its theme track (when the player has no beatmaps or turned
+        /// "osu! music theme" on) and the "see ya" voice on exit. When false, the menu always plays a random beatmap of
+        /// the player's, or nothing.
+        /// </summary>
+        protected virtual bool UsesOsuAudio => true;
+
         protected override bool PlayExitSound => false;
 
         private LeasedBindable<WorkingBeatmap> beatmap;
@@ -116,13 +123,17 @@ namespace osu.Game.Screens.Menu
             MenuVoice = config.GetBindable<bool>(OsuSetting.MenuVoice);
             MenuMusic = config.GetBindable<bool>(OsuSetting.MenuMusic);
 
-            if (api.LocalUser.Value.IsSupporter)
-                AddInternal(skinnableSeeya = new SkinnableSound(new SampleInfo(SeeyaSampleName)));
-            else
-                seeya = audio.Samples.Get(SeeyaSampleName);
+            // TumThai: no "see ya" voice without osu!'s audio.
+            if (UsesOsuAudio)
+            {
+                if (api.LocalUser.Value.IsSupporter)
+                    AddInternal(skinnableSeeya = new SkinnableSound(new SampleInfo(SeeyaSampleName)));
+                else
+                    seeya = audio.Samples.Get(SeeyaSampleName);
+            }
 
             // if the user has requested not to play theme music, we should attempt to find a random beatmap from their collection.
-            if (!MenuMusic.Value)
+            if (!MenuMusic.Value || !UsesOsuAudio)
             {
                 realm.Run(r =>
                 {
@@ -141,7 +152,8 @@ namespace osu.Game.Screens.Menu
             }
 
             // we generally want a song to be playing on startup, so use the intro music even if a user has specified not to if no other track is available.
-            if (initialBeatmap == null)
+            // TumThai: without osu!'s audio there is no theme track to fall back to; the menu stays silent instead.
+            if (initialBeatmap == null && UsesOsuAudio)
             {
                 // Intro beatmaps are generally made using the osu! ruleset.
                 // It might not be present in test projects for other rulesets.
@@ -250,7 +262,7 @@ namespace osu.Game.Screens.Menu
             Beatmap.Disabled = true;
 
             // we also handle the exit transition.
-            if (MenuVoice.Value)
+            if (MenuVoice.Value && UsesOsuAudio)
             {
                 if (skinnableSeeya != null)
                 {

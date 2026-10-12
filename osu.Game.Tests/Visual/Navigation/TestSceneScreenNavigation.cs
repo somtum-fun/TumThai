@@ -21,6 +21,7 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Configuration;
+using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
@@ -707,6 +708,9 @@ namespace osu.Game.Tests.Visual.Navigation
 
             AddUntilStep("wait for no track", () => Game.MusicController.CurrentTrack.IsDummyDevice);
 
+            // TumThai: there's no osu! theme track to fall back on, so the menu needs a beatmap of the player's to play.
+            AddStep("import beatmap with track", () => Game.BeatmapManager.Import(new ImportTask(TestResources.GetTestBeatmapForImport())).WaitSafely());
+
             AddStep("return to menu", () => songSelect.Exit());
 
             AddUntilStep("wait for track", () => !Game.MusicController.CurrentTrack.IsDummyDevice && Game.MusicController.IsPlaying);
@@ -790,6 +794,12 @@ namespace osu.Game.Tests.Visual.Navigation
             bool trackCompleted = false;
 
             AddUntilStep("Wait for music controller", () => Game.MusicController.IsLoaded);
+
+            // TumThai: the game starts silent without beatmaps (no osu! theme track), so play one of the player's.
+            AddStep("import beatmap with track", () => Game.BeatmapManager.Import(new ImportTask(TestResources.GetTestBeatmapForImport())).WaitSafely());
+            AddStep("play it", () => Game.MusicController.NextTrack());
+            AddUntilStep("wait for track", () => !Game.MusicController.CurrentTrack.IsDummyDevice && Game.MusicController.IsPlaying);
+
             AddStep("Seek close to end", () =>
             {
                 Game.MusicController.SeekTo(Game.MusicController.CurrentTrack.Length - 1000);
