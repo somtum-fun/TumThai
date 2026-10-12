@@ -41,7 +41,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             };
 
             text.AddText("Click ");
-            text.AddLink("here", "/home/support");
+            text.AddLink("here", "/store/products/supporter-tag"); // TumThai: the Somtum Supporter Tag
             text.AddText(" to see all the fancy features that you can get!");
         }
     }

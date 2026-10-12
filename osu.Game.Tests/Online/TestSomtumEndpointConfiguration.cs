@@ -14,19 +14,19 @@ namespace osu.Game.Tests.Online
         {
             var config = new SomtumEndpointConfiguration();
 
-            Assert.That(config.APIUrl, Is.EqualTo("https://osu.blueskychan.dev"));
-            Assert.That(config.WebsiteUrl, Is.EqualTo("https://osu.blueskychan.dev"));
+            Assert.That(config.APIUrl, Is.EqualTo("https://osu.somtum.fun"));
+            Assert.That(config.WebsiteUrl, Is.EqualTo("https://osu.somtum.fun"));
 
             // the server's token endpoint rejects a sign-in outright when these are not sent.
             Assert.That(config.APIClientID, Is.EqualTo("5"));
             Assert.That(config.APIClientSecret, Is.Not.Empty);
 
-            Assert.That(config.SpectatorUrl, Is.EqualTo("https://spectator.blueskychan.dev/spectator"));
-            Assert.That(config.MultiplayerUrl, Is.EqualTo("https://spectator.blueskychan.dev/multiplayer"));
-            Assert.That(config.MetadataUrl, Is.EqualTo("https://spectator.blueskychan.dev/metadata"));
+            Assert.That(config.SpectatorUrl, Is.EqualTo("https://spectator.somtum.fun/spectator"));
+            Assert.That(config.MultiplayerUrl, Is.EqualTo("https://spectator.somtum.fun/multiplayer"));
+            Assert.That(config.MetadataUrl, Is.EqualTo("https://spectator.somtum.fun/metadata"));
 
             // the editor only offers submission when this is set.
-            Assert.That(config.BeatmapSubmissionServiceUrl, Is.EqualTo("https://osu.blueskychan.dev/beatmap-submission"));
+            Assert.That(config.BeatmapSubmissionServiceUrl, Is.EqualTo("https://osu.somtum.fun/beatmap-submission"));
         }
 
         [Test]

@@ -73,7 +73,8 @@ namespace osu.Game.Screens.Menu
                 },
             };
 
-            const string url = @"https://osu.ppy.sh/home/support";
+            // TumThai: the Somtum Supporter Tag on our own store, not ppy's osu!supporter page.
+            string url = $@"{api.Endpoints.WebsiteUrl}/store/products/supporter-tag";
             considerBecomingASupporterText = localisation.GetLocalisedBindableString(SupporterDisplayStrings.ConsiderBecomingASupporter(url));
         }
 

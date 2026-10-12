@@ -38,11 +38,11 @@ namespace osu.Game.Updater
             stream = Enum.TryParse(game.Version.Split('-').Last(), true, out ReleaseStream s) ? s : Configuration.ReleaseStream.Lazer;
         }
 
-        // TumThai: our releases are listed in dl.blueskychan.dev's manifest (the website's download page uses it too),
+        // TumThai: our releases are listed in dl.somtum.fun's manifest (the website's download page uses it too),
         // not on ppy/osu's GitHub.
-        private const string manifest_url = @"https://dl.blueskychan.dev/manifest.json";
+        private const string manifest_url = @"https://dl.somtum.fun/manifest.json";
 
-        private const string download_page_url = @"https://osu.blueskychan.dev/home/download";
+        private const string download_page_url = @"https://osu.somtum.fun/home/download";
 
         protected override async Task<bool> PerformUpdateCheck(CancellationToken cancellationToken)
         {

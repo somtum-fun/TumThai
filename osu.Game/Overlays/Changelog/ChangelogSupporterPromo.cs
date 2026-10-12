@@ -153,8 +153,9 @@ namespace osu.Game.Overlays.Changelog
                 },
             };
 
-            supportLinkText.AddText("Support further development of osu! and ");
-            supportLinkText.AddLink("become an osu!supporter", @"https://osu.ppy.sh/home/support", t => t.Font = t.Font.With(weight: FontWeight.Bold));
+            // TumThai: the Somtum Supporter Tag on our own store.
+            supportLinkText.AddText("Help keep somtum.fun running and ");
+            supportLinkText.AddLink("get a Somtum Supporter Tag", @"/store/products/supporter-tag", t => t.Font = t.Font.With(weight: FontWeight.Bold));
             supportLinkText.AddText(" today!");
         }
 

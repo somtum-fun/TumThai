@@ -15,24 +15,24 @@ namespace osu.Game.Online
         /// <summary>
         /// The host serving the API and website.
         /// </summary>
-        public const string API_HOST = @"osu.blueskychan.dev";
+        public const string API_HOST = @"osu.somtum.fun";
 
         /// <summary>
         /// The host serving the realtime (SignalR) endpoints. A sibling of <see cref="API_HOST"/> rather
         /// than a path on it, matching how the server is deployed.
         /// </summary>
-        public const string SPECTATOR_HOST = @"spectator.blueskychan.dev";
+        public const string SPECTATOR_HOST = @"spectator.somtum.fun";
 
         /// <summary>
         /// The host serving user avatars. Kept consistent with <see cref="ResolveAvatarHost"/>, which
         /// derives the same value from <see cref="API_HOST"/>.
         /// </summary>
-        public const string AVATAR_HOST = @"a.blueskychan.dev";
+        public const string AVATAR_HOST = @"a.somtum.fun";
 
         /// <summary>
         /// Where installed TumThai builds look for updates (a Velopack feed made by <c>vpk pack</c>).
         /// </summary>
-        public const string UPDATE_URL = @"https://dl.blueskychan.dev/lazer/releases";
+        public const string UPDATE_URL = @"https://dl.somtum.fun/lazer/releases";
 
         /// <summary>
         /// Endpoints for the built-in server.

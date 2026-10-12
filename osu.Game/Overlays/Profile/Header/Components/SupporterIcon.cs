@@ -89,7 +89,7 @@ namespace osu.Game.Overlays.Profile.Header.Components
             background.Colour = colours.Pink;
 
             // Easy to accidentally click so let's always show the open URL popup.
-            Action = () => game?.OpenUrlExternally(@"/home/support", LinkWarnMode.AlwaysWarn);
+            Action = () => game?.OpenUrlExternally(@"/store/products/supporter-tag", LinkWarnMode.AlwaysWarn); // TumThai: the Somtum Supporter Tag
         }
 
         protected override bool OnHover(HoverEvent e)

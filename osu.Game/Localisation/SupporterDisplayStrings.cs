@@ -10,14 +10,15 @@ namespace osu.Game.Localisation
         private const string prefix = @"osu.Game.Resources.Localisation.SupporterDisplay";
 
         /// <summary>
-        /// "Eternal thanks to you for supporting osu!"
+        /// "Eternal thanks to you for supporting somtum.fun!"
         /// </summary>
-        public static LocalisableString ThankYouForSupporting => new TranslatableString(getKey(@"thank_you_for_supporting"), @"Eternal thanks to you for supporting osu!");
+        // TumThai: new keys, so ppy's translations (which name osu!supporter) don't replace our text.
+        public static LocalisableString ThankYouForSupporting => new TranslatableString(getKey(@"somtum_thank_you_for_supporting"), @"Eternal thanks to you for supporting somtum.fun!");
 
         /// <summary>
-        /// "Consider becoming an [osu!supporter]({0}) to help support osu!'s development"
+        /// "Consider getting a [Somtum Supporter Tag]({0}) to help keep somtum.fun running"
         /// </summary>
-        public static LocalisableString ConsiderBecomingASupporter(string url) => new TranslatableString(getKey(@"consider_becoming_a_supporter"), @"Consider becoming an [osu!supporter]({0}) to help support osu!'s development", url);
+        public static LocalisableString ConsiderBecomingASupporter(string url) => new TranslatableString(getKey(@"somtum_consider_becoming_a_supporter"), @"Consider getting a [Somtum Supporter Tag]({0}) to help keep somtum.fun running", url);
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }

@@ -47,7 +47,7 @@ namespace osu.Game.Tests.Online
             var store = storeForDefaultServer();
 
             Assert.That(store.IsTrusted(@"evil.example.com"), Is.False);
-            Assert.That(store.IsTrusted(@"blueskychan.dev.evil.example.com"), Is.False);
+            Assert.That(store.IsTrusted(@"somtum.fun.evil.example.com"), Is.False);
         }
 
         /// <summary>
