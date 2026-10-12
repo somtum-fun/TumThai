@@ -258,10 +258,13 @@ case "$RID" in
   *) die "unsupported RID for AppImage packaging: $RID" ;;
 esac
 
-AIT="$WORKDIR/appimagetool-$AIT_ARCH.AppImage"
+# appimagetool itself runs on the build machine; ARCH (below) picks the AppImage runtime it packs, so an
+# x86_64 machine can also make the aarch64 AppImage (--rid linux-arm64).
+HOST_ARCH="$(uname -m)"
+AIT="$WORKDIR/appimagetool-$HOST_ARCH.AppImage"
 if [[ ! -x "$AIT" ]]; then
   curl -fL --retry 3 -o "$AIT" \
-    "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${AIT_ARCH}.AppImage"
+    "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${HOST_ARCH}.AppImage"
   chmod +x "$AIT"
 fi
 
