@@ -28,7 +28,8 @@ namespace osu.Game.Rulesets.Mods
         ///  - Hit windows differ (https://github.com/ppy/osu/issues/11311).
         ///  - Sliders always gives combo for slider end, even on miss (https://github.com/ppy/osu/issues/11769).
         /// </summary>
-        public sealed override bool Ranked => false;
+        // TumThai: somtum.fun ranks Classic (staff ranked it in the admin panel's Mods page).
+        public sealed override bool Ranked => true;
 
         public sealed override bool ValidForFreestyleAsRequiredMod => false;
     }
