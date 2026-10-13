@@ -14,6 +14,7 @@ using osu.Framework.Platform;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
 using osu.Game.Online.API;
+using osu.Game.Overlays.Notifications;
 
 namespace osu.Game.Updater
 {
@@ -57,10 +58,23 @@ namespace osu.Game.Updater
                 if (string.IsNullOrEmpty(latestVersion) || latestVersion == version)
                     return false;
 
-                string? url = RuntimeInfo.OS == RuntimeInfo.Platform.Android ? lazer?.Android?.Url : null;
+                // TumThai: on Linux and macOS too (no self-update there). Started from the Somtum Launcher,
+                // the launcher installs the new version the next time it starts TumThai.
+                bool android = RuntimeInfo.OS == RuntimeInfo.Platform.Android;
+                bool viaLauncher = Environment.GetEnvironmentVariable(@"OSU_EXTERNAL_UPDATE_PROVIDER") == @"somtum-launcher";
 
-                if (url == null)
+                if (android && lazer?.Android?.Url == null)
                     return false;
+
+                if (viaLauncher)
+                {
+                    Notifications.Post(new SimpleNotification
+                    {
+                        Text = LocalisableString.Interpolate($"{NotificationsStrings.UpdateAvailable(version, latestVersion)}\n\nClose TumThai and start it again from the Somtum Launcher to update."),
+                        Icon = FontAwesome.Solid.Download,
+                    });
+                    return true;
+                }
 
                 Notifications.Post(new UpdateAvailableNotification(cancellationToken)
                 {
@@ -68,7 +82,7 @@ namespace osu.Game.Updater
                     Icon = FontAwesome.Solid.Download,
                     Activated = () =>
                     {
-                        // the download page, as opening the .apk directly can make the download disappear on some devices.
+                        // the download page (on Android, opening the .apk directly can make the download disappear on some devices).
                         host.OpenUrlExternally(download_page_url);
                         return true;
                     }

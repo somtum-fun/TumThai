@@ -117,8 +117,10 @@ namespace osu.Desktop
             if (IsFirstRun)
                 LocalConfig.SetValue(OsuSetting.ReleaseStream, Version.Contains("-tachyon") ? ReleaseStream.Tachyon : ReleaseStream.Lazer);
 
-            if (IsPackageManaged)
-                return new NoActionUpdateManager();
+            // TumThai: anywhere Velopack doesn't update us (started by the Somtum Launcher, or Linux and macOS,
+            // which have no update feed), dl.somtum.fun's manifest says when there's a new version.
+            if (IsPackageManaged || RuntimeInfo.OS != RuntimeInfo.Platform.Windows)
+                return new MobileUpdateNotifier();
 
             return new VelopackUpdateManager();
         }

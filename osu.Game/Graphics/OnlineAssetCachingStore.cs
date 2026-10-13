@@ -32,6 +32,8 @@ namespace osu.Game.Graphics
         private readonly RealmFileStore fileStore;
         private readonly LargeTextureStore largeTextureStore;
 
+        /// <param name="host">The game host, whose storage holds the cached files.</param>
+        /// <param name="realmAccess">Where the cached files are recorded.</param>
         /// <param name="onlineStore">
         /// The store used to fetch assets. It must trust the configured server, otherwise that server's
         /// avatars and covers are rejected as external and the game falls back to placeholder textures.
