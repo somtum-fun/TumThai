@@ -8,6 +8,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
@@ -181,6 +182,8 @@ namespace osu.Game.Screens.Select
                 // Hide the selector for rulesets without RX/AP variants (osu!mania).
                 variantDropdown.FadeTo(supported.Length > 1 ? 1 : 0, 200, Easing.OutQuint);
             }
+
+            protected override bool OnMouseDown(MouseDownEvent e) => true;
 
             #region Reading / writing state from / to configuration
 
