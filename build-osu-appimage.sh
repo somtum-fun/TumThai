@@ -44,6 +44,9 @@ DO_CLONE=0                        # default: build the local SOURCE, do not clon
 
 APPDIR=""                        # set later
 PROJECT="osu.Desktop/osu.Desktop.csproj"
+# The name in the desktop entry: TumThai, or TumThai Dev for the development server (SomtumServer=dev).
+APP_NAME="${APP_NAME:-TumThai}"
+APP_SERVER="${APP_SERVER:-somtum.fun}"
 
 # ----------------------------------------------------------------------------
 # Helpers
@@ -224,11 +227,11 @@ fi
 cp "$ICON_DST" "$APPDIR/osu.png"
 
 # Desktop entry
-cat > "$APPDIR/usr/share/applications/osu.desktop" <<'EOF'
+cat > "$APPDIR/usr/share/applications/osu.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=TumThai
-Comment=TumThai, the somtum.fun client (not affiliated with ppy Pty Ltd)
+Name=${APP_NAME}
+Comment=${APP_NAME}, the ${APP_SERVER} client (not affiliated with ppy Pty Ltd)
 Exec=tumthai
 Icon=osu
 Categories=Game;

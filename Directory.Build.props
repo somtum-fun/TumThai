@@ -10,6 +10,11 @@
     <!-- https://github.com/dotnet/runtime/issues/129562 -->
     <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
+  <!-- TumThai: `-p:SomtumServer=dev` builds TumThai Dev, for the development server (blueskychan.dev): its own
+       hosts, name, data folder and update feed, so it installs next to TumThai without either touching the other. -->
+  <PropertyGroup Condition="'$(SomtumServer)' == 'dev'">
+    <DefineConstants>$(DefineConstants);SOMTUM_DEV</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>$(MSBuildThisFileDirectory)app.manifest</ApplicationManifest>
   </PropertyGroup>

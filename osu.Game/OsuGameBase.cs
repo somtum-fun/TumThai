@@ -79,6 +79,8 @@ namespace osu.Game
     {
 #if DEBUG
         public const string GAME_NAME = "TumThai (development)";
+#elif SOMTUM_DEV
+        public const string GAME_NAME = "TumThai Dev";
 #else
         public const string GAME_NAME = "TumThai";
 #endif

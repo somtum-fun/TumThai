@@ -15,24 +15,54 @@ namespace osu.Game.Online
         /// <summary>
         /// The host serving the API and website.
         /// </summary>
+#if SOMTUM_DEV
+        public const string API_HOST = @"osu.blueskychan.dev";
+#else
         public const string API_HOST = @"osu.somtum.fun";
+#endif
 
         /// <summary>
         /// The host serving the realtime (SignalR) endpoints. A sibling of <see cref="API_HOST"/> rather
         /// than a path on it, matching how the server is deployed.
         /// </summary>
+#if SOMTUM_DEV
+        public const string SPECTATOR_HOST = @"spectator.blueskychan.dev";
+#else
         public const string SPECTATOR_HOST = @"spectator.somtum.fun";
+#endif
 
         /// <summary>
         /// The host serving user avatars. Kept consistent with <see cref="ResolveAvatarHost"/>, which
         /// derives the same value from <see cref="API_HOST"/>.
         /// </summary>
+#if SOMTUM_DEV
+        public const string AVATAR_HOST = @"a.blueskychan.dev";
+#else
         public const string AVATAR_HOST = @"a.somtum.fun";
+#endif
 
         /// <summary>
         /// Where installed TumThai builds look for updates (a Velopack feed made by <c>vpk pack</c>).
         /// </summary>
+#if SOMTUM_DEV
+        public const string UPDATE_URL = @"https://dl.blueskychan.dev/lazer/releases";
+#else
         public const string UPDATE_URL = @"https://dl.somtum.fun/lazer/releases";
+#endif
+
+        /// <summary>
+        /// The list of every download and its version (the website's download page reads it too).
+        /// </summary>
+#if SOMTUM_DEV
+        public const string MANIFEST_URL = @"https://dl.blueskychan.dev/manifest.json";
+#else
+        public const string MANIFEST_URL = @"https://dl.somtum.fun/manifest.json";
+#endif
+
+        /// <summary>
+        /// The website's download page.
+        /// </summary>
+        public const string DOWNLOAD_PAGE_URL = $@"https://{API_HOST}/home/download";
 
         /// <summary>
         /// Endpoints for the built-in server.

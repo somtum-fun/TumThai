@@ -22,6 +22,9 @@ namespace osu.Desktop
     {
 #if DEBUG
         private const string base_game_name = @"osu-tumthai-development";
+#elif SOMTUM_DEV
+        // TumThai Dev keeps its own data folder (and single-instance channel), apart from TumThai's.
+        private const string base_game_name = @"osu-tumthai-dev";
 #else
         private const string base_game_name = @"osu-tumthai";
 #endif
@@ -212,9 +215,12 @@ namespace osu.Desktop
         [SupportedOSPlatform("windows")]
         private static void configureWindows(VelopackApp app)
         {
+            // TumThai Dev leaves osu:// links and .osz/.osr files to TumThai.
+#if !SOMTUM_DEV
             app.OnFirstRun(_ => WindowsAssociationManager.InstallAssociations());
             app.OnAfterUpdateFastCallback(_ => WindowsAssociationManager.UpdateAssociations());
             app.OnBeforeUninstallFastCallback(_ => WindowsAssociationManager.UninstallAssociations());
+#endif
         }
     }
 }

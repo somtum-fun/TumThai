@@ -13,6 +13,7 @@ using osu.Framework.Localisation;
 using osu.Framework.Platform;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
+using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Overlays.Notifications;
 
@@ -41,9 +42,9 @@ namespace osu.Game.Updater
 
         // TumThai: our releases are listed in dl.somtum.fun's manifest (the website's download page uses it too),
         // not on ppy/osu's GitHub.
-        private const string manifest_url = @"https://dl.somtum.fun/manifest.json";
+        private const string manifest_url = SomtumEndpointConfiguration.MANIFEST_URL;
 
-        private const string download_page_url = @"https://osu.somtum.fun/home/download";
+        private const string download_page_url = SomtumEndpointConfiguration.DOWNLOAD_PAGE_URL;
 
         protected override async Task<bool> PerformUpdateCheck(CancellationToken cancellationToken)
         {
