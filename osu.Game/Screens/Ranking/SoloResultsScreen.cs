@@ -13,6 +13,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.Leaderboards;
+using osu.Game.Screens.Select;
 
 namespace osu.Game.Screens.Ranking
 {
@@ -52,9 +53,10 @@ namespace osu.Game.Screens.Ranking
             Debug.Assert(Score != null);
 
             // sort mode intentionally omitted to default to score - results screen only supports sorting by score, so don't pass any other to avoid confusion
+            // osu!somtum: a Relax/Autopilot play is shown beside its own leaderboard (osurx, ...), not the vanilla one.
             var criteria = new LeaderboardCriteria(
                 Score.BeatmapInfo!,
-                Score.Ruleset,
+                Score.Ruleset.ForMods(Score.Mods),
                 leaderboardManager.CurrentCriteria?.Scope ?? BeatmapLeaderboardScope.Global,
                 leaderboardManager.CurrentCriteria?.ExactMods
             );
