@@ -53,12 +53,15 @@ namespace osu.Game.Screens.Ranking
             Debug.Assert(Score != null);
 
             // sort mode intentionally omitted to default to score - results screen only supports sorting by score, so don't pass any other to avoid confusion
-            // osu!somtum: a Relax/Autopilot play is shown beside its own leaderboard (osurx, ...), not the vanilla one.
+            // osu!somtum: a Relax/Autopilot play is shown beside its own leaderboard (osurx, ...), not the vanilla one,
+            // which is ordered by pp only (stable's and lazer's scores there come from two scoring systems).
+            bool byPp = LeaderboardVariantExtensions.VariantFor(Score.Mods) != LeaderboardVariant.Vanilla;
             var criteria = new LeaderboardCriteria(
                 Score.BeatmapInfo!,
                 Score.Ruleset.ForMods(Score.Mods),
                 leaderboardManager.CurrentCriteria?.Scope ?? BeatmapLeaderboardScope.Global,
-                leaderboardManager.CurrentCriteria?.ExactMods
+                leaderboardManager.CurrentCriteria?.ExactMods,
+                byPp ? LeaderboardSortMode.PerformancePoints : LeaderboardSortMode.Score
             );
 
             Debug.Assert(requestTaskSource == null || requestTaskSource.Task.IsCompleted);
@@ -105,7 +108,8 @@ namespace osu.Game.Screens.Ranking
                 {
                     bool isOnlineLeaderboard = criteria.Scope != BeatmapLeaderboardScope.Local;
                     bool presentingLocalUserScore = Score.UserID == api.LocalUser.Value.OnlineID;
-                    bool presentedLocalUserScoreIsBetter = presentingLocalUserScore && clonedScore.UserID == api.LocalUser.Value.OnlineID && clonedScore.TotalScore < Score.TotalScore;
+                    bool presentedLocalUserScoreIsBetter = presentingLocalUserScore && clonedScore.UserID == api.LocalUser.Value.OnlineID
+                                                           && (byPp ? (clonedScore.PP ?? 0) < (Score.PP ?? 0) : clonedScore.TotalScore < Score.TotalScore);
 
                     if (isOnlineLeaderboard && presentedLocalUserScoreIsBetter)
                         continue;
@@ -119,7 +123,9 @@ namespace osu.Game.Screens.Ranking
             if (!sortedScores.Contains(Score))
                 sortedScores.Add(Score);
 
-            sortedScores = sortedScores.OrderByTotalScore().ToList();
+            sortedScores = byPp
+                ? sortedScores.OrderByDescending(s => s.PP ?? 0).ThenBy(s => s.Date).ToList()
+                : sortedScores.OrderByTotalScore().ToList();
 
             int delta = 0;
             bool isPartialLeaderboard = result.IsPartial;

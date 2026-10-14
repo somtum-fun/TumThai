@@ -150,9 +150,9 @@ namespace osu.Game.Screens.Select
                     }
                     else
                     {
-                        // osu!somtum: online boards are ordered by the server, by pp or by score.
+                        // osu!somtum: online boards are ordered by the server, by pp or by score (Relax/Autopilot: pp only).
                         sortDropdown.Current.UnbindFrom(configLeaderboardSortMode);
-                        sortDropdown.Items = online_sort_modes;
+                        sortDropdown.Items = onlineSortModes(variantDropdown.Current.Value);
                         sortDropdown.Current.Value = defaultOnlineSort(variantDropdown.Current.Value);
                     }
                 }, true);
@@ -161,11 +161,18 @@ namespace osu.Game.Screens.Select
                 variantDropdown.Current.BindValueChanged(variant =>
                 {
                     if (scopeDropdown.Current.Value != BeatmapLeaderboardScope.Local)
+                    {
+                        sortDropdown.Items = onlineSortModes(variant.NewValue);
                         sortDropdown.Current.Value = defaultOnlineSort(variant.NewValue);
+                    }
                 });
             }
 
-            private static readonly LeaderboardSortMode[] online_sort_modes = { LeaderboardSortMode.PerformancePoints, LeaderboardSortMode.Score };
+            // Relax/Autopilot boards are by pp only: stable's and lazer's scores there come from two scoring systems.
+            private static LeaderboardSortMode[] onlineSortModes(LeaderboardVariant variant)
+                => variant == LeaderboardVariant.Vanilla
+                    ? new[] { LeaderboardSortMode.PerformancePoints, LeaderboardSortMode.Score }
+                    : new[] { LeaderboardSortMode.PerformancePoints };
 
             private static LeaderboardSortMode defaultOnlineSort(LeaderboardVariant variant)
                 => variant == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
