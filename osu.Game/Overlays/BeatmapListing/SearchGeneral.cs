@@ -28,7 +28,7 @@ namespace osu.Game.Overlays.BeatmapListing
         [Description("Featured artists")]
         FeaturedArtists,
 
-        [Description("osu!somtum only")]
+        [Description("Uploaded here only")]
         Somtum
     }
 }
