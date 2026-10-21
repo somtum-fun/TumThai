@@ -1,10 +1,12 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
 using System.Linq;
 using Android.App;
+using Android.Content;
 using Android.Content.PM;
+using Android.Media;
 using Microsoft.Maui.Devices;
 using osu.Framework.Allocation;
 using osu.Framework.Development;
@@ -89,6 +91,23 @@ namespace osu.Android
         {
             base.SetHost(host);
             host.Window.CursorState |= CursorState.Hidden;
+        }
+
+        protected override int GetPreferredAndroidAudioSampleRate()
+        {
+            try
+            {
+                var audioManager = Application.Context.GetSystemService(Context.AudioService) as AudioManager;
+                string? rateString = audioManager?.GetProperty(AudioManager.PropertyOutputSampleRate);
+
+                if (int.TryParse(rateString, out int sampleRate) && sampleRate >= 8000 && sampleRate <= 192000)
+                    return sampleRate;
+            }
+            catch
+            {
+            }
+
+            return 0;
         }
 
         protected override UpdateManager CreateUpdateManager() => new MobileUpdateNotifier();

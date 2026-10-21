@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -277,6 +277,12 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.DashboardDisplayStyle, OverlayPanelDisplayStyle.Card);
 
             SetDefault(OsuSetting.PMFriendsOnly, false);
+
+            SetDefault(OsuSetting.InputAudioHz, InputAudioHzMode.Hz1000);
+            SetDefault(OsuSetting.InputAudioHzAutoTuned, false);
+            SetDefault(OsuSetting.ShowLatencyCounter, false);
+            SetDefault(OsuSetting.AndroidLowLatencyAudio, true);
+            SetDefault(OsuSetting.AndroidSustainedPerformance, true);
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)
@@ -538,5 +544,30 @@ namespace osu.Game.Configuration
         /// Extreme-performance preset for weak machines. Read once at startup (restart-gated).
         /// </summary>
         PotatoMode,
+
+        /// <summary>
+        /// Target rate (in Hz) for the input, audio, and multi-threaded update threads.
+        /// </summary>
+        InputAudioHz,
+
+        /// <summary>
+        /// Whether the first-launch hardware auto-tuner has already chosen a default for <see cref="InputAudioHz"/>.
+        /// </summary>
+        InputAudioHzAutoTuned,
+
+        /// <summary>
+        /// Displays the real-time Audio / Input / Draw latency counter in the bottom-right corner.
+        /// </summary>
+        ShowLatencyCounter,
+
+        /// <summary>
+        /// Enables Android native AAudio low-latency audio output routed through a BASS decode mixer.
+        /// </summary>
+        AndroidLowLatencyAudio,
+
+        /// <summary>
+        /// Requests Android's Sustained Performance Mode on supported devices to reduce thermal throttling during long sessions.
+        /// </summary>
+        AndroidSustainedPerformance,
     }
 }

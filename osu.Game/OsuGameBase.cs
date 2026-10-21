@@ -269,6 +269,17 @@ namespace osu.Game
 
         private IBindable<LocalisationParameters> localisationParameters = null!;
 
+        private Bindable<InputAudioHzMode> inputAudioHz = null!;
+
+        private Bindable<bool> androidLowLatencyAudio = null!;
+
+        private Bindable<bool> androidSustainedPerformance = null!;
+
+        /// <summary>
+        /// Returns the preferred hardware output sample rate in Hz on Android (or 0 to let AAudio choose).
+        /// </summary>
+        protected virtual int GetPreferredAndroidAudioSampleRate() => 0;
+
         /// <summary>
         /// Number of unhandled exceptions to allow before aborting execution.
         /// </summary>
@@ -396,6 +407,37 @@ namespace osu.Game
             // that starve the tiny WASAPI buffer on weak machines.
             if (Performance.PotatoMode.Active)
                 frameworkConfig.SetValue(FrameworkSetting.AudioUseExperimentalWasapi, false);
+
+            if (!LocalConfig.Get<bool>(OsuSetting.InputAudioHzAutoTuned))
+            {
+                if (LocalConfig.Get<InputAudioHzMode>(OsuSetting.InputAudioHz) == InputAudioHzMode.Hz1000)
+                    LocalConfig.SetValue(OsuSetting.InputAudioHz, InputAudioHzDefaults.ForThisMachine());
+
+                LocalConfig.SetValue(OsuSetting.InputAudioHzAutoTuned, true);
+            }
+
+            inputAudioHz = LocalConfig.GetBindable<InputAudioHzMode>(OsuSetting.InputAudioHz);
+            inputAudioHz.BindValueChanged(v =>
+            {
+                Host.InputAudioHz.Value = Performance.PotatoMode.Active
+                    ? (int)InputAudioHzMode.Hz500
+                    : (int)v.NewValue;
+            }, true);
+
+            if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
+            {
+                androidLowLatencyAudio = LocalConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio);
+                androidLowLatencyAudio.BindValueChanged(v =>
+                {
+                    Audio.SetAndroidLowLatencyAudio(!Performance.PotatoMode.Active && v.NewValue, GetPreferredAndroidAudioSampleRate());
+                }, true);
+
+                androidSustainedPerformance = LocalConfig.GetBindable<bool>(OsuSetting.AndroidSustainedPerformance);
+                androidSustainedPerformance.BindValueChanged(v =>
+                {
+                    Host.SetSustainedPerformanceMode(v.NewValue);
+                }, true);
+            }
 
             dependencies.Cache(Colours = new OsuColour());
 

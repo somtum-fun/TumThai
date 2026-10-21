@@ -215,6 +215,9 @@ namespace osu.Game
         protected FirstRunSetupOverlay FirstRunOverlay { get; private set; }
 
         private FPSCounter fpsCounter;
+        private LatencyPerformanceCounter latencyCounter;
+        private Bindable<bool> showFpsDisplay;
+        private Bindable<bool> showLatencyCounter;
 
         private VolumeOverlay volume;
 
@@ -1175,6 +1178,28 @@ namespace osu.Game
                 Origin = Anchor.BottomRight,
                 Margin = new MarginPadding(5),
             }, topMostOverlayContent.Add);
+
+            loadComponentSingleFile(latencyCounter = new LatencyPerformanceCounter
+            {
+                Anchor = Anchor.BottomRight,
+                Origin = Anchor.BottomRight,
+                Margin = new MarginPadding(5),
+            }, topMostOverlayContent.Add);
+
+            showFpsDisplay = LocalConfig.GetBindable<bool>(OsuSetting.ShowFpsDisplay);
+            showLatencyCounter = LocalConfig.GetBindable<bool>(OsuSetting.ShowLatencyCounter);
+
+            showFpsDisplay.BindValueChanged(v =>
+            {
+                if (v.NewValue && showLatencyCounter.Value)
+                    showLatencyCounter.Value = false;
+            });
+
+            showLatencyCounter.BindValueChanged(v =>
+            {
+                if (v.NewValue && showFpsDisplay.Value)
+                    showFpsDisplay.Value = false;
+            }, true);
 
             if (!IsDeployedBuild)
                 loadComponentSingleFile(devBuildBanner = new DevBuildBanner(), ScreenContainer.Add);

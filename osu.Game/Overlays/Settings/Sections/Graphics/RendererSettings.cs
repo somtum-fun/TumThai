@@ -1,8 +1,9 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
@@ -25,6 +26,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
 
         private FormCheckBox? dangerousUnlimitedCheckbox;
         private readonly Bindable<SettingsNote.Data?> dangerousUnlimitedNote = new Bindable<SettingsNote.Data?>();
+        private readonly Bindable<SettingsNote.Data?> inputAudioHzNote = new Bindable<SettingsNote.Data?>();
 
         [BackgroundDependencyLoader]
         private void load(FrameworkConfigManager config, OsuConfigManager osuConfig, IDialogOverlay? dialogOverlay, OsuGame? game, GameHost host)
@@ -33,17 +35,15 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
             automaticRendererInUse = renderer.Value == RendererType.Automatic;
 
             var dangerousUnlimitedNoCap = config.GetBindable<bool>(FrameworkSetting.AllowDangerousUnlimitedNoCap);
+            var inputAudioHz = osuConfig.GetBindable<InputAudioHzMode>(OsuSetting.InputAudioHz);
 
             IEnumerable<RendererType> availableRenderers = host.GetPreferredRenderersForCurrentPlatform().Order();
 
-            // Vulkan renderers are pretty broken to the point it may result in a startup crash at worst.
-            // If a user isn't already using it let's hide it until we can fix.
+            // Keep Deferred_Vulkan hidden unless already active; standard Veldrid Vulkan is exposed on Windows and Linux.
             if (renderer.Value != RendererType.Deferred_Vulkan)
                 availableRenderers = availableRenderers.Where(t => t != RendererType.Deferred_Vulkan);
-            if (renderer.Value != RendererType.Vulkan)
-                availableRenderers = availableRenderers.Where(t => t != RendererType.Vulkan);
 
-            Children = new Drawable[]
+            var children = new List<Drawable>
             {
                 new SettingsItemV2(new RendererDropdown
                 {
@@ -52,7 +52,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                     Items = availableRenderers,
                 })
                 {
-                    Keywords = new[] { @"compatibility", @"directx" },
+                    Keywords = new[] { @"compatibility", @"directx", @"vulkan", @"opengl", @"metal" },
                 },
                 // TODO: this needs to be a custom dropdown at some point
                 new SettingsItemV2(new FormEnumDropdown<FrameSync>
@@ -62,6 +62,16 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                 })
                 {
                     Keywords = new[] { @"fps", @"framerate" },
+                },
+                new SettingsItemV2(new FormEnumDropdown<InputAudioHzMode>
+                {
+                    Caption = "Input / audio rate",
+                    HintText = "Controls how frequently input, audio, and multi-threaded gameplay updates run.",
+                    Current = inputAudioHz,
+                })
+                {
+                    Keywords = new[] { @"hz", @"polling", @"input", @"audio", @"update", @"latency", @"1000", @"2000", @"4000", @"8000" },
+                    Note = { BindTarget = inputAudioHzNote },
                 },
                 new SettingsItemV2(dangerousUnlimitedCheckbox = new FormCheckBox
                 {
@@ -86,8 +96,64 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                 {
                     Keywords = new[] { @"framerate", @"counter" },
                 },
-                new PotatoModeToggleAndRestart(),
+                new SettingsItemV2(new FormCheckBox
+                {
+                    Caption = "Show latency counter (Audio / Input / Draw ms)",
+                    HintText = "Displays a compact real-time breakdown of audio output latency, input interval, and draw frame time.",
+                    Current = osuConfig.GetBindable<bool>(OsuSetting.ShowLatencyCounter),
+                })
+                {
+                    Keywords = new[] { @"latency", @"ms", @"fps", @"counter", @"performance", @"audio" },
+                },
             };
+
+            if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
+            {
+                children.Add(new SettingsItemV2(new FormCheckBox
+                {
+                    Caption = "Sustained performance mode",
+                    HintText = "Hints Android to maintain steady CPU/GPU clocks and reduce thermal throttling during long sessions.",
+                    Current = osuConfig.GetBindable<bool>(OsuSetting.AndroidSustainedPerformance),
+                })
+                {
+                    Keywords = new[] { @"android", @"thermal", @"sustained", @"performance", @"throttling" },
+                });
+            }
+
+            children.Add(new PotatoModeToggleAndRestart());
+
+            Children = children;
+
+            inputAudioHz.BindValueChanged(v =>
+            {
+                if (Performance.PotatoMode.Active)
+                {
+                    inputAudioHzNote.Value = new SettingsNote.Data(
+                        "Potato mode is active and forces the input/audio/update rate to 500 Hz to save CPU.",
+                        SettingsNote.Type.Informational);
+                    return;
+                }
+
+                inputAudioHzNote.Value = v.NewValue switch
+                {
+                    InputAudioHzMode.Hz500 => new SettingsNote.Data(
+                        "500 Hz reduces CPU usage and battery drain on weaker laptops and mobile devices.",
+                        SettingsNote.Type.Informational),
+                    InputAudioHzMode.Hz1000 => new SettingsNote.Data(
+                        "1000 Hz is the standard rate and works well for most 125-1000 Hz mice, tablets, and keyboards.",
+                        SettingsNote.Type.Informational),
+                    InputAudioHzMode.Hz2000 => new SettingsNote.Data(
+                        "2000 Hz gives lower input/update quantization for competitive play and high-polling peripherals.",
+                        SettingsNote.Type.Informational),
+                    InputAudioHzMode.Hz4000 => new SettingsNote.Data(
+                        "4000 Hz is intended for 2000-4000 Hz mice/keyboards on fast multi-core desktop CPUs.",
+                        SettingsNote.Type.Warning),
+                    InputAudioHzMode.Hz8000 => new SettingsNote.Data(
+                        "8000 Hz uses significant CPU time. Lower this to 2000 or 4000 Hz if you notice frame drops or audio crackles.",
+                        SettingsNote.Type.Warning),
+                    _ => null
+                };
+            }, true);
 
             dangerousUnlimitedNoCap.BindValueChanged(v =>
             {

@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
@@ -10,6 +10,7 @@ using osu.Framework;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 
@@ -27,7 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
         private FormCheckBox? legacyAudio;
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager osuConfig)
         {
             Children = new Drawable[]
             {
@@ -48,6 +49,18 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
                 });
 
                 legacyAudio.Current.ValueChanged += _ => onDeviceChanged(string.Empty);
+            }
+            else if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
+            {
+                Add(new SettingsItemV2(new FormCheckBox
+                {
+                    Caption = "Low-latency audio (AAudio)",
+                    HintText = "Uses Android's native AAudio low-latency path for responsive hitsounds and music. Disable if your device has crackling or Bluetooth audio issues.",
+                    Current = osuConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio),
+                })
+                {
+                    Keywords = new[] { "aaudio", "oboe", "latency", "android", "low-latency", "bluetooth" },
+                });
             }
 
             audio.OnNewDevice += onDeviceChanged;
