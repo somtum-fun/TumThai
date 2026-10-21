@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -47,8 +47,8 @@ namespace osu.Game.Overlays.Settings
                 {
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.TopCentre,
-                    // TumThai: our own name, not osu!'s.
-                    Text = @"TumThai Client",
+                    // TumThai!Next: distinct from standard TumThai.
+                    Text = @"TumThai!Next",
                     Font = OsuFont.GetFont(size: 18, weight: FontWeight.Bold),
                 },
                 new BuildDisplay(game.Version)
@@ -68,7 +68,7 @@ namespace osu.Game.Overlays.Settings
                     AutoSizeAxes = Axes.Y,
                     TextAnchor = Anchor.TopCentre,
                     Padding = new MarginPadding { Top = 10 },
-                    Text = @"Not affiliated with ppy Pty Ltd. osu! is a trademark of ppy Pty Ltd.",
+                    Text = "TumThai!Next is a heavily modified performance edition of TumThai (same base, custom engine & framework changes).\nNot affiliated with ppy Pty Ltd. osu! is a trademark of ppy Pty Ltd.",
                 },
             };
 

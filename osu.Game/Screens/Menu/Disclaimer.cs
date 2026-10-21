@@ -86,7 +86,7 @@ namespace osu.Game.Screens.Menu
             static void formatBold(SpriteText t) => t.Font = OsuFont.GetFont(size: 20, weight: FontWeight.Bold);
 
             textFlow.AddText(DisclaimerStrings.TitlePart, t => t.Font = t.Font.With(Typeface.Torus, 30, FontWeight.Regular));
-            textFlow.AddText(@"TumThai!", t =>
+            textFlow.AddText(@"TumThai!Next", t =>
             {
                 t.Font = t.Font.With(Typeface.Torus, 30, FontWeight.Regular);
                 t.Colour = tumThaiGreen;
@@ -94,7 +94,7 @@ namespace osu.Game.Screens.Menu
 
             textFlow.NewParagraph();
 
-            textFlow.AddText(DisclaimerStrings.BasedOnParagraph, formatRegular);
+            textFlow.AddText(@"a heavily modified performance edition of TumThai, based on the ", formatRegular);
             textFlow.AddText(@"osu!lazer", t =>
             {
                 t.Font = t.Font.With(Typeface.Torus, 20, FontWeight.Bold);

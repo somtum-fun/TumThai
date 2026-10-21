@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Localisation;
@@ -75,28 +75,24 @@ namespace osu.Game.Localisation
         public static LocalisableString RankedPlay => new TranslatableString(getKey(@"ranked_play"), @"ranked play");
 
         /// <summary>
-        /// "A few important words from your dev team!"
+        /// "Welcome to TumThai!Next on Mobile!"
         /// </summary>
-        public static LocalisableString MobileDisclaimerHeader => new TranslatableString(getKey(@"mobile_disclaimer_header"), @"A few important words from your dev team!");
+        public static LocalisableString MobileDisclaimerHeader => new TranslatableString(getKey(@"tumthai_next_mobile_disclaimer_header"), @"Welcome to TumThai!Next on Mobile!");
 
         /// <summary>
-        /// "While we have released osu! on mobile platforms to maximise the number of people that can enjoy the game, our focus is still on the PC version.
-        ///
-        /// Your experience will not be perfect, and may even feel subpar compared to games which are made mobile-first.
-        ///
-        /// Please bear with us as we continue to improve the game for you!"
+        /// Mobile first-time disclaimer for TumThai!Next.
         /// </summary>
-        public static LocalisableString MobileDisclaimerBody => new TranslatableString(getKey(@"mobile_disclaimer_body"),
-            @"While we have released osu! on mobile platforms to maximise the number of people that can enjoy the game, our focus is still on the PC version.
+        public static LocalisableString MobileDisclaimerBody => new TranslatableString(getKey(@"tumthai_next_mobile_disclaimer_body"),
+            @"You are running TumThai!Next — a heavily modified performance edition of TumThai. While both share the same base, TumThai!Next is a separate build with deep engine and framework modifications.
 
-Your experience will not be perfect, and may even feel subpar compared to games which are made mobile-first.
+This mobile build includes low-latency AAudio output, high-refresh-rate display support, sustained performance mode, and configurable input/audio rates.
 
-Please bear with us as we continue to improve the game for you!");
+If you run into any device-specific audio or graphics issues, you can adjust these options anytime in Settings!");
 
         /// <summary>
-        /// "Understood"
+        /// "Got it!"
         /// </summary>
-        public static LocalisableString MobileDisclaimerOkButton => new TranslatableString(getKey(@"mobile_disclaimer_ok_button"), @"Understood");
+        public static LocalisableString MobileDisclaimerOkButton => new TranslatableString(getKey(@"tumthai_next_mobile_disclaimer_ok_button"), @"Got it!");
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
