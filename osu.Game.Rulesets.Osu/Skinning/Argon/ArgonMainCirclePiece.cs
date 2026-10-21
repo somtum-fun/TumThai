@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Performance;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Objects;
@@ -211,7 +212,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Argon
                                 .FadeOut(flash_in_duration);
                         }
 
-                        if (configHitLighting.Value)
+                        if (configHitLighting.Value && !PotatoMode.Active)
                         {
                             flash.HitLighting = true;
                             flash.FadeTo(1, flash_in_duration, Easing.OutQuint);

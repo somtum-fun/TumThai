@@ -24,6 +24,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -241,6 +242,16 @@ namespace osu.Game.Screens.Select
 
             if (Item == null)
                 return;
+
+            // Potato mode: carousel rows use the stored nomod star rating instead of recalculating
+            // per panel while scrolling (the wedge still shows mod-adjusted difficulty).
+            if (PotatoMode.Active)
+            {
+                var stored = new StarDifficulty(beatmap.StarRating, 0);
+                starRatingDisplay.Current.Value = stored;
+                starCounter.Current = (float)stored.Stars;
+                return;
+            }
 
             starDifficultyBindable = difficultyCache.GetBindableDifficulty(beatmap, starDifficultyCancellationSource.Token, SongSelect.DIFFICULTY_CALCULATION_DEBOUNCE);
             starDifficultyBindable.BindValueChanged(starDifficulty =>

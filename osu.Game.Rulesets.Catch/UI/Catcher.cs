@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Pooling;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Catch.Judgements;
 using osu.Game.Rulesets.Catch.Objects;
 using osu.Game.Rulesets.Catch.Objects.Drawables;
@@ -220,7 +221,7 @@ namespace osu.Game.Rulesets.Catch.UI
                 if (CatchFruitOnPlate)
                     placeCaughtObject(palpableObject, positionInStack);
 
-                if (hitLighting.Value)
+                if (hitLighting.Value && !PotatoMode.Active)
                     addLighting(result, drawableObject.AccentColour.Value, positionInStack.X);
             }
 

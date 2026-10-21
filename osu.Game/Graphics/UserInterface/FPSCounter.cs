@@ -274,6 +274,11 @@ namespace osu.Game.Graphics.UserInterface
 
         private ColourInfo getColour(double performanceRatio)
         {
+            // In Unlimited (no cap), aim FPS is double.MaxValue so the ratio would otherwise paint everything red.
+            // Show cyan to indicate uncapped mode.
+            if (aimDrawFPS > 10000 || aimUpdateFPS > 10000)
+                return colours.Blue0;
+
             if (performanceRatio < 0.5f)
                 return Interpolation.ValueAt(performanceRatio, colours.Red, colours.Orange2, 0, 0.5);
 

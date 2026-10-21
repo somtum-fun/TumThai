@@ -389,6 +389,14 @@ namespace osu.Game
 
             dependencies.Cache(SessionStatics = new SessionStatics());
             dependencies.Cache(hitErrorTracker = new SessionAverageHitErrorTracker());
+
+            // Potato Mode read-once flag (heavy visuals check it at construction). Restart-gated.
+            Performance.PotatoMode.SetFromConfig(LocalConfig.Get<bool>(OsuSetting.PotatoMode));
+            // Potato forces the legacy (BASS) audio path; its larger buffer rides over GC hitches
+            // that starve the tiny WASAPI buffer on weak machines.
+            if (Performance.PotatoMode.Active)
+                frameworkConfig.SetValue(FrameworkSetting.AudioUseExperimentalWasapi, false);
+
             dependencies.Cache(Colours = new OsuColour());
 
             RegisterImportHandler(BeatmapManager);

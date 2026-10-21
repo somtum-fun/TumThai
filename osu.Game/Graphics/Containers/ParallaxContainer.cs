@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
+using osu.Game.Performance;
 using osuTK;
 
 namespace osu.Game.Graphics.Containers
@@ -59,6 +60,11 @@ namespace osu.Game.Graphics.Containers
         protected override void Update()
         {
             base.Update();
+
+            // Potato mode: leave content static (no per-frame parallax
+            // offset / scale interpolation, no high-frequency mouse track).
+            if (PotatoMode.Active)
+                return;
 
             float amount = ParallaxAmount * parallaxScale.Value;
 

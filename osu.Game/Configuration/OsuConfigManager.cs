@@ -157,6 +157,7 @@ namespace osu.Game.Configuration
 
             // Graphics
             SetDefault(OsuSetting.ShowFpsDisplay, false);
+            SetDefault(OsuSetting.PotatoMode, false);
 
             SetDefault(OsuSetting.ShowStoryboard, true);
             SetDefault(OsuSetting.BeatmapSkins, true);
@@ -532,5 +533,10 @@ namespace osu.Game.Configuration
         CustomAvatarUrl,
 
         HitsoundVolume,
+
+        /// <summary>
+        /// Extreme-performance preset for weak machines. Read once at startup (restart-gated).
+        /// </summary>
+        PotatoMode,
     }
 }
