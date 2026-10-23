@@ -36,7 +36,9 @@ namespace osu.Game.Localisation
         public static LocalisableString WelcomeTitle => new TranslatableString(getKey(@"welcome_title"), @"Welcome");
 
         /// <summary>
-        /// First-run welcome description for TumThai!Next.
+        /// "Welcome to the TumThai!Next first-run setup guide!
+        ///
+        /// TumThai!Next is a heavily modified edition built on the same base as TumThai, featuring deep engine, audio, input, and rendering modifications. This guide will help you get the important choices out of the way for a great first experience!"
         /// </summary>
         public static LocalisableString WelcomeDescription => new TranslatableString(getKey(@"tumthai_next_welcome_description"), @"Welcome to the TumThai!Next first-run setup guide!
 

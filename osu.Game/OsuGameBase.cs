@@ -78,11 +78,11 @@ namespace osu.Game
     public partial class OsuGameBase : Framework.Game, ICanAcceptFiles, IBeatSyncProvider
     {
 #if DEBUG
-        public const string GAME_NAME = "TumThai (development)";
+        public const string GAME_NAME = "TumThai!Next (development)";
 #elif SOMTUM_DEV
-        public const string GAME_NAME = "TumThai Dev";
+        public const string GAME_NAME = "TumThai!Next Dev";
 #else
-        public const string GAME_NAME = "TumThai";
+        public const string GAME_NAME = "TumThai!Next";
 #endif
 
         public const string OSU_PROTOCOL = "osu://";
@@ -271,6 +271,8 @@ namespace osu.Game
 
         private Bindable<InputAudioHzMode> inputAudioHz = null!;
 
+        private Bindable<DisplayRefreshRateMode> displayRefreshRate = null!;
+
         private Bindable<bool> androidLowLatencyAudio = null!;
 
         private Bindable<bool> androidSustainedPerformance = null!;
@@ -422,6 +424,12 @@ namespace osu.Game
                 Host.InputAudioHz.Value = Performance.PotatoMode.Active
                     ? (int)InputAudioHzMode.Hz500
                     : (int)v.NewValue;
+            }, true);
+
+            displayRefreshRate = LocalConfig.GetBindable<DisplayRefreshRateMode>(OsuSetting.DisplayRefreshRate);
+            displayRefreshRate.BindValueChanged(v =>
+            {
+                Host.PreferredDisplayRefreshRate.Value = (int)v.NewValue;
             }, true);
 
             if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)

@@ -36,6 +36,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
 
             var dangerousUnlimitedNoCap = config.GetBindable<bool>(FrameworkSetting.AllowDangerousUnlimitedNoCap);
             var inputAudioHz = osuConfig.GetBindable<InputAudioHzMode>(OsuSetting.InputAudioHz);
+            var displayRefreshRate = osuConfig.GetBindable<DisplayRefreshRateMode>(OsuSetting.DisplayRefreshRate);
 
             IEnumerable<RendererType> availableRenderers = host.GetPreferredRenderersForCurrentPlatform().Order();
 
@@ -62,6 +63,15 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                 })
                 {
                     Keywords = new[] { @"fps", @"framerate" },
+                },
+                new SettingsItemV2(new FormEnumDropdown<DisplayRefreshRateMode>
+                {
+                    Caption = "Display refresh rate",
+                    HintText = "Selects the target screen refresh rate (60 / 90 / 120 / 144 / 165 / 240 Hz) on Android and for 2x / 4x / 8x frame limiter multipliers.",
+                    Current = displayRefreshRate,
+                })
+                {
+                    Keywords = new[] { @"hz", @"refresh", @"display", @"60", @"90", @"120", @"144", @"165", @"240", @"fps" },
                 },
                 new SettingsItemV2(new FormEnumDropdown<InputAudioHzMode>
                 {

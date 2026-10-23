@@ -80,7 +80,11 @@ namespace osu.Game.Localisation
         public static LocalisableString MobileDisclaimerHeader => new TranslatableString(getKey(@"tumthai_next_mobile_disclaimer_header"), @"Welcome to TumThai!Next on Mobile!");
 
         /// <summary>
-        /// Mobile first-time disclaimer for TumThai!Next.
+        /// "You are running TumThai!Next — a heavily modified performance edition of TumThai. While both share the same base, TumThai!Next is a separate build with deep engine and framework modifications.
+        ///
+        /// This mobile build includes low-latency AAudio output, high-refresh-rate display support, sustained performance mode, and configurable input/audio rates.
+        ///
+        /// If you run into any device-specific audio or graphics issues, you can adjust these options anytime in Settings!"
         /// </summary>
         public static LocalisableString MobileDisclaimerBody => new TranslatableString(getKey(@"tumthai_next_mobile_disclaimer_body"),
             @"You are running TumThai!Next — a heavily modified performance edition of TumThai. While both share the same base, TumThai!Next is a separate build with deep engine and framework modifications.
