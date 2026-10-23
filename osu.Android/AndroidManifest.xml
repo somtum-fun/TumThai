@@ -3,7 +3,7 @@
 	<uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
 	<application android:allowBackup="true"
 				 android:supportsRtl="true"
-				 android:label="TumThai"
+				 android:label="TumThai!Next"
 				 android:icon="@mipmap/ic_launcher"
 				 android:roundIcon="@mipmap/ic_launcher"
 				 android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
