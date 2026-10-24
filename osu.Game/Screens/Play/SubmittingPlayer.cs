@@ -236,14 +236,14 @@ namespace osu.Game.Screens.Play
             {
                 Score.ScoreInfo.Pauses.Add((int)Math.Round(GameplayClockContainer.CurrentTime));
 
-                // TumThai: osu!dan doesn't allow pausing, so say so on the first pause (the play is still
-                // submitted, as a normal score).
+                // TumThai: osu!dan doesn't allow pausing, so a paused play of a dan map isn't submitted
+                // (its leaderboard is for dan plays only): say so on the first pause.
                 if (isDanMap && !danPauseAlerted)
                 {
                     danPauseAlerted = true;
                     notifications?.Post(new SimpleNotification
                     {
-                        Text = "You paused: this play can't count as an osu!dan clear. It's still submitted as a normal score.",
+                        Text = "You paused: osu!dan doesn't allow pausing, so this play won't be submitted.",
                         Icon = FontAwesome.Solid.Pause,
                     });
                 }
@@ -310,6 +310,13 @@ namespace osu.Game.Screens.Play
             if (token == null)
             {
                 Logger.Log("No token, skipping score submission");
+                return Task.CompletedTask;
+            }
+
+            // TumThai: a paused play of an osu!dan map isn't submitted (the server refuses it too).
+            if (isDanMap && score.ScoreInfo.Pauses.Count > 0)
+            {
+                Logger.Log("Paused on an osu!dan map, skipping score submission");
                 return Task.CompletedTask;
             }
 
