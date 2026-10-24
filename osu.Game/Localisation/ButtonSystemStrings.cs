@@ -94,6 +94,31 @@ This mobile build includes low-latency AAudio output, high-refresh-rate display 
 If you run into any device-specific audio or graphics issues, you can adjust these options anytime in Settings!");
 
         /// <summary>
+        /// "TumThai!Next isn't guaranteed to be stable"
+        /// </summary>
+        public static LocalisableString NextWarningHeader => new TranslatableString(getKey(@"tumthai_next_warning_header"), @"TumThai!Next isn't guaranteed to be stable");
+
+        /// <summary>
+        /// "TumThai!Next changes a lot in how the game renders, and some of it is still an experiment. You may see crashes, graphics glitches or slowdowns that TumThai doesn't have.
+        ///
+        /// If something goes wrong, go back to TumThai: Settings → General → Updates → Release stream, or pick TumThai in the Somtum Launcher. Your account, beatmaps and scores stay the same."
+        /// </summary>
+        public static LocalisableString NextWarningBody => new TranslatableString(getKey(@"tumthai_next_warning_body"),
+            @"TumThai!Next changes a lot in how the game renders, and some of it is still an experiment. You may see crashes, graphics glitches or slowdowns that TumThai doesn't have.
+
+If something goes wrong, go back to TumThai: Settings → General → Updates → Release stream, or pick TumThai in the Somtum Launcher. Your account, beatmaps and scores stay the same.");
+
+        /// <summary>
+        /// "I understand"
+        /// </summary>
+        public static LocalisableString NextWarningOkButton => new TranslatableString(getKey(@"tumthai_next_warning_ok_button"), @"I understand");
+
+        /// <summary>
+        /// "Go back to TumThai"
+        /// </summary>
+        public static LocalisableString NextWarningBackButton => new TranslatableString(getKey(@"tumthai_next_warning_back_button"), @"Go back to TumThai");
+
+        /// <summary>
         /// "Got it!"
         /// </summary>
         public static LocalisableString MobileDisclaimerOkButton => new TranslatableString(getKey(@"tumthai_next_mobile_disclaimer_ok_button"), @"Got it!");

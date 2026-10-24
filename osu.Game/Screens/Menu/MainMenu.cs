@@ -42,6 +42,7 @@ using osu.Game.Screens.OnlinePlay.Multiplayer;
 using osu.Game.Screens.OnlinePlay.Playlists;
 using osu.Game.Screens.Select;
 using osu.Game.Seasonal;
+using osu.Game.Updater;
 using osuTK;
 using osuTK.Graphics;
 
@@ -119,12 +120,19 @@ namespace osu.Game.Screens.Menu
         [CanBeNull]
         private IDisposable logoProxy;
 
+        [Resolved(canBeNull: true)]
+        [CanBeNull]
+        private UpdateManager updateManager { get; set; }
+
+        private Bindable<ReleaseStream> releaseStream;
+
         [BackgroundDependencyLoader(true)]
         private void load(BeatmapListingOverlay beatmapListing, SettingsOverlay settings, OsuConfigManager config, SessionStatics statics, AudioManager audio)
         {
             holdDelay = config.GetBindable<double>(OsuSetting.UIHoldActivationDelay);
             loginDisplayed = statics.GetBindable<bool>(Static.LoginOverlayDisplayed);
             showMobileDisclaimer = config.GetBindable<bool>(OsuSetting.ShowMobileDisclaimer);
+            releaseStream = config.GetBindable<ReleaseStream>(OsuSetting.ReleaseStream);
 
             if (host.CanExit)
             {
@@ -270,6 +278,16 @@ namespace osu.Game.Screens.Menu
 
             if (storage is OsuStorage osuStorage && osuStorage.Error != OsuStorageError.None)
                 dialogOverlay?.Push(new StorageErrorDialog(osuStorage, osuStorage.Error));
+
+            // TumThai!Next: every start, right after the intro, say it isn't guaranteed to be stable. Where the game
+            // switches streams itself (not started by the launcher or a package), it can go back to TumThai from here.
+            if (e.Last is IntroScreen)
+            {
+                Action goBack = updateManager?.FixedReleaseStream == null && releaseStream.Value == ReleaseStream.Tachyon
+                    ? () => releaseStream.Value = ReleaseStream.Lazer
+                    : null;
+                Scheduler.AddDelayed(() => dialogOverlay?.Push(new NextWarningDialog(goBack)), 500);
+            }
         }
 
         [CanBeNull]
@@ -488,6 +506,28 @@ namespace osu.Game.Screens.Menu
         private void loadQuickPlay() => this.Push(new OnlinePlay.Matchmaking.Intro.ScreenIntro(MatchmakingPoolType.QuickPlay));
 
         private void loadRankedPlay() => this.Push(new OnlinePlay.Matchmaking.Intro.ScreenIntro(MatchmakingPoolType.RankedPlay));
+
+        /// <summary>TumThai!Next: it isn't guaranteed to be stable (its rendering is changed, partly experimental).</summary>
+        private partial class NextWarningDialog : PopupDialog
+        {
+            public NextWarningDialog([CanBeNull] Action goBackToTumThai)
+            {
+                HeaderText = ButtonSystemStrings.NextWarningHeader;
+                BodyText = ButtonSystemStrings.NextWarningBody;
+
+                Icon = FontAwesome.Solid.ExclamationTriangle;
+
+                var buttons = new System.Collections.Generic.List<PopupDialogButton>
+                {
+                    new PopupDialogOkButton { Text = ButtonSystemStrings.NextWarningOkButton },
+                };
+
+                if (goBackToTumThai != null)
+                    buttons.Add(new PopupDialogCancelButton { Text = ButtonSystemStrings.NextWarningBackButton, Action = goBackToTumThai });
+
+                Buttons = buttons;
+            }
+        }
 
         private partial class MobileDisclaimerDialog : PopupDialog
         {
