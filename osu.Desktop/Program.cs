@@ -21,12 +21,15 @@ namespace osu.Desktop
     public static class Program
     {
 #if DEBUG
-        private const string base_game_name = @"osu-tumthai-development";
+        private const string base_game_name = @"TumThai-development";
+        private const string old_base_game_name = @"osu-tumthai-development";
 #elif SOMTUM_DEV
         // TumThai Dev keeps its own data folder (and single-instance channel), apart from TumThai's.
-        private const string base_game_name = @"osu-tumthai-dev";
+        private const string base_game_name = @"TumThaiDev";
+        private const string old_base_game_name = @"osu-tumthai-dev";
 #else
-        private const string base_game_name = @"osu-tumthai";
+        private const string base_game_name = @"TumThai";
+        private const string old_base_game_name = @"osu-tumthai";
 #endif
 
         private static LegacyTcpIpcProvider? legacyIpc;
@@ -78,6 +81,7 @@ namespace osu.Desktop
             string cwd = Environment.CurrentDirectory;
 
             string gameName = base_game_name;
+            string oldGameName = old_base_game_name;
             bool tournamentClient = false;
 
             foreach (string arg in args)
@@ -101,9 +105,13 @@ namespace osu.Desktop
                             throw new ArgumentException("Provided client ID must be an integer.");
 
                         gameName = $"{base_game_name}-{clientID}";
+                        oldGameName = $"{old_base_game_name}-{clientID}";
                         break;
                 }
             }
+
+            // TumThai: the data folder was "osu-tumthai" before; move it to the new name first.
+            gameName = DataFolderMigration.Migrate(oldGameName, gameName);
 
             var hostOptions = new HostOptions
             {
