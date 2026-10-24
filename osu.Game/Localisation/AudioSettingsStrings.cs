@@ -40,6 +40,16 @@ namespace osu.Game.Localisation
         public static LocalisableString MasterVolume => new TranslatableString(getKey(@"master_volume"), @"Master");
 
         /// <summary>
+        /// "Lower the volume when the game isn't focused"
+        /// </summary>
+        public static LocalisableString LowerVolumeWhenInactive => new TranslatableString(getKey(@"tumthai_lower_volume_when_inactive"), @"Lower the volume when the game isn't focused"); // TumThai
+
+        /// <summary>
+        /// "Minimised, or another window in front: the volume goes down to the level below."
+        /// </summary>
+        public static LocalisableString LowerVolumeWhenInactiveTooltip => new TranslatableString(getKey(@"tumthai_lower_volume_when_inactive_tooltip"), @"Minimised, or another window in front: the volume goes down to the level below."); // TumThai
+
+        /// <summary>
         /// "Master (window inactive)"
         /// </summary>
         public static LocalisableString MasterVolumeInactive => new TranslatableString(getKey(@"master_volume_inactive"), @"Master (window inactive)");

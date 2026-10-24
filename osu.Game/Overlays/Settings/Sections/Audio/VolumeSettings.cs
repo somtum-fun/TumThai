@@ -3,6 +3,7 @@
 
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
@@ -15,9 +16,14 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
     {
         protected override LocalisableString Header => AudioSettingsStrings.VolumeHeader;
 
+        private Bindable<bool> inactiveEnabled = null!;
+        private SettingsItemV2 inactiveVolume = null!;
+
         [BackgroundDependencyLoader]
         private void load(AudioManager audio, OsuConfigManager config)
         {
+            inactiveEnabled = config.GetBindable<bool>(OsuSetting.VolumeInactiveEnabled);
+
             Children = new Drawable[]
             {
                 new SettingsItemV2(new FormSliderBar<double>
@@ -28,7 +34,14 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
                     DisplayAsPercentage = true,
                     PlaySamplesOnAdjust = false,
                 }),
-                new SettingsItemV2(new FormSliderBar<double>
+                // TumThai: whether the volume goes down at all while the game isn't focused.
+                new SettingsItemV2(new FormCheckBox
+                {
+                    Caption = AudioSettingsStrings.LowerVolumeWhenInactive,
+                    HintText = AudioSettingsStrings.LowerVolumeWhenInactiveTooltip,
+                    Current = inactiveEnabled,
+                }),
+                inactiveVolume = new SettingsItemV2(new FormSliderBar<double>
                 {
                     Caption = AudioSettingsStrings.MasterVolumeInactive,
                     Current = config.GetBindable<double>(OsuSetting.VolumeInactive),
@@ -60,6 +73,14 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
                     PlaySamplesOnAdjust = false,
                 }),
             };
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // TumThai: the inactive level only matters while lowering the volume is on.
+            inactiveEnabled.BindValueChanged(enabled => inactiveVolume.Alpha = enabled.NewValue ? 1 : 0, true);
         }
     }
 }

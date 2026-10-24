@@ -132,6 +132,8 @@ namespace osu.Game.Configuration
 
             // Audio
             SetDefault(OsuSetting.VolumeInactive, 0.25, 0, 1, 0.01);
+            // TumThai: whether the volume goes down to VolumeInactive at all while the window isn't focused.
+            SetDefault(OsuSetting.VolumeInactiveEnabled, true);
 
             SetDefault(OsuSetting.HitsoundVolume, 0.6, 0, 1, 0.01);
 
@@ -407,6 +409,11 @@ namespace osu.Game.Configuration
         AudioOffset,
 
         VolumeInactive,
+
+        /// <summary>
+        /// TumThai: whether <see cref="VolumeInactive"/> applies (lower the volume while the window is inactive).
+        /// </summary>
+        VolumeInactiveEnabled,
         MenuMusic,
         MenuVoice,
         MenuTips,
