@@ -114,7 +114,7 @@ namespace osu.Desktop
             // This ensures that if a user is trying to recover from a failed startup, it will keep them
             // on the stream which is imminently being reinstalled.
             if (IsFirstRun)
-                LocalConfig.SetValue(OsuSetting.ReleaseStream, Version.Contains("-tachyon") ? ReleaseStream.Tachyon : ReleaseStream.Lazer);
+                LocalConfig.SetValue(OsuSetting.ReleaseStream, Version.Contains("-next") ? ReleaseStream.Tachyon : ReleaseStream.Lazer); // TumThai: TumThai!Next's versions end in -next
 
             // TumThai: anywhere Velopack doesn't update us (started by the Somtum Launcher, or Linux and macOS,
             // which have no update feed), dl.somtum.fun's manifest says when there's a new version.

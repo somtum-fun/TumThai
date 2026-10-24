@@ -37,7 +37,8 @@ namespace osu.Game.Updater
         private void load(OsuGameBase game)
         {
             version = game.Version.Split('-').First();
-            stream = Enum.TryParse(game.Version.Split('-').Last(), true, out ReleaseStream s) ? s : Configuration.ReleaseStream.Lazer;
+            // TumThai: TumThai!Next's versions end in -next.
+            stream = game.Version.EndsWith(@"-next", StringComparison.Ordinal) ? Configuration.ReleaseStream.Tachyon : Configuration.ReleaseStream.Lazer;
         }
 
         // TumThai: our releases are listed in dl.somtum.fun's manifest (the website's download page uses it too),
@@ -53,8 +54,9 @@ namespace osu.Game.Updater
                 var manifestRequest = new OsuJsonWebRequest<DownloadManifest>(manifest_url);
                 await manifestRequest.PerformAsync(cancellationToken).ConfigureAwait(false);
 
-                var lazer = manifestRequest.ResponseObject?.Lazer;
-                string? latestVersion = lazer?.Version;
+                // TumThai: TumThai!Next is listed as lazer_next.
+                var lazer = stream == Configuration.ReleaseStream.Tachyon ? manifestRequest.ResponseObject?.LazerNext : manifestRequest.ResponseObject?.Lazer;
+                string? latestVersion = lazer?.Version?.Split('-').First();
 
                 if (string.IsNullOrEmpty(latestVersion) || latestVersion == version)
                     return false;
@@ -102,6 +104,9 @@ namespace osu.Game.Updater
         {
             [JsonProperty(@"lazer")]
             public LazerRelease? Lazer { get; set; }
+
+            [JsonProperty(@"lazer_next")]
+            public LazerRelease? LazerNext { get; set; }
         }
 
         private class LazerRelease

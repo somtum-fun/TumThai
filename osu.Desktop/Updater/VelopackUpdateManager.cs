@@ -56,11 +56,13 @@ namespace osu.Desktop.Updater
 
             try
             {
-                // TumThai: our own feed; ppy's releases would replace TumThai with official lazer.
+                // TumThai: our own feed; ppy's releases would replace TumThai with official lazer. TumThai!Next is the
+                // same app on its own channel, so picking a stream moves to that channel's newest release (older or not).
                 IUpdateSource updateSource = new SimpleWebSource(SomtumEndpointConfiguration.UPDATE_URL);
                 Velopack.UpdateManager updateManager = new Velopack.UpdateManager(updateSource, new UpdateOptions
                 {
-                    AllowVersionDowngrade = true
+                    AllowVersionDowngrade = true,
+                    ExplicitChannel = ReleaseStream.Value == Game.Configuration.ReleaseStream.Tachyon ? @"win-next" : @"win",
                 });
 
                 UpdateInfo? update = await updateManager.CheckForUpdatesAsync().ConfigureAwait(false);

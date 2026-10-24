@@ -107,22 +107,22 @@ namespace osu.Game.Localisation
         /// <summary>
         /// "Check with your package manager / provider for other release streams."
         /// </summary>
-        public static LocalisableString ChangeReleaseStreamPackageManagerWarning => new TranslatableString(getKey(@"change_release_stream_package_warning"), @"Check with your package manager / provider for other release streams.");
+        public static LocalisableString ChangeReleaseStreamPackageManagerWarning => new TranslatableString(getKey(@"tumthai_change_release_stream_launcher"), @"Pick TumThai or TumThai!Next in the Somtum Launcher, or download the other one from the website."); // TumThai
 
         /// <summary>
         /// "Are you sure you want to run a potentially unstable version of the game?"
         /// </summary>
-        public static LocalisableString ChangeReleaseStreamConfirmation => new TranslatableString(getKey(@"change_release_stream_confirmation"), @"Are you sure you want to run a potentially unstable version of the game?");
+        public static LocalisableString ChangeReleaseStreamConfirmation => new TranslatableString(getKey(@"tumthai_change_release_stream_confirmation"), @"Switch to TumThai!Next?"); // TumThai
 
         /// <summary>
         /// "If you run into issues starting the game, you can usually run the installer from the official site to recover."
         /// </summary>
-        public static LocalisableString ChangeReleaseStreamConfirmationInfo => new TranslatableString(getKey(@"change_release_stream_confirmation_info"), @"If you run into issues starting the game, you can usually run the installer from the official site to recover.");
+        public static LocalisableString ChangeReleaseStreamConfirmationInfo => new TranslatableString(getKey(@"tumthai_change_release_stream_confirmation_info"), @"It's TumThai on tumthai-framework, with the same account, beatmaps and scores. It downloads in the background, then restarts into TumThai!Next. If it won't start, run TumThai's installer from the website."); // TumThai
 
         /// <summary>
         /// "Note that when using a non-stable release stream, the game may still update to a stable release if it is newer."
         /// </summary>
-        public static LocalisableString ReleaseStreamNonStableUpgradeInformation => new TranslatableString(getKey(@"release_stream_non_stable_upgrade_information"), @"Note that when using a non-stable release stream, the game may still update to a stable release if it is newer.");
+        public static LocalisableString ReleaseStreamNonStableUpgradeInformation => new TranslatableString(getKey(@"tumthai_release_stream_next_information"), @"TumThai!Next updates on its own stream. Pick TumThai here to go back."); // TumThai
 
         /// <summary>
         /// "You are running the latest release ({0})"
