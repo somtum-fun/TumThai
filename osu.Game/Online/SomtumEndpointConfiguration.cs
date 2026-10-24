@@ -45,9 +45,9 @@ namespace osu.Game.Online
         /// Where installed TumThai builds look for updates (a Velopack feed made by <c>vpk pack</c>).
         /// </summary>
 #if SOMTUM_DEV
-        public const string UPDATE_URL = @"https://dl.blueskychan.dev/lazer-next/releases";
+        public const string UPDATE_URL = @"https://dl.blueskychan.dev/lazer/releases";
 #else
-        public const string UPDATE_URL = @"https://dl.somtum.fun/lazer-next/releases";
+        public const string UPDATE_URL = @"https://dl.somtum.fun/lazer/releases";
 #endif
 
         /// <summary>

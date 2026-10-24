@@ -94,7 +94,7 @@ namespace osu.Game.Screens.Menu
 
             textFlow.NewParagraph();
 
-            textFlow.AddText(@"a heavily modified performance edition of TumThai, based on the ", formatRegular);
+            textFlow.AddText(@"TumThai's performance stream, based on the ", formatRegular);
             textFlow.AddText(@"osu!lazer", t =>
             {
                 t.Font = t.Font.With(Typeface.Torus, 20, FontWeight.Bold);

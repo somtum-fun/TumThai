@@ -68,7 +68,7 @@ namespace osu.Game.Overlays.Settings
                     AutoSizeAxes = Axes.Y,
                     TextAnchor = Anchor.TopCentre,
                     Padding = new MarginPadding { Top = 10 },
-                    Text = "TumThai!Next is a heavily modified performance edition of TumThai (same base, custom engine & framework changes).\nNot affiliated with ppy Pty Ltd. osu! is a trademark of ppy Pty Ltd.",
+                    Text = "TumThai!Next is TumThai's performance stream (tumthai-framework). Switch streams under General > Updates.\nNot affiliated with ppy Pty Ltd. osu! is a trademark of ppy Pty Ltd.",
                 },
             };
 
