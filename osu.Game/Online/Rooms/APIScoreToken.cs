@@ -9,5 +9,11 @@ namespace osu.Game.Online.Rooms
     {
         [JsonProperty("id")]
         public long ID { get; set; }
+
+        /// <summary>
+        /// TumThai: whether the map is in an osu!dan course on this server (its "no pausing" rule).
+        /// </summary>
+        [JsonProperty("tomyum_dan")]
+        public bool IsDanMap { get; set; }
     }
 }
