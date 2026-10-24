@@ -105,22 +105,22 @@ namespace osu.Game.Localisation
         public static LocalisableString ReportIssueTooltip => new TranslatableString(getKey(@"report_issue_tooltip"), @"Report a problem with the game to the developers.");
 
         /// <summary>
-        /// "Check with your package manager / provider for other release streams."
+        /// "Pick TumThai or TumThai!Next in the Somtum Launcher, or download the other one from the website."
         /// </summary>
         public static LocalisableString ChangeReleaseStreamPackageManagerWarning => new TranslatableString(getKey(@"tumthai_change_release_stream_launcher"), @"Pick TumThai or TumThai!Next in the Somtum Launcher, or download the other one from the website."); // TumThai
 
         /// <summary>
-        /// "Are you sure you want to run a potentially unstable version of the game?"
+        /// "Switch to TumThai!Next?"
         /// </summary>
         public static LocalisableString ChangeReleaseStreamConfirmation => new TranslatableString(getKey(@"tumthai_change_release_stream_confirmation"), @"Switch to TumThai!Next?"); // TumThai
 
         /// <summary>
-        /// "If you run into issues starting the game, you can usually run the installer from the official site to recover."
+        /// "It's TumThai on tumthai-framework, with the same account, beatmaps and scores. It downloads in the background, then restarts into TumThai!Next. If it won't start, run TumThai's installer from the website."
         /// </summary>
         public static LocalisableString ChangeReleaseStreamConfirmationInfo => new TranslatableString(getKey(@"tumthai_change_release_stream_confirmation_info"), @"It's TumThai on tumthai-framework, with the same account, beatmaps and scores. It downloads in the background, then restarts into TumThai!Next. If it won't start, run TumThai's installer from the website."); // TumThai
 
         /// <summary>
-        /// "Note that when using a non-stable release stream, the game may still update to a stable release if it is newer."
+        /// "TumThai!Next updates on its own stream. Pick TumThai here to go back."
         /// </summary>
         public static LocalisableString ReleaseStreamNonStableUpgradeInformation => new TranslatableString(getKey(@"tumthai_release_stream_next_information"), @"TumThai!Next updates on its own stream. Pick TumThai here to go back."); // TumThai
 
