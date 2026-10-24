@@ -168,13 +168,15 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                 };
             }, true);
 
-            // TumThai!Next: Unlimited renders as fast as the GPU goes (1000+ fps here, unlike TumThai), so say what it costs.
+            // TumThai!Next: "Unlimited" (UnlimitedNoCap) has no cap at all, unlike "Basically unlimited" (osu!'s, capped at
+            // 1000 fps), so say what it costs.
             frameSync.BindValueChanged(v =>
             {
-                frameSyncNote.Value = v.NewValue == FrameSync.Unlimited
+                frameSyncNote.Value = v.NewValue == FrameSync.UnlimitedNoCap
                     ? new SettingsNote.Data(
-                        "Unlimited renders as fast as your graphics card can (often 1000+ fps): more heat, power use and fan noise, and on some systems stutters or crashes. "
-                        + "It's experimental in TumThai!Next. 2x, 4x or 8x refresh rate is usually just as smooth.",
+                        "Unlimited has no frame cap at all (\"Basically unlimited\" stops at 1000 fps): your graphics card runs flat out, "
+                        + "with more heat, power use and fan noise, and on some systems stutters or crashes. It's experimental. "
+                        + "Basically unlimited, or 2x, 4x or 8x refresh rate, is usually just as smooth.",
                         SettingsNote.Type.Warning)
                     : null;
             }, true);
