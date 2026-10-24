@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Localisation;
@@ -60,9 +60,9 @@ namespace osu.Game.Localisation
         public static LocalisableString CheckingForUpdates => new TranslatableString(getKey(@"checking_for_updates"), @"Checking for updates");
 
         /// <summary>
-        /// "Open osu! folder"
+        /// "Open TumThai folder"
         /// </summary>
-        public static LocalisableString OpenOsuFolder => new TranslatableString(getKey(@"open_osu_folder"), @"Open osu! folder");
+        public static LocalisableString OpenOsuFolder => new TranslatableString(getKey(@"open_tumthai_folder"), @"Open TumThai folder");
 
         /// <summary>
         /// "Export logs"
