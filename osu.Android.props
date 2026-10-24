@@ -4,8 +4,8 @@
   </ItemGroup>
   <PropertyGroup>
     <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
-    <!-- TumThai: release builds pass TumThaiAndroidAbis=android-arm64 (RuntimeIdentifiers itself can't be set from the
-         command line: it would reach the referenced projects too). -->
+    <!-- TumThai: release builds can pass TumThaiAndroidAbis (RuntimeIdentifiers itself can't be set from the
+         command line: it would reach the referenced projects too). ppy's CoreCLR runtime is arm64 only. -->
     <TumThaiAndroidAbis Condition=" '$(TumThaiAndroidAbis)' == '' ">android-arm64</TumThaiAndroidAbis>
     <RuntimeIdentifiers>$(TumThaiAndroidAbis)</RuntimeIdentifiers>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
