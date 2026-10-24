@@ -27,6 +27,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
         private FormCheckBox? dangerousUnlimitedCheckbox;
         private readonly Bindable<SettingsNote.Data?> dangerousUnlimitedNote = new Bindable<SettingsNote.Data?>();
         private readonly Bindable<SettingsNote.Data?> inputAudioHzNote = new Bindable<SettingsNote.Data?>();
+        private readonly Bindable<SettingsNote.Data?> frameSyncNote = new Bindable<SettingsNote.Data?>();
 
         [BackgroundDependencyLoader]
         private void load(FrameworkConfigManager config, OsuConfigManager osuConfig, IDialogOverlay? dialogOverlay, OsuGame? game, GameHost host)
@@ -35,6 +36,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
             automaticRendererInUse = renderer.Value == RendererType.Automatic;
 
             var dangerousUnlimitedNoCap = config.GetBindable<bool>(FrameworkSetting.AllowDangerousUnlimitedNoCap);
+            var frameSync = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync);
             var inputAudioHz = osuConfig.GetBindable<InputAudioHzMode>(OsuSetting.InputAudioHz);
             var displayRefreshRate = osuConfig.GetBindable<DisplayRefreshRateMode>(OsuSetting.DisplayRefreshRate);
 
@@ -59,10 +61,11 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                 new SettingsItemV2(new FormEnumDropdown<FrameSync>
                 {
                     Caption = GraphicsSettingsStrings.FrameLimiter,
-                    Current = config.GetBindable<FrameSync>(FrameworkSetting.FrameSync),
+                    Current = frameSync,
                 })
                 {
                     Keywords = new[] { @"fps", @"framerate" },
+                    Note = { BindTarget = frameSyncNote },
                 },
                 new SettingsItemV2(new FormEnumDropdown<DisplayRefreshRateMode>
                 {
@@ -163,6 +166,17 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                         SettingsNote.Type.Warning),
                     _ => null
                 };
+            }, true);
+
+            // TumThai!Next: Unlimited renders as fast as the GPU goes (1000+ fps here, unlike TumThai), so say what it costs.
+            frameSync.BindValueChanged(v =>
+            {
+                frameSyncNote.Value = v.NewValue == FrameSync.Unlimited
+                    ? new SettingsNote.Data(
+                        "Unlimited renders as fast as your graphics card can (often 1000+ fps): more heat, power use and fan noise, and on some systems stutters or crashes. "
+                        + "It's experimental in TumThai!Next. 2x, 4x or 8x refresh rate is usually just as smooth.",
+                        SettingsNote.Type.Warning)
+                    : null;
             }, true);
 
             dangerousUnlimitedNoCap.BindValueChanged(v =>
