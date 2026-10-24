@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Logging;
 using osu.Framework.Screens;
 using osu.Game.Beatmaps;
@@ -37,6 +38,11 @@ namespace osu.Game.Screens.Play
         /// The token to be used for the current submission. This is fetched via a request created by <see cref="CreateTokenRequest"/>.
         /// </summary>
         private long? token;
+
+        // TumThai: the map is in an osu!dan course (from the score token), and whether this play's
+        // pause alert has been shown.
+        private bool isDanMap;
+        private bool danPauseAlerted;
 
         [Resolved]
         private IAPIProvider api { get; set; }
@@ -124,6 +130,7 @@ namespace osu.Game.Screens.Play
             {
                 Logger.Log($"Score submission token retrieved ({r.ID})");
                 token = r.ID;
+                isDanMap = r.IsDanMap;
                 tcs.SetResult(true);
             };
             req.Failure += ex => handleTokenFailure(ex, displayNotification: true);
@@ -226,7 +233,21 @@ namespace osu.Game.Screens.Play
             bool paused = base.Pause();
 
             if (!wasPaused && paused)
+            {
                 Score.ScoreInfo.Pauses.Add((int)Math.Round(GameplayClockContainer.CurrentTime));
+
+                // TumThai: osu!dan doesn't allow pausing, so say so on the first pause (the play is still
+                // submitted, as a normal score).
+                if (isDanMap && !danPauseAlerted)
+                {
+                    danPauseAlerted = true;
+                    notifications?.Post(new SimpleNotification
+                    {
+                        Text = "You paused: this play can't count as an osu!dan clear. It's still submitted as a normal score.",
+                        Icon = FontAwesome.Solid.Pause,
+                    });
+                }
+            }
 
             return paused;
         }
