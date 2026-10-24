@@ -460,6 +460,8 @@ namespace osu.Game
             }, true);
 
             IsActive.BindValueChanged(active => updateActiveState(active.NewValue), true);
+            // TumThai: turning the inactive volume on or off takes effect straight away.
+            LocalConfig.GetBindable<bool>(OsuSetting.VolumeInactiveEnabled).BindValueChanged(_ => updateActiveState(IsActive.Value));
 
             Audio.AddAdjustment(AdjustableProperty.Volume, inactiveVolumeFade);
 
@@ -1718,7 +1720,8 @@ namespace osu.Game
 
         private void updateActiveState(bool isActive)
         {
-            if (isActive)
+            // TumThai: the player can keep the volume as it is while the window is inactive.
+            if (isActive || !LocalConfig.Get<bool>(OsuSetting.VolumeInactiveEnabled))
                 this.TransformBindableTo(inactiveVolumeFade, 1, 400, Easing.OutQuint);
             else
                 this.TransformBindableTo(inactiveVolumeFade, LocalConfig.Get<double>(OsuSetting.VolumeInactive), 4000, Easing.OutQuint);
