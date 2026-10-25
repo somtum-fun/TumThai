@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Game.Beatmaps;
 using osu.Game.Extensions;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
@@ -33,6 +34,17 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
         public readonly Bindable<APIBeatmap> Beatmap = new Bindable<APIBeatmap>();
         private readonly Bindable<IRulesetInfo> ruleset = new Bindable<IRulesetInfo>();
+
+        /// <summary>
+        /// TumThai: the ruleset picked in the overlay's tabs. A custom ruleset's shows its own board (by score, asked
+        /// for by its slug on the server) for the osu! difficulty shown.
+        /// </summary>
+        public readonly Bindable<RulesetInfo> SomtumRuleset = new Bindable<RulesetInfo>();
+
+        [Resolved(CanBeNull = true)]
+        private SomtumCustomRulesets customRulesets { get; set; }
+
+        private RulesetInfo customRuleset => SomtumRuleset.Value is { } r && !r.IsLegacyRuleset() && !r.IsSpecialRuleset() ? r : null;
         private readonly Bindable<BeatmapLeaderboardScope> scope = new Bindable<BeatmapLeaderboardScope>(BeatmapLeaderboardScope.Global);
         private readonly IBindable<APIUser> user = new Bindable<APIUser>();
 
@@ -100,7 +112,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                     MD5Hash = apiBeatmap.MD5Hash
                 };
 
-                var scores = value.Scores.Select(s => s.ToScoreInfo(rulesets, beatmapInfo)).ToArray();
+                // TumThai: a custom ruleset's scores carry the server's id for it: they're read with that ruleset.
+                var scores = value.Scores.Select(s => s.ToScoreInfo(rulesets, beatmapInfo, customRuleset)).ToArray();
 
                 if (!keepServerOrder)
                     scores = scores.OrderByTotalScore().ToArray();
@@ -116,7 +129,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 scoreTable.Show();
 
                 var userScore = value.UserScore;
-                var userScoreInfo = userScore?.Score.ToScoreInfo(rulesets, beatmapInfo);
+                var userScoreInfo = userScore?.Score.ToScoreInfo(rulesets, beatmapInfo, customRuleset);
 
                 topScoresContainer.Add(new DrawableTopScore(topScore, sortedByPerformance: sortedByPerformance));
 
@@ -259,6 +272,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                     getScores();
             });
             sort.BindValueChanged(_ => getScores());
+            // TumThai: the difficulty stays the same between osu! and a custom ruleset: start over as for a new one.
+            SomtumRuleset.BindValueChanged(_ => onBeatmapChanged(new ValueChangedEvent<APIBeatmap>(Beatmap.Value, Beatmap.Value)));
 
             modSelector.SelectedMods.CollectionChanged += (_, _) => getScores();
 
@@ -268,11 +283,12 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
         private void onBeatmapChanged(ValueChangedEvent<APIBeatmap> beatmap)
         {
-            var beatmapRuleset = beatmap.NewValue?.Ruleset;
+            // TumThai: a custom ruleset's board has its mods and variants (and no pp to sort by).
+            IRulesetInfo beatmapRuleset = (IRulesetInfo)customRuleset ?? beatmap.NewValue?.Ruleset;
 
             updateVariants(beatmapRuleset);
             resetSort();
-            sortSelector.Alpha = beatmap.NewValue?.Status.GrantsPerformancePoints() == true ? 1 : 0;
+            sortSelector.Alpha = customRuleset == null && beatmap.NewValue?.Status.GrantsPerformancePoints() == true ? 1 : 0;
 
             if (ruleset.Value?.OnlineID == beatmapRuleset?.OnlineID)
             {
@@ -302,7 +318,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         /// <returns>Whether the sort changed (which refetches the scores).</returns>
         private bool resetSort()
         {
-            var defaultSort = variant.Value == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
+            var defaultSort = customRuleset != null || variant.Value == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
 
             if (sort.Value == defaultSort)
                 return false;
@@ -351,6 +367,34 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
             Show();
             loading.Show();
+
+            // TumThai: a custom ruleset's board, by score (none when the server doesn't rank it).
+            if (customRuleset != null)
+            {
+                string slug = customRulesets?.Find(customRuleset)?.Slug;
+
+                if (slug == null)
+                {
+                    Scores = null;
+                    loading.Hide();
+                    noScoresPlaceholder.ShowWithScope(scope.Value);
+                    return;
+                }
+
+                requestedByPerformance = false;
+                keepServerOrder = false;
+                getScoresRequest = new GetScoresRequest(Beatmap.Value, customRuleset, scope.Value, modSelector.SelectedMods, LeaderboardSortMode.Score, slug, variant.Value);
+                getScoresRequest.Success += scores =>
+                {
+                    Scores = scores;
+
+                    if (!scores.Scores.Any())
+                        noScoresPlaceholder.ShowWithScope(scope.Value);
+                };
+
+                api.Queue(getScoresRequest);
+                return;
+            }
 
             IRulesetInfo requestRuleset = Beatmap.Value.Ruleset;
 

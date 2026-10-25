@@ -59,7 +59,8 @@ namespace osu.Game.Overlays.BeatmapSet
             if (ruleset.NewValue == null)
                 return;
 
-            var rulesetInstance = rulesets.GetRuleset(ruleset.NewValue.OnlineID)?.CreateInstance();
+            // TumThai: a custom ruleset has no online ID: its own mods.
+            var rulesetInstance = (ruleset.NewValue is RulesetInfo own && ruleset.NewValue.OnlineID < 0 ? own : rulesets.GetRuleset(ruleset.NewValue.OnlineID))?.CreateInstance();
 
             if (rulesetInstance == null)
                 return;

@@ -53,7 +53,9 @@ namespace osu.Game.Overlays
                     },
                     new ScoresContainer
                     {
-                        Beatmap = { BindTarget = Header.HeaderContent.Picker.Beatmap }
+                        Beatmap = { BindTarget = Header.HeaderContent.Picker.Beatmap },
+                        // TumThai: a custom ruleset's tab shows its board.
+                        SomtumRuleset = { BindTarget = Header.Ruleset },
                     },
                     comments = new CommentsSection()
                 }

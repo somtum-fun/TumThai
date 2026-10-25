@@ -13,6 +13,9 @@ namespace osu.Game.Overlays.BeatmapSet
     {
         private readonly Bindable<APIBeatmapSet?> beatmapSet = new Bindable<APIBeatmapSet?>();
 
+        // TumThai: custom rulesets play a set's osu! difficulties (the tab's on when it has some), with boards of their own.
+        protected override bool LegacyOnly => false;
+
         public APIBeatmapSet? BeatmapSet
         {
             get => beatmapSet.Value;
