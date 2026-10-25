@@ -6,6 +6,8 @@
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game.Extensions;
+using osu.Game.Online;
 using osu.Game.Overlays.Rankings;
 using osu.Game.Users;
 using osu.Game.Rulesets;
@@ -26,6 +28,10 @@ namespace osu.Game.Overlays
 
         [Resolved]
         private IBindable<RulesetInfo> parentRuleset { get; set; }
+
+        // TumThai: a custom ruleset's rankings are asked for by its slug on the server.
+        [Resolved(CanBeNull = true)]
+        private SomtumCustomRulesets customRulesets { get; set; }
 
         [Cached]
         private readonly Bindable<RulesetInfo> ruleset = new Bindable<RulesetInfo>();
@@ -125,6 +131,18 @@ namespace osu.Game.Overlays
 
         private APIRequest createScopedRequest()
         {
+            // TumThai: a custom ruleset has one ranking, by ranked score (no pp, no countries' table); none when the
+            // server doesn't rank it.
+            if (ruleset.Value != null && !ruleset.Value.IsLegacyRuleset() && !ruleset.Value.IsSpecialRuleset())
+            {
+                string slug = customRulesets?.Find(ruleset.Value)?.Slug;
+
+                if (slug == null || Header.Current.Value is not (RankingsScope.Performance or RankingsScope.Score))
+                    return null;
+
+                return new GetUserRankingsRequest(ruleset.Value, UserRankingsType.Score, countryCode: Country.Value) { SomtumMode = slug };
+            }
+
             switch (Header.Current.Value)
             {
                 case RankingsScope.Performance:

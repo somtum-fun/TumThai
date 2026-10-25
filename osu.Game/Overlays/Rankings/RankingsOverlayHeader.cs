@@ -22,7 +22,13 @@ namespace osu.Game.Overlays.Rankings
 
         protected override OverlayTitle CreateTitle() => new RankingsTitle();
 
-        protected override Drawable CreateTabControlContent() => rulesetSelector = new OverlayRulesetSelector();
+        protected override Drawable CreateTabControlContent() => rulesetSelector = new RankingsRulesetSelector();
+
+        // TumThai: custom rulesets have rankings too (by ranked score, on the server), so they're tabs here.
+        private partial class RankingsRulesetSelector : OverlayRulesetSelector
+        {
+            protected override bool LegacyOnly => false;
+        }
 
         protected override Drawable CreateContent() => countryFilter = new CountryFilter();
 

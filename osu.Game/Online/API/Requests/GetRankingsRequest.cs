@@ -26,7 +26,12 @@ namespace osu.Game.Online.API.Requests
             return req;
         }
 
-        protected override string Target => $"rankings/{ruleset.ShortName}/{TargetPostfix()}";
+        /// <summary>
+        /// TumThai: the mode to ask for in place of the ruleset's short name (a custom ruleset's slug on the server).
+        /// </summary>
+        public string? SomtumMode { get; init; }
+
+        protected override string Target => $"rankings/{SomtumMode ?? ruleset.ShortName}/{TargetPostfix()}";
 
         protected abstract string TargetPostfix();
     }
