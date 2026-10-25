@@ -46,7 +46,11 @@ namespace osu.Game.Scoring.Legacy
 
             using (SerializationReader sr = new SerializationReader(stream))
             {
-                currentRuleset = GetRuleset(sr.ReadByte());
+                // TumThai: a custom ruleset's replay names it after the marker byte (LegacyScoreEncoder.CUSTOM_RULESET_ID).
+                int rulesetId = sr.ReadByte();
+                currentRuleset = rulesetId == LegacyScoreEncoder.CUSTOM_RULESET_ID
+                    ? GetRuleset(sr.ReadString()) ?? throw new InvalidOperationException(@"The replay's custom ruleset isn't installed.")
+                    : GetRuleset(rulesetId);
                 var scoreInfo = new ScoreInfo { Ruleset = currentRuleset.RulesetInfo };
 
                 score.ScoreInfo = scoreInfo;
@@ -371,6 +375,13 @@ namespace osu.Game.Scoring.Legacy
         /// <param name="rulesetId">The id.</param>
         /// <returns>The <see cref="Ruleset"/>.</returns>
         protected abstract Ruleset GetRuleset(int rulesetId);
+
+        /// <summary>
+        /// TumThai: retrieves a custom ruleset by its short name, for its replays. Null when it isn't available.
+        /// </summary>
+        /// <param name="shortName">The short name.</param>
+        /// <returns>The <see cref="Ruleset"/>, or null.</returns>
+        protected virtual Ruleset GetRuleset(string shortName) => null;
 
         /// <summary>
         /// Retrieves the <see cref="WorkingBeatmap"/> corresponding to an MD5 hash.

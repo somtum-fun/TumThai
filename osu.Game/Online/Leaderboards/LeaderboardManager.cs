@@ -21,6 +21,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.Leaderboards;
 using Realms;
+using osu.Game.Screens.Select;
 
 namespace osu.Game.Online.Leaderboards
 {
@@ -152,7 +153,8 @@ namespace osu.Game.Online.Leaderboards
                             requestMods = newCriteria.ExactMods;
                     }
 
-                    var newRequest = new GetScoresRequest(newCriteria.Beatmap, newCriteria.Ruleset, newCriteria.Scope, requestMods, newCriteria.Sorting, customRuleset?.Slug);
+                    var newRequest = new GetScoresRequest(newCriteria.Beatmap, newCriteria.Ruleset, newCriteria.Scope, requestMods, newCriteria.Sorting, customRuleset?.Slug,
+                        customRuleset != null ? newCriteria.Variant : LeaderboardVariant.Vanilla);
                     newRequest.Success += response =>
                     {
                         if (inFlightOnlineRequest != null && !newRequest.Equals(inFlightOnlineRequest))
@@ -257,7 +259,9 @@ namespace osu.Game.Online.Leaderboards
         RulesetInfo? Ruleset,
         BeatmapLeaderboardScope Scope,
         Mod[]? ExactMods,
-        LeaderboardSortMode Sorting = LeaderboardSortMode.Score
+        LeaderboardSortMode Sorting = LeaderboardSortMode.Score,
+        // TumThai: a custom ruleset's Relax/Autopilot board (osu!'s variants are rulesets of their own: osurx, ...).
+        LeaderboardVariant Variant = LeaderboardVariant.Vanilla
     );
 
     public record LeaderboardScores

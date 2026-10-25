@@ -61,7 +61,8 @@ namespace osu.Game.Screens.Ranking
                 Score.Ruleset.ForMods(Score.Mods),
                 leaderboardManager.CurrentCriteria?.Scope ?? BeatmapLeaderboardScope.Global,
                 leaderboardManager.CurrentCriteria?.ExactMods,
-                byPp ? LeaderboardSortMode.PerformancePoints : LeaderboardSortMode.Score
+                byPp ? LeaderboardSortMode.PerformancePoints : LeaderboardSortMode.Score,
+                LeaderboardVariantExtensions.VariantFor(Score.Mods)
             );
 
             Debug.Assert(requestTaskSource == null || requestTaskSource.Task.IsCompleted);

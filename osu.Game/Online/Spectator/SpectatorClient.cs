@@ -239,14 +239,23 @@ namespace osu.Game.Online.Spectator
             });
         }
 
+        private bool loggedFramesOutsideScope;
+
         public void HandleFrame(ReplayFrame frame) => Schedule(() =>
         {
             if (!isPlaying)
             {
-                if (IsConnected.Value)
+                // TumThai: once per stretch, not for every frame (a custom-ruleset play records frames but isn't spectated).
+                if (IsConnected.Value && !loggedFramesOutsideScope)
+                {
+                    loggedFramesOutsideScope = true;
                     Logger.Log($"Frames arrived at {nameof(SpectatorClient)} outside of gameplay scope and will be ignored.");
+                }
+
                 return;
             }
+
+            loggedFramesOutsideScope = false;
 
             if (frame is IConvertibleReplayFrame convertible)
             {

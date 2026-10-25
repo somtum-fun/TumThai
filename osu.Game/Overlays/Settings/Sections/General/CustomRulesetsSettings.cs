@@ -65,6 +65,7 @@ namespace osu.Game.Overlays.Settings.Sections.General
             }
 
             bool restart = false;
+            bool broken = false;
 
             foreach (var entry in customRulesets.Available.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase))
             {
@@ -91,16 +92,23 @@ namespace osu.Game.Overlays.Settings.Sections.General
                         list.Add(new SettingsButtonV2 { Text = $@"{entry.Name}{version}: ready, restart TumThai to load it", Enabled = { Value = false } });
                         break;
 
+                    case CustomRulesetState.Broken:
+                        list.Add(removeButton($@"{entry.Name}{version} doesn't work with this TumThai version (remove)", entry));
+                        broken = true;
+                        break;
+
                     case CustomRulesetState.RestartToRemove:
                         list.Add(new SettingsButtonV2 { Text = $@"{entry.Name}: removed when TumThai restarts", Enabled = { Value = false } });
                         break;
                 }
             }
 
-            setNote(restart
-                ? @"Restart TumThai to finish installing, updating or removing rulesets."
-                : @"Rulesets from rulesets.info that this server ranks, by score. A play submits only on the version shown here: update a ruleset when it says so.",
-                restart ? SettingsNote.Type.Warning : SettingsNote.Type.Informational);
+            if (restart)
+                setNote(@"Restart TumThai to finish installing, updating or removing rulesets.", SettingsNote.Type.Warning);
+            else if (broken)
+                setNote(@"A ruleset here was made for another lazer version and doesn't work in this TumThai: it works again once its developer updates it.", SettingsNote.Type.Warning);
+            else
+                setNote(@"Rulesets from rulesets.info that this server ranks, by score. A play submits only on the version shown here: update a ruleset when it says so.", SettingsNote.Type.Informational);
         }
 
         private SettingsButtonV2 button(string text, APISomtumCustomRuleset entry)

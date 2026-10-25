@@ -1255,7 +1255,8 @@ namespace osu.Game.Screens.Play
 
             ByteArrayArchiveReader replayReader = null;
 
-            if (score.ScoreInfo.Ruleset.IsLegacyRuleset())
+            // TumThai: a custom ruleset's replay is kept too (LegacyScoreEncoder.CUSTOM_RULESET_ID); lazer keeps none.
+            if (score.ScoreInfo.Ruleset.IsLegacyRuleset() || LegacyScoreEncoder.CanEncodeCustom(score))
             {
                 using (var stream = new MemoryStream())
                 {
