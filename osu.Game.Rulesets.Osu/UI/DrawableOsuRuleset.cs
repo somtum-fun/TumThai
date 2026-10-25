@@ -42,8 +42,9 @@ namespace osu.Game.Rulesets.Osu.UI
         [BackgroundDependencyLoader]
         private void load(ReplayPlayer? replayPlayer)
         {
-            // TumThai: a custom ruleset built on osu!'s (osu!fps) may have no osu! config: no replay analysis for it.
-            if (replayPlayer != null && base.Config is OsuRulesetConfigManager)
+            // TumThai: a custom ruleset built on osu!'s (osu!fps) has its own config, registered under its own type (even when
+            // it derives from osu!'s), so the replay analysis can't find osu!'s: none for it.
+            if (replayPlayer != null && base.Config?.GetType() == typeof(OsuRulesetConfigManager))
             {
                 ReplayAnalysisOverlay analysisOverlay;
                 PlayfieldAdjustmentContainer.Add(analysisOverlay = new ReplayAnalysisOverlay(replayPlayer.Score.Replay));
