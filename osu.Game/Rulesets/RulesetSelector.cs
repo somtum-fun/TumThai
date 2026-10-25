@@ -38,9 +38,17 @@ namespace osu.Game.Rulesets
                 }
             }
 
-            // TumThai: a custom ruleset installed while the game runs shows here without a restart.
+            // TumThai: a custom ruleset installed (or removed) while the game runs shows here (or goes) without a restart.
             Rulesets.RulesetAdded += onRulesetAdded;
+            Rulesets.RulesetRemoved += onRulesetRemoved;
         }
+
+        private void onRulesetRemoved(RulesetInfo ruleset) => Schedule(() =>
+        {
+            var item = Items.FirstOrDefault(r => r.ShortName == ruleset.ShortName);
+            if (item != null)
+                RemoveItem(item);
+        });
 
         private void onRulesetAdded(RulesetInfo ruleset) => Schedule(() =>
         {
@@ -62,7 +70,10 @@ namespace osu.Game.Rulesets
             base.Dispose(isDisposing);
 
             if (Rulesets != null)
+            {
                 Rulesets.RulesetAdded -= onRulesetAdded;
+                Rulesets.RulesetRemoved -= onRulesetRemoved;
+            }
         }
     }
 }

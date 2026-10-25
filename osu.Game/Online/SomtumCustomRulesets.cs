@@ -51,6 +51,9 @@ namespace osu.Game.Online
         [Resolved]
         private RulesetStore rulesets { get; set; } = null!;
 
+        [Resolved]
+        private Bindable<RulesetInfo> ruleset { get; set; } = null!;
+
         private bool fetched;
 
         [BackgroundDependencyLoader]
@@ -170,18 +173,45 @@ namespace osu.Game.Online
             }
         }
 
-        /// <summary>Removes the ruleset: now if it isn't loaded, on the next start if it is.</summary>
+        /// <summary>
+        /// Removes the ruleset: its file now if it isn't loaded, on the next start if it is; either way it leaves the ruleset
+        /// list at once (the game moves to osu! if it was on it). From the update thread.
+        /// </summary>
         public void Remove(APISomtumCustomRuleset entry)
         {
             string path = pathFor(entry);
             File.Delete(path + update_suffix);
             if (LoadedHash(entry) != null)
-            {
                 File.WriteAllText(path + delete_suffix, string.Empty);
-                return;
-            }
+            else
+                File.Delete(path);
 
-            File.Delete(path);
+            var loaded = rulesets.AvailableRulesets.FirstOrDefault(r => string.Equals(AssemblyOf(r), entry.Assembly, StringComparison.OrdinalIgnoreCase));
+            if (loaded == null)
+                return;
+
+            if (ruleset.Value?.ShortName == loaded.ShortName)
+                ruleset.Value = rulesets.AvailableRulesets.First(r => r.ShortName != loaded.ShortName);
+            rulesets.HideRuleset(loaded.ShortName);
+        }
+
+        /// <summary>Undoes a removal that waits for the next start: the ruleset is back in the list.</summary>
+        public void CancelRemoval(APISomtumCustomRuleset entry)
+        {
+            File.Delete(pathFor(entry) + delete_suffix);
+
+            try
+            {
+                var loaded = AppDomain.CurrentDomain.GetAssemblies()
+                                      .FirstOrDefault(a => string.Equals(a.GetName().Name, entry.Assembly, StringComparison.OrdinalIgnoreCase));
+                var type = loaded?.GetTypes().FirstOrDefault(t => t.IsPublic && t.IsSubclassOf(typeof(Ruleset)));
+                if (type != null && Activator.CreateInstance(type) is Ruleset instance)
+                    rulesets.UnhideRuleset(instance.RulesetInfo.ShortName);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, $@"Couldn't put the {entry.Name} ruleset back in the list: it's back after a restart");
+            }
         }
 
         /// <summary>The assembly a ruleset is in (from its instantiation info), or null.</summary>

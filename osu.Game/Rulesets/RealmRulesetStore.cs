@@ -138,6 +138,7 @@ namespace osu.Game.Rulesets
                     return;
 
                 var info = instance.RulesetInfo;
+                RuntimeLoadedTypes[info.InstantiationInfo] = type;
                 var rulesets = realm.All<RulesetInfo>();
                 var entry = rulesets.FirstOrDefault(r => r.InstantiationInfo == info.InstantiationInfo)
                             ?? rulesets.FirstOrDefault(r => r.ShortName == info.ShortName);
@@ -181,6 +182,43 @@ namespace osu.Game.Rulesets
             availableRulesets = availableRulesets.Append(added).Order().ToList();
             OnRulesetAdded(added);
             return added;
+        }
+
+        // TumThai: rulesets taken out this session (HideRuleset), by short name.
+        private readonly Dictionary<string, RulesetInfo> hiddenRulesets = new Dictionary<string, RulesetInfo>();
+
+        public override bool HideRuleset(string shortName)
+        {
+            RulesetInfo? ruleset;
+
+            lock (hiddenRulesets)
+            {
+                ruleset = availableRulesets.FirstOrDefault(r => r.ShortName == shortName);
+                if (ruleset == null || ruleset.IsLegacyRuleset())
+                    return false;
+
+                hiddenRulesets[shortName] = ruleset;
+                availableRulesets = availableRulesets.Where(r => r.ShortName != shortName).ToList();
+            }
+
+            OnRulesetRemoved(ruleset);
+            return true;
+        }
+
+        public override bool UnhideRuleset(string shortName)
+        {
+            RulesetInfo? ruleset;
+
+            lock (hiddenRulesets)
+            {
+                if (!hiddenRulesets.Remove(shortName, out ruleset) || availableRulesets.Any(r => r.ShortName == shortName))
+                    return false;
+
+                availableRulesets = availableRulesets.Append(ruleset).Order().ToList();
+            }
+
+            OnRulesetAdded(ruleset);
+            return true;
         }
 
         private bool checkRulesetUpToDate(Ruleset instance)

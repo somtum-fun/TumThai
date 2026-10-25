@@ -287,7 +287,7 @@ namespace osu.Game.Overlays
                     CustomRulesetState.Installed => ("Installed", colours.Green, "Remove"),
                     CustomRulesetState.RestartToLoad => ("Installed: restart TumThai to load it", colours.Yellow, null),
                     CustomRulesetState.RestartToUpdate => ("Updated: restart TumThai to use it", colours.Yellow, null),
-                    CustomRulesetState.RestartToRemove => ("Removed when TumThai restarts", colours.Yellow, null),
+                    CustomRulesetState.RestartToRemove => ("Removed (its file goes when TumThai restarts)", colours.GreySeaFoamLighter, "Undo"),
                     CustomRulesetState.Broken => ("Doesn't work with this TumThai version", colours.Red, "Remove"),
                     _ => (string.Empty, colours.GreySeaFoamLighter, (string?)null),
                 };
@@ -303,6 +303,22 @@ namespace osu.Game.Overlays
             private void act()
             {
                 var current = customRulesets.StateOf(entry);
+
+                if (current is CustomRulesetState.RestartToRemove)
+                {
+                    try
+                    {
+                        customRulesets.CancelRemoval(entry);
+                        refresh();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e, $@"Couldn't undo removing the {entry.Name} ruleset");
+                        refresh($"Couldn't undo it: {e.Message}", true);
+                    }
+
+                    return;
+                }
 
                 if (current is CustomRulesetState.Installed or CustomRulesetState.Broken)
                 {

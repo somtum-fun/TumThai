@@ -98,6 +98,28 @@ namespace osu.Game.Rulesets
         protected void OnRulesetAdded(RulesetInfo ruleset) => RulesetAdded?.Invoke(ruleset);
 
         /// <summary>
+        /// TumThai: a ruleset taken out while the game runs (Settings > Custom rulesets removes one: its file goes on the next
+        /// start, as a loaded DLL is locked). Raised on the thread that took it out: listeners schedule their work.
+        /// </summary>
+        public event Action<RulesetInfo>? RulesetRemoved;
+
+        protected void OnRulesetRemoved(RulesetInfo ruleset) => RulesetRemoved?.Invoke(ruleset);
+
+        /// <summary>TumThai: takes a ruleset out of <see cref="AvailableRulesets"/> for this session. False if it wasn't in.</summary>
+        public virtual bool HideRuleset(string shortName) => false;
+
+        /// <summary>TumThai: puts back a ruleset <see cref="HideRuleset"/> took out (its removal was undone).</summary>
+        public virtual bool UnhideRuleset(string shortName) => false;
+
+        /// <summary>
+        /// TumThai: the rulesets loaded while the game runs, by instantiation info. <see cref="RulesetInfo.CreateInstance"/>
+        /// looks here first: a name lookup (Type.GetType) of an assembly that failed to bind earlier in the session (its DLL
+        /// wasn't there at startup) keeps failing even once it's loaded.
+        /// </summary>
+        public static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Type> RuntimeLoadedTypes =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, Type>(StringComparer.Ordinal);
+
+        /// <summary>
         /// TumThai: loads a ruleset DLL put in the rulesets folder while the game runs, and makes it available (the
         /// toolbar and song select get it). Null when it couldn't be loaded (it's then loaded on the next start, as before).
         /// </summary>
