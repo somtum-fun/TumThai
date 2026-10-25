@@ -35,6 +35,10 @@ namespace osu.Game.Online.API.Requests.Responses
         [JsonProperty("description")]
         public string? Description { get; set; }
 
+        /// <summary>The ruleset's icon, from this server (lazer loads images only from its own server's domain).</summary>
+        [JsonProperty("icon")]
+        public string? Icon { get; set; }
+
         [JsonProperty("version")]
         public string? Version { get; set; }
 

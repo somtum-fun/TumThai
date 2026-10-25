@@ -36,6 +36,32 @@ namespace osu.Game.Rulesets
                     RulesetStore.LogRulesetFailure(ruleset, e);
                 }
             }
+
+            // TumThai: a custom ruleset installed while the game runs shows here without a restart.
+            Rulesets.RulesetAdded += onRulesetAdded;
+        }
+
+        private void onRulesetAdded(RulesetInfo ruleset) => Schedule(() =>
+        {
+            if (LegacyOnly || Items.Contains(ruleset))
+                return;
+
+            try
+            {
+                AddItem(ruleset);
+            }
+            catch (Exception e)
+            {
+                RulesetStore.LogRulesetFailure(ruleset, e);
+            }
+        });
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (Rulesets != null)
+                Rulesets.RulesetAdded -= onRulesetAdded;
         }
     }
 }

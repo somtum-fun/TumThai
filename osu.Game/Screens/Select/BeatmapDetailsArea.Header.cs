@@ -15,6 +15,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Online.Leaderboards;
+using osu.Game.Extensions;
 using osu.Game.Rulesets;
 using osu.Game.Screens.Play.Leaderboards;
 using osuTK;
@@ -139,7 +140,16 @@ namespace osu.Game.Screens.Select
                     updateConfigDetailTab();
                 }, true);
 
-                ruleset.BindValueChanged(r => updateVariantOptions(r.NewValue), true);
+                ruleset.BindValueChanged(r =>
+                {
+                    updateVariantOptions(r.NewValue);
+                    // TumThai: a custom ruleset's boards are by score only.
+                    if (scopeDropdown.Current.Value != BeatmapLeaderboardScope.Local)
+                    {
+                        sortDropdown.Items = onlineSortModes(variantDropdown.Current.Value);
+                        sortDropdown.Current.Value = defaultOnlineSort(variantDropdown.Current.Value);
+                    }
+                }, true);
 
                 scopeDropdown.Current.BindValueChanged(scope =>
                 {
@@ -169,13 +179,18 @@ namespace osu.Game.Screens.Select
             }
 
             // Relax/Autopilot boards are by pp only: stable's and lazer's scores there come from two scoring systems.
-            private static LeaderboardSortMode[] onlineSortModes(LeaderboardVariant variant)
-                => variant == LeaderboardVariant.Vanilla
+            // TumThai: a custom ruleset's boards (Normal, Relax, Autopilot) are by score only: it has no pp.
+            private bool customRuleset => ruleset.Value is RulesetInfo r && !r.IsLegacyRuleset() && !r.IsSpecialRuleset();
+
+            private LeaderboardSortMode[] onlineSortModes(LeaderboardVariant variant)
+                => customRuleset
+                    ? new[] { LeaderboardSortMode.Score }
+                    : variant == LeaderboardVariant.Vanilla
                     ? new[] { LeaderboardSortMode.PerformancePoints, LeaderboardSortMode.Score }
                     : new[] { LeaderboardSortMode.PerformancePoints };
 
-            private static LeaderboardSortMode defaultOnlineSort(LeaderboardVariant variant)
-                => variant == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
+            private LeaderboardSortMode defaultOnlineSort(LeaderboardVariant variant)
+                => customRuleset || variant == LeaderboardVariant.Vanilla ? LeaderboardSortMode.Score : LeaderboardSortMode.PerformancePoints;
 
             private void updateVariantOptions(RulesetInfo? rulesetInfo)
             {

@@ -19,7 +19,8 @@ namespace osu.Game.Rulesets
         private readonly RealmAccess realmAccess;
         public override IEnumerable<RulesetInfo> AvailableRulesets => availableRulesets;
 
-        private readonly List<RulesetInfo> availableRulesets = new List<RulesetInfo>();
+        // TumThai: replaced, not changed, when a ruleset is added while the game runs (others may be enumerating it).
+        private List<RulesetInfo> availableRulesets = new List<RulesetInfo>();
 
         public RealmRulesetStore(RealmAccess realmAccess, Storage? storage = null)
             : base(storage)
@@ -121,6 +122,65 @@ namespace osu.Game.Rulesets
 
                 availableRulesets.AddRange(detachedRulesets.Order());
             });
+        }
+
+        public override RulesetInfo? LoadAdditionalRuleset(string path)
+        {
+            var type = LoadUserRulesetFile(path);
+            if (type == null)
+                return null;
+
+            RulesetInfo? added = null;
+
+            realmAccess.Write(realm =>
+            {
+                if (Activator.CreateInstance(type) is not Ruleset instance || instance is ILegacyRuleset)
+                    return;
+
+                var info = instance.RulesetInfo;
+                var rulesets = realm.All<RulesetInfo>();
+                var entry = rulesets.FirstOrDefault(r => r.InstantiationInfo == info.InstantiationInfo)
+                            ?? rulesets.FirstOrDefault(r => r.ShortName == info.ShortName);
+
+                if (entry == null)
+                    realm.Add(entry = new RulesetInfo(info.ShortName, info.Name, info.InstantiationInfo, info.OnlineID));
+                else
+                    entry.InstantiationInfo = info.InstantiationInfo;
+
+                // The checks prepareDetachedRulesets does at startup.
+                try
+                {
+                    if (!checkRulesetUpToDate(instance))
+                        throw new ArgumentOutOfRangeException(nameof(instance.RulesetAPIVersionSupported),
+                            $"Ruleset API version is too old (was {instance.RulesetAPIVersionSupported}, expected {Ruleset.CURRENT_RULESET_API_VERSION})");
+
+                    type.Assembly.GetTypes();
+
+                    entry.Name = info.Name;
+                    entry.ShortName = info.ShortName;
+                    entry.Available = true;
+
+                    testRulesetCompatibility(entry);
+
+                    added = entry.Clone();
+                }
+                catch (Exception ex)
+                {
+                    entry.Available = false;
+                    LogRulesetFailure(entry, ex);
+                }
+            });
+
+            if (added == null)
+                return null;
+
+            var existing = availableRulesets.FirstOrDefault(r => r.ShortName == added.ShortName);
+            if (existing != null)
+                return existing;
+
+            availableRulesets = availableRulesets.Append(added).Order().ToList();
+            OnRulesetAdded(added);
+            return added;
         }
 
         private bool checkRulesetUpToDate(Ruleset instance)

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Graphics;
 using osu.Game.Configuration;
 using osu.Game.Database;
@@ -38,12 +39,26 @@ namespace osu.Game.Rulesets
 
                 configCache[ruleset.ShortName] = ruleset.CreateInstance().CreateConfig(settingsStore);
             }
+
+            // TumThai: a ruleset installed while the game runs gets its config too.
+            rulesets.RulesetAdded += onRulesetAdded;
         }
+
+        private void onRulesetAdded(RulesetInfo ruleset) => Schedule(() =>
+        {
+            if (!string.IsNullOrEmpty(ruleset.ShortName) && !configCache.ContainsKey(ruleset.ShortName))
+                configCache[ruleset.ShortName] = ruleset.CreateInstance().CreateConfig(new SettingsStore(realm));
+        });
 
         public IRulesetConfigManager? GetConfigFor(Ruleset ruleset)
         {
             if (!IsLoaded)
                 throw new InvalidOperationException($@"Cannot retrieve {nameof(IRulesetConfigManager)} before {nameof(RulesetConfigCache)} has loaded");
+
+            // TumThai: a ruleset added while the game runs, asked for before its scheduled add ran.
+            if (!configCache.ContainsKey(ruleset.RulesetInfo.ShortName) && !ruleset.RulesetInfo.IsLegacyRuleset()
+                && rulesets.AvailableRulesets.Any(r => r.ShortName == ruleset.RulesetInfo.ShortName))
+                configCache[ruleset.RulesetInfo.ShortName] = ruleset.CreateConfig(new SettingsStore(realm));
 
             if (!configCache.TryGetValue(ruleset.RulesetInfo.ShortName, out var config))
                 throw new InvalidOperationException($@"Attempted to retrieve {nameof(IRulesetConfigManager)} for an unavailable ruleset {ruleset.GetDisplayString()}");
@@ -54,6 +69,8 @@ namespace osu.Game.Rulesets
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
+            rulesets.RulesetAdded -= onRulesetAdded;
 
             // ensures any potential database operations are finalised before game destruction.
             foreach (var c in configCache.Values)
