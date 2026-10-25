@@ -79,7 +79,7 @@ namespace osu.Game.Screens.Select
 
         /// <summary>
         /// TumThai: a custom ruleset's Relax/Autopilot plays have their own boards on the server (by score) when it has those
-        /// mods. Its ruleset stays the same: the board is asked for with <see cref="LeaderboardCriteria.Variant"/>.
+        /// mods. Its ruleset stays the same: the board is asked for with the leaderboard criteria's Variant.
         /// </summary>
         private static LeaderboardVariant[] customVariants(IRulesetInfo? ruleset)
         {
