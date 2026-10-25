@@ -36,7 +36,12 @@ namespace osu.Game.Online.API.Requests
             Ruleset = ruleset;
         }
 
-        protected override string Target => $@"users/{Lookup}/{Ruleset?.ShortName}?key={lookupType.ToString().ToLowerInvariant()}";
+        /// <summary>
+        /// TumThai: the mode to ask for in place of the ruleset's short name (a custom ruleset's slug on the server).
+        /// </summary>
+        public string? SomtumMode { get; init; }
+
+        protected override string Target => $@"users/{Lookup}/{SomtumMode ?? Ruleset?.ShortName}?key={lookupType.ToString().ToLowerInvariant()}";
 
         private enum LookupType
         {

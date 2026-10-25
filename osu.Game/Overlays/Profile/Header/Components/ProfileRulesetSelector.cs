@@ -19,6 +19,9 @@ namespace osu.Game.Overlays.Profile.Header.Components
 
         public readonly Bindable<UserProfileData?> User = new Bindable<UserProfileData?>();
 
+        // TumThai: custom rulesets have profiles too (their stats and plays on the server), so they're tabs here.
+        protected override bool LegacyOnly => false;
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
@@ -59,7 +62,10 @@ namespace osu.Game.Overlays.Profile.Header.Components
 
         private void updateState(UserProfileData? user)
         {
-            Current.Value = getItemsWithSpecialRulesets().SingleOrDefault(ruleset => user?.Ruleset.MatchesOnlineID(ruleset) == true);
+            // TumThai: custom rulesets have no online ID, so they're matched by short name.
+            Current.Value = getItemsWithSpecialRulesets().FirstOrDefault(ruleset => user?.Ruleset.MatchesOnlineID(ruleset) == true
+                                                                                   || (user != null && !ruleset.IsLegacyRuleset() && !ruleset.IsSpecialRuleset()
+                                                                                       && ruleset.ShortName == user.Ruleset.ShortName));
             SetDefaultRuleset(Rulesets.GetRuleset(user?.User.PlayMode ?? @"osu").AsNonNull());
         }
 

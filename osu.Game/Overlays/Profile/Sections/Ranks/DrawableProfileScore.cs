@@ -35,6 +35,12 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
 
         protected readonly SoloScoreInfo Score;
 
+        /// <summary>
+        /// TumThai: the ruleset to show the score with when it isn't one installed by its id (a custom ruleset's
+        /// scores carry the server's id for it).
+        /// </summary>
+        public RulesetInfo? SomtumRuleset { get; init; }
+
         [Resolved]
         private OsuColour colours { get; set; } = null!;
 
@@ -52,7 +58,7 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
         [BackgroundDependencyLoader]
         private void load(RulesetStore rulesets)
         {
-            var ruleset = rulesets.GetRuleset(Score.RulesetID)?.CreateInstance() ?? throw new InvalidOperationException($"Ruleset with ID of {Score.RulesetID} not found locally");
+            var ruleset = SomtumRuleset?.CreateInstance() ?? rulesets.GetRuleset(Score.RulesetID)?.CreateInstance() ?? throw new InvalidOperationException($"Ruleset with ID of {Score.RulesetID} not found locally");
 
             AddInternal(new ProfileItemContainer
             {

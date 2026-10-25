@@ -24,11 +24,18 @@ namespace osu.Game.Online.API.Requests
             this.ruleset = ruleset;
         }
 
+        /// <summary>
+        /// TumThai: the mode to ask for in place of the ruleset's short name (a custom ruleset's slug on the server).
+        /// </summary>
+        public string SomtumMode { get; init; }
+
         protected override WebRequest CreateWebRequest()
         {
             var req = base.CreateWebRequest();
 
-            if (ruleset != null)
+            if (SomtumMode != null)
+                req.AddParameter("mode", SomtumMode);
+            else if (ruleset != null)
                 req.AddParameter("mode", ruleset.ShortName);
 
             return req;

@@ -8,7 +8,9 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Game.Online.API.Requests.Responses;
 using System.Collections.Generic;
+using osu.Game.Online;
 using osu.Game.Online.API;
+using osu.Game.Extensions;
 using osu.Framework.Allocation;
 using osu.Framework.Localisation;
 using APIUser = osu.Game.Online.API.Requests.Responses.APIUser;
@@ -60,20 +62,31 @@ namespace osu.Game.Overlays.Profile.Sections.Ranks
             base.OnItemsReceived(items);
         }
 
+        // TumThai: a custom ruleset's plays are asked for by its slug on the server.
+        [Resolved]
+        private SomtumCustomRulesets? customRulesets { get; set; }
+
         protected override APIRequest<List<SoloScoreInfo>> CreateRequest(UserProfileData user, PaginationParameters pagination) =>
-            new GetUserScoresRequest(user.User.Id, type, pagination, user.Ruleset);
+            new GetUserScoresRequest(user.User.Id, type, pagination, user.Ruleset)
+            {
+                SomtumMode = user.Ruleset.IsLegacyRuleset() ? null : customRulesets?.Find(user.Ruleset)?.Slug,
+            };
 
         private int drawableItemIndex;
 
         protected override Drawable CreateDrawableItem(SoloScoreInfo model)
         {
+            // TumThai: a custom ruleset's profile shows its plays with that ruleset.
+            var ruleset = User.Value?.Ruleset;
+            var custom = ruleset != null && !ruleset.IsLegacyRuleset() && !ruleset.IsSpecialRuleset() ? ruleset : null;
+
             switch (type)
             {
                 default:
-                    return new DrawableProfileScore(model);
+                    return new DrawableProfileScore(model) { SomtumRuleset = custom };
 
                 case ScoreType.Best:
-                    return new DrawableProfileWeightedScore(model, Math.Pow(0.95, drawableItemIndex++));
+                    return new DrawableProfileWeightedScore(model, Math.Pow(0.95, drawableItemIndex++)) { SomtumRuleset = custom };
             }
         }
     }
