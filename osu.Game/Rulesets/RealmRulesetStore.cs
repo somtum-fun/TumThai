@@ -11,6 +11,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
+using osu.Game.Extensions;
 
 namespace osu.Game.Rulesets
 {
@@ -189,35 +190,37 @@ namespace osu.Game.Rulesets
 
         public override bool HideRuleset(string shortName)
         {
-            RulesetInfo? ruleset;
+            RulesetInfo hidden;
 
             lock (hiddenRulesets)
             {
-                ruleset = availableRulesets.FirstOrDefault(r => r.ShortName == shortName);
-                if (ruleset == null || ruleset.IsLegacyRuleset())
+                var found = availableRulesets.FirstOrDefault(r => r.ShortName == shortName);
+                if (found == null || found.IsLegacyRuleset())
                     return false;
 
-                hiddenRulesets[shortName] = ruleset;
+                hidden = found;
+                hiddenRulesets[shortName] = hidden;
                 availableRulesets = availableRulesets.Where(r => r.ShortName != shortName).ToList();
             }
 
-            OnRulesetRemoved(ruleset);
+            OnRulesetRemoved(hidden);
             return true;
         }
 
         public override bool UnhideRuleset(string shortName)
         {
-            RulesetInfo? ruleset;
+            RulesetInfo shown;
 
             lock (hiddenRulesets)
             {
-                if (!hiddenRulesets.Remove(shortName, out ruleset) || availableRulesets.Any(r => r.ShortName == shortName))
+                if (!hiddenRulesets.Remove(shortName, out var found) || availableRulesets.Any(r => r.ShortName == shortName))
                     return false;
 
-                availableRulesets = availableRulesets.Append(ruleset).Order().ToList();
+                shown = found;
+                availableRulesets = availableRulesets.Append(shown).Order().ToList();
             }
 
-            OnRulesetAdded(ruleset);
+            OnRulesetAdded(shown);
             return true;
         }
 
