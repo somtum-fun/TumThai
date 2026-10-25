@@ -38,6 +38,10 @@ namespace osu.Game.Online
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
 
+        // TumThai: custom rulesets' statistics are the player's standing in their rankings (by ranked score).
+        [Resolved]
+        private SomtumCustomRulesets? customRulesets { get; set; }
+
         private readonly IBindable<APIUser> localUser = new Bindable<APIUser>();
 
         private readonly Dictionary<string, UserStatistics> statisticsCache = new Dictionary<string, UserStatistics>();
@@ -60,6 +64,30 @@ namespace osu.Game.Online
                 // schedule a frame to allow the API to be in its correct state sending requests.
                 Schedule(initialiseStatistics);
             }, true);
+
+            // TumThai: the custom rulesets' list arrives after sign-in, and a ruleset can be installed while the game runs.
+            customRulesets?.Available.BindCollectionChanged((_, _) => Schedule(refetchCustomStatistics));
+            rulesets.RulesetAdded += onRulesetAdded;
+        }
+
+        private void onRulesetAdded(RulesetInfo _) => Schedule(refetchCustomStatistics);
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            rulesets.RulesetAdded -= onRulesetAdded;
+        }
+
+        private void refetchCustomStatistics()
+        {
+            if (api.LocalUser.Value == null || api.LocalUser.Value.Id <= 1)
+                return;
+
+            foreach (var ruleset in rulesets.AvailableRulesets.Where(r => !r.IsLegacyRuleset() && !r.IsSpecialRuleset()))
+            {
+                if (customRulesets?.Find(ruleset) != null)
+                    RefetchStatistics(ruleset);
+            }
         }
 
         private void initialiseStatistics()
@@ -77,10 +105,21 @@ namespace osu.Game.Online
                 foreach (var variant in ruleset.SupportedVariants().Where(v => v != LeaderboardVariant.Vanilla))
                     RefetchStatistics(ruleset.ApplyVariant(variant));
             }
+
+            refetchCustomStatistics();
         }
 
         public void RefetchStatistics(RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
         {
+            // TumThai: a custom ruleset the server ranks: the player's standing in its rankings.
+            if (!ruleset.IsLegacyRuleset() && !ruleset.IsSpecialRuleset() && customRulesets?.Find(ruleset) is APISomtumCustomRuleset custom)
+            {
+                var standing = new GetSomtumCustomRulesetStandingRequest(custom.Slug);
+                standing.Success += s => UpdateStatistics(s, ruleset, callback);
+                api.Queue(standing);
+                return;
+            }
+
             if (!ruleset.IsLegacyRuleset() && !ruleset.IsSpecialRuleset())
                 throw new InvalidOperationException($@"Retrieving statistics is not supported for ruleset {ruleset.ShortName}");
 
