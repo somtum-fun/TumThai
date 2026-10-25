@@ -405,6 +405,11 @@ namespace osu.Game
             dependencies.CacheAs<IBindable<WorkingBeatmap>>(Beatmap);
             dependencies.CacheAs(Beatmap);
 
+            // TumThai: the custom rulesets the server ranks (Settings, submission, leaderboards).
+            var customRulesets = new SomtumCustomRulesets();
+            dependencies.Cache(customRulesets);
+            base.Content.Add(customRulesets);
+
             dependencies.Cache(LeaderboardManager = new LeaderboardManager());
             base.Content.Add(LeaderboardManager);
 

@@ -28,10 +28,12 @@ namespace osu.Game.Online.API.Requests
         private readonly IRulesetInfo ruleset;
         private readonly IEnumerable<IMod> mods;
         private readonly LeaderboardSortMode? sort;
+        private readonly string? mode;
 
         // osu!somtum: sort is by pp or by score; null for the board's own order (pp for Relax/Autopilot, score otherwise).
+        // TumThai: mode is the board's name when it isn't the ruleset's short name (a custom ruleset's slug on the server).
         public GetScoresRequest(IBeatmapInfo beatmapInfo, IRulesetInfo ruleset, BeatmapLeaderboardScope scope = BeatmapLeaderboardScope.Global, IEnumerable<IMod>? mods = null,
-                                LeaderboardSortMode? sort = null)
+                                LeaderboardSortMode? sort = null, string? mode = null)
         {
             if (beatmapInfo.OnlineID <= 0)
                 throw new InvalidOperationException($"Cannot lookup a beatmap's scores without having a populated {nameof(IBeatmapInfo.OnlineID)}.");
@@ -42,6 +44,7 @@ namespace osu.Game.Online.API.Requests
             this.beatmapInfo = beatmapInfo;
             this.scope = scope;
             this.ruleset = ruleset ?? throw new ArgumentNullException(nameof(ruleset));
+            this.mode = mode;
             this.mods = mods ?? Array.Empty<IMod>();
             this.sort = sort;
 
@@ -55,7 +58,7 @@ namespace osu.Game.Online.API.Requests
             var req = base.CreateWebRequest();
 
             req.AddParameter(@"type", scope.ToString().ToLowerInvariant());
-            req.AddParameter(@"mode", ruleset.ShortName);
+            req.AddParameter(@"mode", mode ?? ruleset.ShortName);
 
             foreach (var mod in mods)
                 req.AddParameter(@"mods[]", mod.Acronym);

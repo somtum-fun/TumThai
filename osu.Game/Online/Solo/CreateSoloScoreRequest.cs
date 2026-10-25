@@ -22,12 +22,16 @@ namespace osu.Game.Online.Solo
         // play starts for osu!dan maps, which are submitted only with Classic (CL).
         private readonly IEnumerable<string>? modAcronyms;
 
-        public CreateSoloScoreRequest(BeatmapInfo beatmapInfo, int rulesetId, string versionHash, IEnumerable<string>? modAcronyms = null)
+        // TumThai: a custom ruleset's DLL hash (the server only takes the file it pinned).
+        private readonly string? rulesetHash;
+
+        public CreateSoloScoreRequest(BeatmapInfo beatmapInfo, int rulesetId, string versionHash, IEnumerable<string>? modAcronyms = null, string? rulesetHash = null)
         {
             this.beatmapInfo = beatmapInfo;
             this.rulesetId = rulesetId;
             this.versionHash = versionHash;
             this.modAcronyms = modAcronyms;
+            this.rulesetHash = rulesetHash;
         }
 
         protected override WebRequest CreateWebRequest()
@@ -39,6 +43,8 @@ namespace osu.Game.Online.Solo
             req.AddParameter("ruleset_id", rulesetId.ToString(CultureInfo.InvariantCulture));
             if (modAcronyms != null)
                 req.AddParameter("mods", string.Join(',', modAcronyms.Where(a => !string.IsNullOrEmpty(a))));
+            if (rulesetHash != null)
+                req.AddParameter("ruleset_hash", rulesetHash);
             return req;
         }
 

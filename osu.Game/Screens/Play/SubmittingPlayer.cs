@@ -16,6 +16,7 @@ using osu.Framework.Screens;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Extensions;
 using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.Multiplayer;
@@ -223,7 +224,9 @@ namespace osu.Game.Screens.Play
                 realmBeatmap?.LastPlayed = DateTimeOffset.Now;
             });
 
-            spectatorClient.BeginPlaying(token, GameplayState, Score);
+            // TumThai: the spectator server only knows osu!'s rulesets (a custom one would get a hub error back).
+            if (Ruleset.Value.IsLegacyRuleset() || Ruleset.Value.IsSpecialRuleset())
+                spectatorClient.BeginPlaying(token, GameplayState, Score);
         }
 
         public override bool Pause()
