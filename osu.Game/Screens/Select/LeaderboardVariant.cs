@@ -92,9 +92,9 @@ namespace osu.Game.Screens.Select
                 {
                     var all = ruleset.CreateInstance().CreateAllMods().ToList();
                     var variants = new List<LeaderboardVariant> { LeaderboardVariant.Vanilla };
-                    if (all.Any(m => m is ModRelax))
+                    if (all.Any(m => m is ModRelax || m.Acronym == @"RX"))
                         variants.Add(LeaderboardVariant.Relax);
-                    if (all.Any(m => m is ModAutopilot))
+                    if (all.Any(m => m.Acronym == @"AP"))
                         variants.Add(LeaderboardVariant.Autopilot);
                     return variants.ToArray();
                 }
