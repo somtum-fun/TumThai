@@ -4,6 +4,7 @@
 #nullable disable
 
 using System;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics.UserInterface;
 using osu.Game.Extensions;
