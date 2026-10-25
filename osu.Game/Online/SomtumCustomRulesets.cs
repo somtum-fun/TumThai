@@ -23,10 +23,10 @@ namespace osu.Game.Online
 {
     /// <summary>
     /// TumThai: the custom rulesets the server ranks (staff turn them on and pin a file for each). A play of one submits only
-    /// when the ruleset it runs on is that exact file (by SHA-256); Settings installs, updates and removes them. Rulesets live
-    /// in the data folder's <c>rulesets</c>, where lazer loads them from at start, so a change takes a restart: an update of a
-    /// loaded ruleset is kept as <c>&lt;name&gt;.dll.update</c> (and a removal as <c>&lt;name&gt;.dll.delete</c>) and done by
-    /// <see cref="ApplyPending"/> the next time TumThai starts.
+    /// when the ruleset it runs on is that exact file (by SHA-256); the Custom rulesets window installs, updates and removes
+    /// them. Rulesets live in the data folder's <c>rulesets</c>. A new one is loaded at once (no restart); a loaded one can't
+    /// be replaced while the game runs (Windows keeps its DLL locked), so its update is kept as <c>&lt;name&gt;.dll.update</c>
+    /// (and a removal as <c>&lt;name&gt;.dll.delete</c>) and done by <see cref="ApplyPending"/> the next time TumThai starts.
     /// </summary>
     public partial class SomtumCustomRulesets : Component
     {
@@ -47,6 +47,9 @@ namespace osu.Game.Online
 
         [Resolved]
         private Storage storage { get; set; } = null!;
+
+        [Resolved]
+        private RulesetStore rulesets { get; set; } = null!;
 
         private bool fetched;
 
@@ -123,10 +126,10 @@ namespace osu.Game.Online
         }
 
         /// <summary>
-        /// Downloads the pinned file and checks it. It takes the ruleset's place now if it isn't loaded, or on the next
-        /// start if it is (Windows keeps a loaded DLL locked).
+        /// Downloads the pinned file and checks it. A ruleset that isn't loaded is loaded at once (true: no restart); a
+        /// loaded one is replaced on the next start (Windows keeps a loaded DLL locked).
         /// </summary>
-        public async Task InstallAsync(APISomtumCustomRuleset entry, CancellationToken cancellationToken = default)
+        public async Task<bool> InstallAsync(APISomtumCustomRuleset entry, CancellationToken cancellationToken = default)
         {
             string path = pathFor(entry);
             string download = path + @".download";
@@ -151,10 +154,20 @@ namespace osu.Game.Online
             if (LoadedHash(entry) != null)
             {
                 File.Move(download, path + update_suffix, true);
-                return;
+                return false;
             }
 
             File.Move(download, path, true);
+
+            try
+            {
+                return rulesets.LoadAdditionalRuleset(path) != null;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, $@"Couldn't load the {entry.Name} ruleset now: it loads the next time TumThai starts");
+                return false;
+            }
         }
 
         /// <summary>Removes the ruleset: now if it isn't loaded, on the next start if it is.</summary>

@@ -1,23 +1,20 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Linq;
-using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Localisation;
-using osu.Framework.Logging;
 using osu.Game.Online;
-using osu.Game.Online.API.Requests.Responses;
 
 namespace osu.Game.Overlays.Settings.Sections.General
 {
     /// <summary>
-    /// TumThai: the custom rulesets the server ranks (from rulesets.info, a file pinned by staff for each), to install,
-    /// update or remove. A ruleset put in the rulesets folder by hand works too, but submits only when it's the pinned file.
-    /// Changes take effect when TumThai starts again.
+    /// TumThai: the custom rulesets the server ranks (from rulesets.info, a file pinned by staff for each): a line saying
+    /// where they stand and a button for the window that installs, updates and removes them
+    /// (<see cref="SomtumCustomRulesetsDialog"/>). A ruleset put in the rulesets folder by hand works too, but submits only
+    /// when it's the pinned file.
     /// </summary>
     public partial class CustomRulesetsSettings : SettingsSubsection
     {
@@ -26,7 +23,9 @@ namespace osu.Game.Overlays.Settings.Sections.General
         [Resolved]
         private SomtumCustomRulesets customRulesets { get; set; } = null!;
 
-        private FillFlowContainer list = null!;
+        [Resolved]
+        private SomtumCustomRulesetsDialog? dialog { get; set; }
+
         private readonly SettingsNote note = new SettingsNote { RelativeSizeAxes = Axes.X };
 
         [BackgroundDependencyLoader]
@@ -39,122 +38,42 @@ namespace osu.Game.Overlays.Settings.Sections.General
                 Padding = SettingsPanel.CONTENT_PADDING,
                 Child = note,
             });
-            Add(list = new FillFlowContainer
+            Add(new SettingsButtonV2
             {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
-                Direction = FillDirection.Vertical,
-                Spacing = new osuTK.Vector2(0, SettingsSection.ITEM_SPACING_V2),
+                Text = @"Install custom rulesets…",
+                Action = () => dialog?.Show(),
             });
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            customRulesets.Available.BindCollectionChanged((_, _) => rebuild(), true);
+            customRulesets.Available.BindCollectionChanged((_, _) => updateNote(), true);
         }
 
-        private void rebuild()
+        private void updateNote()
         {
-            list.Clear();
+            int count = customRulesets.Available.Count;
 
-            if (customRulesets.Available.Count == 0)
+            if (count == 0)
             {
-                setNote(@"Custom rulesets the server ranks show here once you're signed in. Their scores go on their own leaderboards, by score.", SettingsNote.Type.Informational);
+                note.Current.Value = new SettingsNote.Data(@"Custom rulesets the server ranks show here once you're signed in. Their scores go on their own leaderboards, by score.",
+                    SettingsNote.Type.Informational);
                 return;
             }
 
-            bool restart = false;
-            bool broken = false;
+            var states = customRulesets.Available.Select(customRulesets.StateOf).ToList();
+            int installed = states.Count(s => s is CustomRulesetState.Installed);
+            int updates = states.Count(s => s is CustomRulesetState.UpdateAvailable);
+            int restart = states.Count(s => s is CustomRulesetState.RestartToLoad or CustomRulesetState.RestartToUpdate or CustomRulesetState.RestartToRemove);
 
-            foreach (var entry in customRulesets.Available.OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase))
-            {
-                var state = customRulesets.StateOf(entry);
-                restart |= state is CustomRulesetState.RestartToLoad or CustomRulesetState.RestartToUpdate or CustomRulesetState.RestartToRemove;
-                string version = entry.Version is { Length: > 0 } v ? $@" {v}" : string.Empty;
+            string text = $"This server ranks {count} custom ruleset{(count == 1 ? string.Empty : "s")}; {installed} installed here.";
+            if (updates > 0)
+                text += $" {updates} need{(updates == 1 ? "s" : string.Empty)} an update.";
+            if (restart > 0)
+                text += " Restart TumThai to finish a change.";
 
-                switch (state)
-                {
-                    case CustomRulesetState.NotInstalled:
-                        list.Add(button($@"Install {entry.Name}{version}", entry));
-                        break;
-
-                    case CustomRulesetState.UpdateAvailable:
-                        list.Add(button($@"Update {entry.Name} to{version}", entry));
-                        break;
-
-                    case CustomRulesetState.Installed:
-                        list.Add(removeButton($@"{entry.Name}{version}: installed (remove)", entry));
-                        break;
-
-                    case CustomRulesetState.RestartToLoad:
-                    case CustomRulesetState.RestartToUpdate:
-                        list.Add(new SettingsButtonV2 { Text = $@"{entry.Name}{version}: ready, restart TumThai to load it", Enabled = { Value = false } });
-                        break;
-
-                    case CustomRulesetState.Broken:
-                        list.Add(removeButton($@"{entry.Name}{version} doesn't work with this TumThai version (remove)", entry));
-                        broken = true;
-                        break;
-
-                    case CustomRulesetState.RestartToRemove:
-                        list.Add(new SettingsButtonV2 { Text = $@"{entry.Name}: removed when TumThai restarts", Enabled = { Value = false } });
-                        break;
-                }
-            }
-
-            if (restart)
-                setNote(@"Restart TumThai to finish installing, updating or removing rulesets.", SettingsNote.Type.Warning);
-            else if (broken)
-                setNote(@"A ruleset here was made for another lazer version and doesn't work in this TumThai: it works again once its developer updates it.", SettingsNote.Type.Warning);
-            else
-                setNote(@"Rulesets from rulesets.info that this server ranks, by score. A play submits only on the version shown here: update a ruleset when it says so.", SettingsNote.Type.Informational);
+            note.Current.Value = new SettingsNote.Data(text, updates > 0 || restart > 0 ? SettingsNote.Type.Warning : SettingsNote.Type.Informational);
         }
-
-        private SettingsButtonV2 button(string text, APISomtumCustomRuleset entry)
-        {
-            var b = new SettingsButtonV2 { Text = text };
-            b.Action = () =>
-            {
-                b.Enabled.Value = false;
-                b.Text = $@"Downloading {entry.Name}…";
-                Task.Run(() => customRulesets.InstallAsync(entry)).ContinueWith(t => Schedule(() =>
-                {
-                    if (t.IsFaulted)
-                    {
-                        Logger.Error(t.Exception, $@"Couldn't install the {entry.Name} ruleset");
-                        setNote($@"Couldn't install {entry.Name}: {t.Exception?.GetBaseException().Message}", SettingsNote.Type.Critical);
-                        b.Enabled.Value = true;
-                        b.Text = text;
-                        return;
-                    }
-
-                    rebuild();
-                }));
-            };
-            return b;
-        }
-
-        private SettingsButtonV2 removeButton(string text, APISomtumCustomRuleset entry) => new DangerousSettingsButtonV2
-        {
-            Text = text,
-            Action = () =>
-            {
-                try
-                {
-                    customRulesets.Remove(entry);
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, $@"Couldn't remove the {entry.Name} ruleset");
-                    setNote($@"Couldn't remove {entry.Name}: {e.Message}", SettingsNote.Type.Critical);
-                    return;
-                }
-
-                rebuild();
-            },
-        };
-
-        private void setNote(string text, SettingsNote.Type type) => note.Current.Value = new SettingsNote.Data(text, type);
     }
 }

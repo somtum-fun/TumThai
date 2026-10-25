@@ -89,6 +89,30 @@ namespace osu.Game.Rulesets
             return LoadedAssemblies.Keys.FirstOrDefault(a => a.FullName == asm.FullName);
         }
 
+        /// <summary>
+        /// TumThai: a ruleset added while the game runs (Settings > Custom rulesets installs one without a restart). Raised
+        /// on the thread that added it: listeners schedule their work.
+        /// </summary>
+        public event Action<RulesetInfo>? RulesetAdded;
+
+        protected void OnRulesetAdded(RulesetInfo ruleset) => RulesetAdded?.Invoke(ruleset);
+
+        /// <summary>
+        /// TumThai: loads a ruleset DLL put in the rulesets folder while the game runs, and makes it available (the
+        /// toolbar and song select get it). Null when it couldn't be loaded (it's then loaded on the next start, as before).
+        /// </summary>
+        public virtual RulesetInfo? LoadAdditionalRuleset(string path) => null;
+
+        /// <summary>TumThai: loads one ruleset DLL as a user ruleset; the type it brings, or null.</summary>
+        protected Type? LoadUserRulesetFile(string path)
+        {
+            var assembly = loadRulesetFromFile(path);
+            if (assembly == null)
+                return null;
+            UserRulesetAssemblies.Add(assembly);
+            return LoadedAssemblies.TryGetValue(assembly, out var type) ? type : null;
+        }
+
         private void loadFromAppDomain()
         {
             foreach (var ruleset in AppDomain.CurrentDomain.GetAssemblies())
