@@ -48,5 +48,17 @@ namespace osu.Game.Screens.Ranking.Statistics
             FullWidth = fullWidth;
             CreateContent = createContent;
         }
+
+        /// <summary>
+        /// TumThai: the constructor from before <c>fullWidth</c> (ppy #38643), which rulesets built before then call;
+        /// without it their results screen fails (MissingMethodException).
+        /// </summary>
+        /// <param name="name">The name of the item. Can be <see langword="null"/> to hide the item header.</param>
+        /// <param name="createContent">A function returning the <see cref="Drawable"/> content to be displayed.</param>
+        /// <param name="requiresHitEvents">Whether this item requires hit events.</param>
+        public StatisticItem(LocalisableString name, Func<Drawable> createContent, bool requiresHitEvents)
+            : this(name, createContent, requiresHitEvents, true)
+        {
+        }
     }
 }

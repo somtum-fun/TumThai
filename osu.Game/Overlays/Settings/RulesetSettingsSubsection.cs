@@ -40,7 +40,9 @@ namespace osu.Game.Overlays.Settings
             return dependencies;
         }
 
-        protected sealed override LocalisableString Header => string.Empty;
+        // TumThai: not sealed (ppy sealed it in #38640): rulesets built before then override it, and a sealed one
+        // stops them loading at all (TypeLoadException). The header isn't drawn either way (CreateHeader below).
+        protected override LocalisableString Header => string.Empty;
         protected sealed override Drawable CreateHeader() => Empty();
     }
 }
