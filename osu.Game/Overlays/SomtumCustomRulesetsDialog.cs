@@ -248,10 +248,9 @@ namespace osu.Game.Overlays
                             {
                                 Font = OsuFont.GetFont(size: 14, weight: FontWeight.SemiBold),
                             },
-                            new OsuSpriteText
+                            new TruncatingSpriteText
                             {
                                 RelativeSizeAxes = Axes.X,
-                                Truncate = true,
                                 Text = entry.Description ?? string.Empty,
                                 Font = OsuFont.GetFont(size: 13),
                                 Colour = colours.GreySeaFoamLighter,
