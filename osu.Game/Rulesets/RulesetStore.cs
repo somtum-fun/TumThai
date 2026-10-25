@@ -169,9 +169,16 @@ namespace osu.Game.Rulesets
             }
             catch (Exception e)
             {
+                FailedAssemblies[assembly.GetName().Name!] = true;
                 logRulesetFailure(assembly.GetName().Name!.Split('.').Last(), e);
             }
         }
+
+        /// <summary>
+        /// TumThai: the assemblies of rulesets that failed to load or run this session (built for another lazer version),
+        /// for Settings to say so instead of showing them as installed.
+        /// </summary>
+        public static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> FailedAssemblies = new System.Collections.Concurrent.ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
         public void Dispose()
         {
@@ -184,7 +191,13 @@ namespace osu.Game.Rulesets
             AppDomain.CurrentDomain.AssemblyResolve -= resolveRulesetDependencyAssembly;
         }
 
-        public static void LogRulesetFailure(RulesetInfo ruleset, Exception e) => logRulesetFailure(ruleset.Name, e);
+        public static void LogRulesetFailure(RulesetInfo ruleset, Exception e)
+        {
+            string? assembly = osu.Game.Online.SomtumCustomRulesets.AssemblyOf(ruleset);
+            if (assembly != null)
+                FailedAssemblies[assembly] = true;
+            logRulesetFailure(ruleset.Name, e);
+        }
 
         private static void logRulesetFailure(string name, Exception exception)
         {

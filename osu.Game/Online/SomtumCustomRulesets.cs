@@ -105,6 +105,8 @@ namespace osu.Game.Online
                 return CustomRulesetState.RestartToRemove;
 
             string? loaded = LoadedHash(entry);
+            if (loaded != null && RulesetStore.FailedAssemblies.ContainsKey(entry.Assembly))
+                return CustomRulesetState.Broken;
             if (loaded != null)
                 return string.Equals(loaded, entry.Sha256, StringComparison.OrdinalIgnoreCase) ? CustomRulesetState.Installed : CustomRulesetState.UpdateAvailable;
 
@@ -237,5 +239,8 @@ namespace osu.Game.Online
         RestartToLoad,
         RestartToUpdate,
         RestartToRemove,
+
+        /// <summary>Loaded, but it failed to load or run: built for another lazer version.</summary>
+        Broken,
     }
 }

@@ -70,8 +70,39 @@ namespace osu.Game.Screens.Select
                     return new[] { LeaderboardVariant.Vanilla, LeaderboardVariant.Relax };
 
                 default:
-                    return new[] { LeaderboardVariant.Vanilla };
+                    return customVariants(baseRuleset);
             }
+        }
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, LeaderboardVariant[]> custom_variants =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, LeaderboardVariant[]>();
+
+        /// <summary>
+        /// TumThai: a custom ruleset's Relax/Autopilot plays have their own boards on the server (by score) when it has those
+        /// mods. Its ruleset stays the same: the board is asked for with <see cref="LeaderboardCriteria.Variant"/>.
+        /// </summary>
+        private static LeaderboardVariant[] customVariants(IRulesetInfo? ruleset)
+        {
+            if (ruleset == null || ruleset.IsLegacyRuleset() || ruleset.IsSpecialRuleset() || string.IsNullOrEmpty(ruleset.ShortName))
+                return new[] { LeaderboardVariant.Vanilla };
+
+            return custom_variants.GetOrAdd(ruleset.ShortName, _ =>
+            {
+                try
+                {
+                    var all = ruleset.CreateInstance().CreateAllMods().ToList();
+                    var variants = new List<LeaderboardVariant> { LeaderboardVariant.Vanilla };
+                    if (all.Any(m => m is ModRelax))
+                        variants.Add(LeaderboardVariant.Relax);
+                    if (all.Any(m => m is ModAutopilot))
+                        variants.Add(LeaderboardVariant.Autopilot);
+                    return variants.ToArray();
+                }
+                catch
+                {
+                    return new[] { LeaderboardVariant.Vanilla };
+                }
+            });
         }
 
         /// <summary>

@@ -90,15 +90,34 @@ namespace osu.Game.Scoring.Legacy
             if (beatmap == null && !score.Replay.Frames.All(f => f is LegacyReplayFrame))
                 throw new ArgumentException(@"Beatmap must be provided if frames are not already legacy frames.", nameof(beatmap));
 
-            if (!score.ScoreInfo.Ruleset.IsLegacyRuleset())
+            if (!score.ScoreInfo.Ruleset.IsLegacyRuleset() && !CanEncodeCustom(score))
                 throw new ArgumentException(@"Only scores in the osu, taiko, catch, or mania rulesets can be encoded to the legacy score format.", nameof(score));
         }
+
+        /// <summary>
+        /// TumThai: the ruleset byte of a custom ruleset's replay, followed by the ruleset's short name. Only TumThai reads
+        /// these (they stay on the player's computer: the replay of a custom-ruleset play isn't uploaded).
+        /// </summary>
+        public const byte CUSTOM_RULESET_ID = 255;
+
+        /// <summary>TumThai: whether a custom ruleset's score can be saved with its replay (every frame converts to legacy).</summary>
+        public static bool CanEncodeCustom(Score score) =>
+            !score.ScoreInfo.Ruleset.IsLegacyRuleset()
+            && !string.IsNullOrEmpty(score.ScoreInfo.Ruleset.ShortName)
+            && score.Replay.Frames.All(f => f is LegacyReplayFrame or IConvertibleReplayFrame);
 
         public void Encode(Stream stream, bool leaveOpen = false)
         {
             using (SerializationWriter sw = new SerializationWriter(stream, leaveOpen))
             {
-                sw.Write((byte)(score.ScoreInfo.Ruleset.OnlineID));
+                if (score.ScoreInfo.Ruleset.IsLegacyRuleset())
+                    sw.Write((byte)(score.ScoreInfo.Ruleset.OnlineID));
+                else
+                {
+                    sw.Write(CUSTOM_RULESET_ID);
+                    sw.Write(score.ScoreInfo.Ruleset.ShortName);
+                }
+
                 sw.Write(score.ScoreInfo.TotalScoreVersion);
                 sw.Write(score.ScoreInfo.BeatmapInfo!.MD5Hash);
                 sw.Write(score.ScoreInfo.User.Username);

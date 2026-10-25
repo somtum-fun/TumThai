@@ -13,6 +13,7 @@ using osu.Framework.IO.Network;
 using osu.Game.Extensions;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Screens.Play.Leaderboards;
+using osu.Game.Screens.Select;
 
 namespace osu.Game.Online.API.Requests
 {
@@ -29,11 +30,12 @@ namespace osu.Game.Online.API.Requests
         private readonly IEnumerable<IMod> mods;
         private readonly LeaderboardSortMode? sort;
         private readonly string? mode;
+        private readonly LeaderboardVariant variant;
 
         // osu!somtum: sort is by pp or by score; null for the board's own order (pp for Relax/Autopilot, score otherwise).
         // TumThai: mode is the board's name when it isn't the ruleset's short name (a custom ruleset's slug on the server).
         public GetScoresRequest(IBeatmapInfo beatmapInfo, IRulesetInfo ruleset, BeatmapLeaderboardScope scope = BeatmapLeaderboardScope.Global, IEnumerable<IMod>? mods = null,
-                                LeaderboardSortMode? sort = null, string? mode = null)
+                                LeaderboardSortMode? sort = null, string? mode = null, LeaderboardVariant variant = LeaderboardVariant.Vanilla)
         {
             if (beatmapInfo.OnlineID <= 0)
                 throw new InvalidOperationException($"Cannot lookup a beatmap's scores without having a populated {nameof(IBeatmapInfo.OnlineID)}.");
@@ -45,6 +47,7 @@ namespace osu.Game.Online.API.Requests
             this.scope = scope;
             this.ruleset = ruleset ?? throw new ArgumentNullException(nameof(ruleset));
             this.mode = mode;
+            this.variant = variant;
             this.mods = mods ?? Array.Empty<IMod>();
             this.sort = sort;
 
@@ -59,6 +62,10 @@ namespace osu.Game.Online.API.Requests
 
             req.AddParameter(@"type", scope.ToString().ToLowerInvariant());
             req.AddParameter(@"mode", mode ?? ruleset.ShortName);
+
+            // TumThai: a custom ruleset's Relax/Autopilot board.
+            if (variant != LeaderboardVariant.Vanilla)
+                req.AddParameter(@"variant", variant == LeaderboardVariant.Relax ? @"relax" : @"autopilot");
 
             foreach (var mod in mods)
                 req.AddParameter(@"mods[]", mod.Acronym);
@@ -79,7 +86,9 @@ namespace osu.Game.Online.API.Requests
                    && scope == other.scope
                    && ruleset.Equals(other.ruleset)
                    && mods.SequenceEqual(other.mods)
-                   && sort == other.sort;
+                   && sort == other.sort
+                   && mode == other.mode
+                   && variant == other.variant;
         }
     }
 }
