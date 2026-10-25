@@ -118,7 +118,8 @@ namespace osu.Game.Overlays.Toolbar
             if (r.OldValue == null)
                 return;
 
-            var channel = rulesetSelectionSample[r.NewValue]?.GetChannel();
+            // TumThai: a ruleset installed while the game runs has no sample loaded here: the default one plays.
+            var channel = rulesetSelectionSample.GetValueOrDefault(r.NewValue)?.GetChannel();
 
             // Skip sample choking and ducking for the default/fallback sample
             if (channel == null)
