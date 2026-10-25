@@ -53,6 +53,10 @@ namespace osu.Game.Overlays
         [Resolved]
         private RulesetStore rulesets { get; set; } = null!;
 
+        // TumThai: a custom ruleset's profile is asked for by its slug on the server.
+        [Resolved]
+        private SomtumCustomRulesets? customRulesets { get; set; }
+
         public UserProfileOverlay()
             : base(OverlayColourScheme.Pink)
         {
@@ -130,7 +134,17 @@ namespace osu.Game.Overlays
 
             if (API.State.Value != APIState.Offline)
             {
-                userReq = user.OnlineID > 1 ? new GetUserRequest(user.OnlineID, ruleset) : new GetUserRequest(user.Username, ruleset);
+                // TumThai: a custom ruleset by the server's slug; one the server doesn't rank shows their default instead.
+                string? customSlug = ruleset == null || ruleset.IsLegacyRuleset() || ruleset.IsSpecialRuleset()
+                    ? null
+                    : customRulesets?.Find(ruleset)?.Slug;
+
+                if (ruleset != null && !ruleset.IsLegacyRuleset() && !ruleset.IsSpecialRuleset() && customSlug == null)
+                    ruleset = null;
+
+                userReq = user.OnlineID > 1
+                    ? new GetUserRequest(user.OnlineID, ruleset) { SomtumMode = customSlug }
+                    : new GetUserRequest(user.Username, ruleset) { SomtumMode = customSlug };
                 userReq.Success += u => userLoadComplete(u, ruleset);
 
                 API.Queue(userReq);
