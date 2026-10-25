@@ -214,8 +214,17 @@ namespace osu.Game.Online.Leaderboards
                 ? (currentRuleset.ShortName == RulesetInfo.OSU_AUTOPILOT_MODE_SHORTNAME ? "AP" : "RX")
                 : null;
 
+            // TumThai: a custom ruleset's variant rides on the criteria (its ruleset stays the same).
+            if (variantAcronym == null && CurrentCriteria.Variant != LeaderboardVariant.Vanilla)
+                variantAcronym = CurrentCriteria.Variant == LeaderboardVariant.Autopilot ? "AP" : "RX";
+
             if (variantAcronym != null)
                 newScores = newScores.Where(s => s.Mods.Any(m => m.Acronym == variantAcronym));
+            else if (currentRuleset != null && currentRuleset.SupportedVariants().Length > 1)
+            {
+                // TumThai: the normal board of a ruleset with Relax/Autopilot boards has neither, like the online one.
+                newScores = newScores.Where(s => !s.Mods.Any(m => m.Acronym is "RX" or "AP"));
+            }
 
             if (CurrentCriteria.ExactMods != null)
             {
