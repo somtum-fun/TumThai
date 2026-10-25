@@ -190,9 +190,11 @@ namespace osu.Game.Online.API.Requests.Responses
         /// </summary>
         /// <param name="rulesets">A ruleset store, used to populate a ruleset instance in the returned score.</param>
         /// <param name="beatmap">An optional beatmap, copied into the returned score (for cases where the API does not populate the beatmap).</param>
+        /// <param name="customRuleset">
+        /// TumThai: the ruleset to use instead of looking it up by id. A custom ruleset's scores carry the server's id for it
+        /// (10 and up), which the ruleset loaded here doesn't have: the board that asked for them passes the ruleset itself.
+        /// </param>
         /// <returns></returns>
-        // TumThai: a custom ruleset's scores carry the server's id for it (10 and up), which the ruleset loaded here doesn't
-        // have: the board that asked for them passes the ruleset itself.
         public ScoreInfo ToScoreInfo(RulesetStore rulesets, BeatmapInfo? beatmap = null, RulesetInfo? customRuleset = null)
         {
             var ruleset = customRuleset ?? rulesets.GetRuleset(RulesetID) ?? throw new InvalidOperationException($"Ruleset with ID of {RulesetID} not found locally");
