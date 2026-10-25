@@ -115,7 +115,8 @@ namespace osu.Game.Rulesets
             if (!Available)
                 throw new RulesetLoadException(@"Ruleset not available");
 
-            var type = Type.GetType(InstantiationInfo);
+            // TumThai: a ruleset loaded while the game runs is found by its type, not by name (RulesetStore.RuntimeLoadedTypes).
+            var type = RulesetStore.RuntimeLoadedTypes.TryGetValue(InstantiationInfo, out var loaded) ? loaded : Type.GetType(InstantiationInfo);
 
             if (type == null)
                 throw new RulesetLoadException(@"Type lookup failure");
