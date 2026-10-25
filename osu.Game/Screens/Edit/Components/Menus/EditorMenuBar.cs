@@ -18,7 +18,8 @@ namespace osu.Game.Screens.Edit.Components.Menus
 {
     public partial class EditorMenuBar : OsuMenu
     {
-        private const float heading_area = 114;
+        // TumThai: wider than ppy's 114 for "TumThai editor" (it ran under the icon).
+        private const float heading_area = 150;
 
         public EditorMenuBar()
             : base(Direction.Horizontal, true)
