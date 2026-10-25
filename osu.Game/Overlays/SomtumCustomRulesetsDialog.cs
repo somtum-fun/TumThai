@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -334,7 +335,7 @@ namespace osu.Game.Overlays
                         return;
                     }
 
-                    refresh(t.Result ? "Installed: it's in the ruleset list now" : null);
+                    refresh(t.GetResultSafely() ? "Installed: it's in the ruleset list now" : null);
                 }));
             }
         }
