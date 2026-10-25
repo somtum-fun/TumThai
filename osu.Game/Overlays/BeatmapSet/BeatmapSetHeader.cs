@@ -30,6 +30,9 @@ namespace osu.Game.Overlays.BeatmapSet
         [Cached(typeof(IBindable<RulesetInfo>))]
         private readonly Bindable<RulesetInfo> ruleset = new Bindable<RulesetInfo>();
 
+        /// <summary>TumThai: the ruleset picked in the tabs (the scores show a custom ruleset's board for it).</summary>
+        public Bindable<RulesetInfo> Ruleset => ruleset;
+
         public BeatmapSetHeader()
         {
             Masking = true;

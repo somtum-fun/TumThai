@@ -163,8 +163,11 @@ namespace osu.Game.Overlays.BeatmapSet
 
             if (BeatmapSet != null)
             {
+                // TumThai: a custom ruleset plays the set's own osu! difficulties.
+                bool custom = ruleset.Value != null && !ruleset.Value.IsLegacyRuleset() && !ruleset.Value.IsSpecialRuleset();
+
                 Difficulties.ChildrenEnumerable = BeatmapSet.Beatmaps.Concat(BeatmapSet.Converts ?? Array.Empty<APIBeatmap>())
-                                                            .Where(b => b.Ruleset.MatchesOnlineID(ruleset.Value))
+                                                            .Where(b => custom ? b.Ruleset.OnlineID == 0 && !b.Convert : b.Ruleset.MatchesOnlineID(ruleset.Value))
                                                             .OrderBy(b => !b.Convert)
                                                             .ThenBy(b => b.StarRating)
                                                             .Select(b => new DifficultySelectorButton(b, b.Convert ? new RulesetInfo { OnlineID = 0 } : null)
