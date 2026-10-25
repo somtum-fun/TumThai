@@ -30,7 +30,11 @@ namespace osu.Game.Overlays.Settings.Sections
             if (updateManager?.CanCheckForUpdate == true)
                 Add(new UpdateSettings());
             if (RuntimeInfo.IsDesktop)
+            {
                 Add(new InstallationSettings());
+                // TumThai: custom rulesets load from disk, which lazer only does on desktop.
+                Add(new CustomRulesetsSettings());
+            }
         }
     }
 }

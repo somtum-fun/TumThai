@@ -44,7 +44,11 @@ namespace osu.Game.Rulesets
 
             RulesetStorage = storage?.GetStorageForDirectory(@"rulesets");
             if (RulesetStorage != null)
+            {
+                // TumThai: custom ruleset updates and removals Settings left for this start.
+                Online.SomtumCustomRulesets.ApplyPending(RulesetStorage.GetFullPath(@"."));
                 loadUserRulesets(RulesetStorage);
+            }
         }
 
         /// <summary>

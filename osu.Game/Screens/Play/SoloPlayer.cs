@@ -10,6 +10,7 @@ using JetBrains.Annotations;
 using osu.Framework.Allocation;
 using osu.Game.Beatmaps;
 using osu.Game.Extensions;
+using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.Rooms;
 using osu.Game.Online.Solo;
@@ -20,6 +21,11 @@ namespace osu.Game.Screens.Play
 {
     public partial class SoloPlayer : SubmittingPlayer
     {
+        // TumThai: the custom rulesets the server ranks.
+        [Resolved(canBeNull: true)]
+        [CanBeNull]
+        private SomtumCustomRulesets customRulesets { get; set; }
+
         [Cached(typeof(IGameplayLeaderboardProvider))]
         private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider { AllowPerformanceSort = true }; // osu!somtum
 
@@ -47,7 +53,13 @@ namespace osu.Game.Screens.Play
                 return null;
 
             if (!Ruleset.Value.IsLegacyRuleset())
-                return null;
+            {
+                // TumThai: a custom ruleset the server ranks submits under the server's id, played on the file it pinned.
+                if (customRulesets?.Submittable(Ruleset.Value) is not { } custom)
+                    return null;
+
+                return new CreateSoloScoreRequest(Beatmap.Value.BeatmapInfo, custom.ID, Game.VersionHash, Mods.Value.Select(m => m.Acronym), custom.Sha256);
+            }
 
             return new CreateSoloScoreRequest(Beatmap.Value.BeatmapInfo, rulesetId, Game.VersionHash, Mods.Value.Select(m => m.Acronym));
         }

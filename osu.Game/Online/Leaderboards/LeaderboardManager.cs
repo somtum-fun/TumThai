@@ -13,6 +13,7 @@ using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Extensions;
+using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Rulesets;
@@ -52,6 +53,9 @@ namespace osu.Game.Online.Leaderboards
 
         [Resolved]
         private RulesetStore rulesets { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private SomtumCustomRulesets? customRulesets { get; set; }
 
         /// <summary>
         /// Fetch leaderboard content with the new criteria specified in the background.
@@ -110,7 +114,10 @@ namespace osu.Game.Online.Leaderboards
 
                     // Special (RX/AP) rulesets carry a non-legacy online id but are valid server-side variants
                     // of a legacy ruleset, so allow them through alongside genuine legacy rulesets.
-                    if (!newCriteria.Ruleset.IsLegacyRuleset() && !newCriteria.Ruleset.IsSpecialRuleset())
+                    // TumThai: a custom ruleset the server ranks has its own board (asked for by its slug).
+                    var customRuleset = newCriteria.Ruleset.IsLegacyRuleset() ? null : customRulesets?.Find(newCriteria.Ruleset);
+
+                    if (!newCriteria.Ruleset.IsLegacyRuleset() && !newCriteria.Ruleset.IsSpecialRuleset() && customRuleset == null)
                     {
                         scores.Value = LeaderboardScores.Failure(LeaderboardFailState.RulesetUnavailable);
                         return;
@@ -145,7 +152,7 @@ namespace osu.Game.Online.Leaderboards
                             requestMods = newCriteria.ExactMods;
                     }
 
-                    var newRequest = new GetScoresRequest(newCriteria.Beatmap, newCriteria.Ruleset, newCriteria.Scope, requestMods, newCriteria.Sorting);
+                    var newRequest = new GetScoresRequest(newCriteria.Beatmap, newCriteria.Ruleset, newCriteria.Scope, requestMods, newCriteria.Sorting, customRuleset?.Slug);
                     newRequest.Success += response =>
                     {
                         if (inFlightOnlineRequest != null && !newRequest.Equals(inFlightOnlineRequest))
