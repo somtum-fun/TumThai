@@ -18,9 +18,9 @@ namespace osu.Game.Online.API.Requests.Responses
         [JsonProperty(@"score")]
         public SoloScoreInfo Score;
 
-        public ScoreInfo CreateScoreInfo(RulesetStore rulesets, BeatmapInfo beatmap = null)
+        public ScoreInfo CreateScoreInfo(RulesetStore rulesets, BeatmapInfo beatmap = null, RulesetInfo customRuleset = null)
         {
-            var score = Score.ToScoreInfo(rulesets, beatmap);
+            var score = Score.ToScoreInfo(rulesets, beatmap, customRuleset);
             score.Position = Position;
             return score;
         }

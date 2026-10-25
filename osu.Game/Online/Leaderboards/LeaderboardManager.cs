@@ -158,7 +158,9 @@ namespace osu.Game.Online.Leaderboards
                         if (inFlightOnlineRequest != null && !newRequest.Equals(inFlightOnlineRequest))
                             return;
 
-                        var fetched = response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap));
+                        // TumThai: a custom ruleset's scores are converted with that ruleset (they carry the server's id for it).
+                        var ownRuleset = customRuleset != null ? newCriteria.Ruleset : null;
+                        var fetched = response.Scores.Select(s => s.ToScoreInfo(rulesets, newCriteria.Beatmap, ownRuleset));
 
                         // osu!somtum: the server orders the board (by pp or by score, as asked); keep that order.
                         if (newCriteria.Sorting == LeaderboardSortMode.Score && !newCriteria.Ruleset.IsSpecialRuleset())
@@ -174,7 +176,7 @@ namespace osu.Game.Online.Leaderboards
                                    .ToArray(),
                             scoresRequested: newRequest.ScoresRequested,
                             totalScores: response.ScoresCount,
-                            response.UserScore?.CreateScoreInfo(rulesets, newCriteria.Beatmap)
+                            response.UserScore?.CreateScoreInfo(rulesets, newCriteria.Beatmap, ownRuleset)
                         );
                         inFlightOnlineRequest = null;
                         scores.Value = result;
