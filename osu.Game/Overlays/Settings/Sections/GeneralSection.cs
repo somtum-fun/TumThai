@@ -30,11 +30,10 @@ namespace osu.Game.Overlays.Settings.Sections
             if (updateManager?.CanCheckForUpdate == true)
                 Add(new UpdateSettings());
             if (RuntimeInfo.IsDesktop)
-            {
                 Add(new InstallationSettings());
-                // TumThai: custom rulesets load from disk, which lazer only does on desktop.
+            // TumThai!Next: custom rulesets load from the game's rulesets folder, on desktop and Android alike.
+            if (RuntimeInfo.IsDesktop || RuntimeInfo.OS == RuntimeInfo.Platform.Android)
                 Add(new CustomRulesetsSettings());
-            }
         }
     }
 }
