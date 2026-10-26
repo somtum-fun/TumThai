@@ -28,7 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
         private FormCheckBox? legacyAudio;
 
         [BackgroundDependencyLoader]
-        private void load(OsuConfigManager osuConfig)
+        private void load()
         {
             Children = new Drawable[]
             {
@@ -49,18 +49,6 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
                 });
 
                 legacyAudio.Current.ValueChanged += _ => onDeviceChanged(string.Empty);
-            }
-            else if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
-            {
-                Add(new SettingsItemV2(new FormCheckBox
-                {
-                    Caption = "Low-latency audio (AAudio)",
-                    HintText = "Uses Android's native AAudio low-latency path for responsive hitsounds and music. Disable if your device has crackling or Bluetooth audio issues.",
-                    Current = osuConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio),
-                })
-                {
-                    Keywords = new[] { "aaudio", "oboe", "latency", "android", "low-latency", "bluetooth" },
-                });
             }
 
             audio.OnNewDevice += onDeviceChanged;
