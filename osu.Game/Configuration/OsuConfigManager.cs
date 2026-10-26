@@ -283,7 +283,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.InputAudioHz, InputAudioHzMode.Hz1000);
             SetDefault(OsuSetting.InputAudioHzAutoTuned, false);
             // TumThai!Next: the rate used when InputAudioHz is Custom, within what the framework accepts.
-            SetDefault(OsuSetting.InputAudioHzCustom, 1000, 250, 16000, 1);
+            SetDefault(OsuSetting.InputAudioHzCustom, 1000, 250, 16000);
             SetDefault(OsuSetting.DisplayRefreshRate, DisplayRefreshRateMode.Automatic);
             SetDefault(OsuSetting.ShowLatencyCounter, false);
             SetDefault(OsuSetting.AndroidLowLatencyAudio, true);
