@@ -159,7 +159,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                 if (Performance.PotatoMode.Active)
                 {
                     inputAudioHzNote.Value = new SettingsNote.Data(
-                        "Potato mode is active and forces the input/audio/update rate to 500 Hz to save CPU.",
+                        "Potato mode is active and caps the input/audio/update rate at 500 Hz to save CPU. Pick Custom to go lower (down to 250 Hz).",
                         SettingsNote.Type.Informational);
                     return;
                 }

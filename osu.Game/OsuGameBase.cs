@@ -274,10 +274,10 @@ namespace osu.Game
 
         private void updateInputAudioHz()
         {
-            if (Performance.PotatoMode.Active)
-                Host.InputAudioHz.Value = (int)InputAudioHzMode.Hz500;
-            else
-                Host.InputAudioHz.Value = inputAudioHz.Value == InputAudioHzMode.Custom ? inputAudioHzCustom.Value : (int)inputAudioHz.Value;
+            int chosen = inputAudioHz.Value == InputAudioHzMode.Custom ? inputAudioHzCustom.Value : (int)inputAudioHz.Value;
+
+            // Potato mode caps the rate at 500 Hz; a lower rate the player picked (Custom, down to 250 Hz) still applies.
+            Host.InputAudioHz.Value = Performance.PotatoMode.Active ? Math.Min(chosen, (int)InputAudioHzMode.Hz500) : chosen;
         }
 
         private Bindable<DisplayRefreshRateMode> displayRefreshRate = null!;
