@@ -59,8 +59,13 @@ namespace osu.Game.Updater
             if (game.IsDeployedBuild)
             {
                 // make sure the release stream setting matches the build which was just run.
-                if (FixedReleaseStream != null)
-                    config.SetValue(OsuSetting.ReleaseStream, FixedReleaseStream.Value);
+                // TumThai: on every platform. TumThai and TumThai!Next share one config file, so a fresh TumThai!Next
+                // install read TumThai's stream and "updated" itself back to TumThai (and the other way round). Picking the
+                // other stream in Settings afterwards still moves to it.
+                config.SetValue(OsuSetting.ReleaseStream, FixedReleaseStream
+                                                          ?? (game.Version.EndsWith(@"-next", StringComparison.Ordinal)
+                                                              ? Configuration.ReleaseStream.Tachyon
+                                                              : Configuration.ReleaseStream.Lazer));
 
                 // TumThai: silenced — the osu!somtum build is intentionally unofficial, and the server
                 // enforces its own build allowlist for online features. The log line below still fires.
