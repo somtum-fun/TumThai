@@ -86,7 +86,8 @@ namespace osu.Game.Updater
                     Activated = () =>
                     {
                         // the download page (on Android, opening the .apk directly can make the download disappear on some devices).
-                        host.OpenUrlExternally(download_page_url);
+                        // TumThai: TumThai!Next's own downloads; the page's default is TumThai, whose .apk replaces Next.
+                        host.OpenUrlExternally(stream == Configuration.ReleaseStream.Tachyon ? download_page_url + @"?stream=next" : download_page_url);
                         return true;
                     }
                 });
