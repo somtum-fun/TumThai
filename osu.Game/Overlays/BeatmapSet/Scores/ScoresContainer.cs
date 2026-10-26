@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -120,7 +120,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
                 var topScore = scores.First();
 
-                bool showPerformance = apiBeatmap.Status.GrantsPerformancePoints();
+                // TumThai: a custom ruleset has no pp.
+                bool showPerformance = customRuleset == null && apiBeatmap.Status.GrantsPerformancePoints();
 
                 // osu!somtum: show pp in place of score when sorted by pp.
                 bool sortedByPerformance = showPerformance && requestedByPerformance;
@@ -290,7 +291,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             resetSort();
             sortSelector.Alpha = customRuleset == null && beatmap.NewValue?.Status.GrantsPerformancePoints() == true ? 1 : 0;
 
-            if (ruleset.Value?.OnlineID == beatmapRuleset?.OnlineID)
+            // TumThai: custom rulesets all have online ID -1: the same ruleset is the same short name too.
+            if (ruleset.Value?.OnlineID == beatmapRuleset?.OnlineID && ruleset.Value?.ShortName == beatmapRuleset?.ShortName)
             {
                 modSelector.DeselectAll();
                 ruleset.TriggerChange();

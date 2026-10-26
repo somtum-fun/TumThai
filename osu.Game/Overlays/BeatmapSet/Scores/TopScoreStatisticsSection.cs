@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
+using osu.Game.Extensions;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
@@ -145,7 +146,9 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 maxComboColumn.Text = value.MaxCombo.ToLocalisableString(@"0\x");
 
                 // osu!somtum: the pp column is always shown when it holds the main value.
-                ppColumn.Alpha = sortedByPerformance || value.BeatmapInfo!.Status.GrantsPerformancePoints() ? 1 : 0;
+                // TumThai: a custom ruleset's play has no pp.
+                bool customRuleset = !value.Ruleset.IsLegacyRuleset() && !value.Ruleset.IsSpecialRuleset();
+                ppColumn.Alpha = !customRuleset && (sortedByPerformance || value.BeatmapInfo!.Status.GrantsPerformancePoints()) ? 1 : 0;
 
                 var ppFont = sortedByPerformance ? largeFont : smallFont;
 
