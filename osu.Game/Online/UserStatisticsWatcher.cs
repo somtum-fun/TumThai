@@ -10,6 +10,7 @@ using osu.Game.Extensions;
 using osu.Game.Screens.Select;
 using osu.Game.Online.API;
 using osu.Game.Online.Spectator;
+using osu.Game.Rulesets;
 using osu.Game.Scoring;
 
 namespace osu.Game.Online
@@ -29,6 +30,10 @@ namespace osu.Game.Online
 
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
+
+        // TumThai: the custom rulesets the server ranks (their plays' standing is fetched right after submission).
+        [Resolved]
+        private SomtumCustomRulesets? customRulesets { get; set; }
 
         private readonly Dictionary<long, ScoreInfo> watchedScores = new Dictionary<long, ScoreInfo>();
 
@@ -55,6 +60,16 @@ namespace osu.Game.Online
                 if (!api.IsLoggedIn)
                     return;
 
+                // TumThai: a custom ruleset's play has no server-side processing to wait for (ppy's processor leaves
+                // custom rulesets alone, so no "score processed" ever comes): its standing is fetched again as soon as
+                // it's submitted, and the results screen and toolbar show the change.
+                if (!score.Ruleset.IsLegacyRuleset() && !score.Ruleset.IsSpecialRuleset() && score.OnlineID > 0
+                    && customRulesets?.Find(score.Ruleset) != null)
+                {
+                    publishUpdateAfterRefetch(score, score.Ruleset);
+                    return;
+                }
+
                 if (!score.Ruleset.IsLegacyRuleset() || score.OnlineID <= 0)
                     return;
 
@@ -71,7 +86,12 @@ namespace osu.Game.Online
                 return;
 
             // osu!somtum: an RX/AP play counts in that variant's statistics (osurx, ...), not vanilla's.
-            statisticsProvider.RefetchStatistics(scoreInfo.Ruleset.ForMods(scoreInfo.Mods), u => Schedule(() =>
+            publishUpdateAfterRefetch(scoreInfo, scoreInfo.Ruleset.ForMods(scoreInfo.Mods));
+        }
+
+        private void publishUpdateAfterRefetch(ScoreInfo scoreInfo, RulesetInfo ruleset)
+        {
+            statisticsProvider.RefetchStatistics(ruleset, u => Schedule(() =>
             {
                 if (u.OldStatistics != null)
                     latestUpdate.Value = new ScoreBasedUserStatisticsUpdate(scoreInfo, u.OldStatistics, u.NewStatistics);
