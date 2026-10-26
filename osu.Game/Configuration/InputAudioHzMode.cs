@@ -27,6 +27,10 @@ namespace osu.Game.Configuration
 
         [Description("8000 Hz (extreme 8K polling)")]
         Hz8000 = 8000,
+
+        /// <summary>TumThai!Next: the player's own rate, <see cref="OsuSetting.InputAudioHzCustom"/>.</summary>
+        [Description("Custom")]
+        Custom = 0,
     }
 
     public static class InputAudioHzDefaults

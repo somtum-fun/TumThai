@@ -28,6 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
         private readonly Bindable<SettingsNote.Data?> dangerousUnlimitedNote = new Bindable<SettingsNote.Data?>();
         private readonly Bindable<SettingsNote.Data?> inputAudioHzNote = new Bindable<SettingsNote.Data?>();
         private readonly Bindable<SettingsNote.Data?> frameSyncNote = new Bindable<SettingsNote.Data?>();
+        private readonly BindableBool inputAudioHzCustomCanBeShown = new BindableBool();
 
         [BackgroundDependencyLoader]
         private void load(FrameworkConfigManager config, OsuConfigManager osuConfig, IDialogOverlay? dialogOverlay, OsuGame? game, GameHost host)
@@ -83,8 +84,22 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                     Current = inputAudioHz,
                 })
                 {
-                    Keywords = new[] { @"hz", @"polling", @"input", @"audio", @"update", @"latency", @"1000", @"2000", @"4000", @"8000" },
+                    Keywords = new[] { @"hz", @"polling", @"input", @"audio", @"update", @"latency", @"1000", @"2000", @"4000", @"8000", @"custom" },
                     Note = { BindTarget = inputAudioHzNote },
+                },
+                // TumThai!Next: the player's own rate, typed in or slid, when the rate above is Custom.
+                new SettingsItemV2(new FormSliderBar<int>
+                {
+                    Caption = "Custom input / audio rate",
+                    HintText = "Any rate from 250 to 16000 Hz. Click the number to type an exact value.",
+                    Current = osuConfig.GetBindable<int>(OsuSetting.InputAudioHzCustom),
+                    KeyboardStep = 50,
+                    TransferValueOnCommit = true,
+                    LabelFormat = v => $@"{v} Hz",
+                })
+                {
+                    Keywords = new[] { @"hz", @"polling", @"input", @"audio", @"custom" },
+                    CanBeShown = { BindTarget = inputAudioHzCustomCanBeShown },
                 },
                 new SettingsItemV2(dangerousUnlimitedCheckbox = new FormCheckBox
                 {
@@ -139,6 +154,8 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
 
             inputAudioHz.BindValueChanged(v =>
             {
+                inputAudioHzCustomCanBeShown.Value = v.NewValue == InputAudioHzMode.Custom;
+
                 if (Performance.PotatoMode.Active)
                 {
                     inputAudioHzNote.Value = new SettingsNote.Data(
@@ -164,6 +181,9 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
                     InputAudioHzMode.Hz8000 => new SettingsNote.Data(
                         "8000 Hz uses significant CPU time. Lower this to 2000 or 4000 Hz if you notice frame drops or audio crackles.",
                         SettingsNote.Type.Warning),
+                    InputAudioHzMode.Custom => new SettingsNote.Data(
+                        "Set your own rate below. Above 4000 Hz uses a lot of CPU: lower it if you notice frame drops or audio crackles.",
+                        SettingsNote.Type.Informational),
                     _ => null
                 };
             }, true);

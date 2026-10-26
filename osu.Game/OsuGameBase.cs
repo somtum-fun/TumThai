@@ -270,6 +270,15 @@ namespace osu.Game
         private IBindable<LocalisationParameters> localisationParameters = null!;
 
         private Bindable<InputAudioHzMode> inputAudioHz = null!;
+        private Bindable<int> inputAudioHzCustom = null!;
+
+        private void updateInputAudioHz()
+        {
+            if (Performance.PotatoMode.Active)
+                Host.InputAudioHz.Value = (int)InputAudioHzMode.Hz500;
+            else
+                Host.InputAudioHz.Value = inputAudioHz.Value == InputAudioHzMode.Custom ? inputAudioHzCustom.Value : (int)inputAudioHz.Value;
+        }
 
         private Bindable<DisplayRefreshRateMode> displayRefreshRate = null!;
 
@@ -419,12 +428,9 @@ namespace osu.Game
             }
 
             inputAudioHz = LocalConfig.GetBindable<InputAudioHzMode>(OsuSetting.InputAudioHz);
-            inputAudioHz.BindValueChanged(v =>
-            {
-                Host.InputAudioHz.Value = Performance.PotatoMode.Active
-                    ? (int)InputAudioHzMode.Hz500
-                    : (int)v.NewValue;
-            }, true);
+            inputAudioHzCustom = LocalConfig.GetBindable<int>(OsuSetting.InputAudioHzCustom);
+            inputAudioHz.BindValueChanged(_ => updateInputAudioHz());
+            inputAudioHzCustom.BindValueChanged(_ => updateInputAudioHz(), true);
 
             displayRefreshRate = LocalConfig.GetBindable<DisplayRefreshRateMode>(OsuSetting.DisplayRefreshRate);
             displayRefreshRate.BindValueChanged(v =>
