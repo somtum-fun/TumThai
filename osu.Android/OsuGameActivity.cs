@@ -12,6 +12,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Views;
+using osu.Android.Performance;
 using osu.Framework.Android;
 using osu.Game.Database;
 using Debug = System.Diagnostics.Debug;
@@ -82,6 +83,9 @@ namespace osu.Android
 
         protected override void OnCreate(Bundle? savedInstanceState)
         {
+            // Configure BASS's built-in AAudio low-latency parameters BEFORE base.OnCreate starts SDL and calls Bass.Init.
+            AndroidAudioOptimizer.ConfigureBeforeStartup(this);
+
             base.OnCreate(savedInstanceState);
 
             // OnNewIntent() only fires for an activity if it's *re-launched* while it's on top of the activity stack.

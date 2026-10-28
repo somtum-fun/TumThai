@@ -4,15 +4,16 @@
 using System;
 using System.Linq;
 using Android.App;
-using Android.Content;
 using Android.Content.PM;
-using Android.Media;
 using Microsoft.Maui.Devices;
+using osu.Android.Performance;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.Configuration;
 using osu.Game.Performance;
 using osu.Game.Screens;
 using osu.Game.Updater;
@@ -30,6 +31,8 @@ namespace osu.Android
         private readonly HighPerformanceSessionManager highPerformanceSessionManager = new HighPerformanceSessionManager();
 
         private readonly PackageInfo packageInfo;
+
+        private Bindable<bool>? androidLowLatencyAudio;
 
         public override Vector2 ScalingContainerTargetDrawSize => new Vector2(1024, 1024 * DrawHeight / DrawWidth);
 
@@ -57,6 +60,22 @@ namespace osu.Android
         {
             base.LoadComplete();
             UserPlayingState.BindValueChanged(_ => updateOrientation());
+
+            androidLowLatencyAudio = LocalConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio);
+            androidLowLatencyAudio.BindValueChanged(v =>
+            {
+                AndroidAudioOptimizer.ScheduleApplyOnAudioThread(gameActivity, Host?.AudioThread, !PotatoMode.Active && v.NewValue);
+            }, true);
+
+            Audio.OnNewDevice += onAudioDeviceChanged;
+            Scheduler.AddDelayed(() => onAudioDeviceChanged(string.Empty), 750);
+
+            AndroidAudioOptimizer.RegisterRouteMonitor(gameActivity, Host?.AudioThread, () => !PotatoMode.Active && (androidLowLatencyAudio?.Value ?? true));
+        }
+
+        private void onAudioDeviceChanged(string _)
+        {
+            AndroidAudioOptimizer.ScheduleApplyOnAudioThread(gameActivity, Host?.AudioThread, !PotatoMode.Active && (androidLowLatencyAudio?.Value ?? true));
         }
 
         protected override void ScreenChanged(IOsuScreen? current, IOsuScreen? newScreen)
@@ -69,7 +88,10 @@ namespace osu.Android
 
         private void updateOrientation()
         {
-            var orientation = MobileUtils.GetOrientation(this, (IOsuScreen)ScreenStack.CurrentScreen, gameActivity.IsTablet);
+            if (ScreenStack.CurrentScreen is not IOsuScreen currentScreen)
+                return;
+
+            var orientation = MobileUtils.GetOrientation(this, currentScreen, gameActivity.IsTablet);
 
             switch (orientation)
             {
@@ -93,26 +115,17 @@ namespace osu.Android
             host.Window.CursorState |= CursorState.Hidden;
         }
 
-        protected override int GetPreferredAndroidAudioSampleRate()
-        {
-            try
-            {
-                var audioManager = Application.Context.GetSystemService(Context.AudioService) as AudioManager;
-                string? rateString = audioManager?.GetProperty(AudioManager.PropertyOutputSampleRate);
-
-                if (int.TryParse(rateString, out int sampleRate) && sampleRate >= 8000 && sampleRate <= 192000)
-                    return sampleRate;
-            }
-            catch
-            {
-            }
-
-            return 0;
-        }
-
         protected override UpdateManager CreateUpdateManager() => new MobileUpdateNotifier();
 
         protected override BatteryInfo CreateBatteryInfo() => new AndroidBatteryInfo();
+
+        protected override void Dispose(bool isDisposing)
+        {
+            if (IsLoaded)
+                Audio.OnNewDevice -= onAudioDeviceChanged;
+
+            base.Dispose(isDisposing);
+        }
 
         private class AndroidBatteryInfo : BatteryInfo
         {

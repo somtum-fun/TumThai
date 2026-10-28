@@ -1,14 +1,14 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Framework.Allocation;
-using osu.Framework.Audio;
-using osu.Framework.Graphics;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework;
+using osu.Framework.Allocation;
+using osu.Framework.Audio;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
+using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -27,8 +27,10 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
 
         private FormCheckBox? legacyAudio;
 
+        private readonly Bindable<SettingsNote.Data?> androidLowLatencyNote = new Bindable<SettingsNote.Data?>();
+
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager osuConfig)
         {
             Children = new Drawable[]
             {
@@ -49,6 +51,40 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
                 });
 
                 legacyAudio.Current.ValueChanged += _ => onDeviceChanged(string.Empty);
+            }
+            else if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
+            {
+                var androidLowLatency = osuConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio);
+
+                Add(new SettingsItemV2(new FormCheckBox
+                {
+                    Caption = "Low-latency audio (AAudio)",
+                    HintText = "Tunes BASS's native AAudio output to your device's hardware burst size for responsive hitsounds and music, automatically relaxing for Bluetooth audio.",
+                    Current = androidLowLatency,
+                })
+                {
+                    Keywords = new[] { "aaudio", "oboe", "latency", "android", "low-latency", "bluetooth", "bass" },
+                    Note = { BindTarget = androidLowLatencyNote },
+                });
+
+                androidLowLatency.BindValueChanged(v =>
+                {
+                    if (Performance.PotatoMode.Active)
+                    {
+                        androidLowLatencyNote.Value = new SettingsNote.Data(
+                            "Potato mode is active and keeps standard audio buffers enabled to prevent crackles.",
+                            SettingsNote.Type.Informational);
+                        return;
+                    }
+
+                    androidLowLatencyNote.Value = v.NewValue
+                        ? new SettingsNote.Data(
+                            "Active on speakers and wired/USB-C audio; automatically relaxes when Bluetooth headphones connect. Changes apply on audio route switch or restart.",
+                            SettingsNote.Type.Informational)
+                        : new SettingsNote.Data(
+                            "Uses standard 40 ms audio buffers. Changes apply on audio route switch or restart.",
+                            SettingsNote.Type.Informational);
+                }, true);
             }
 
             audio.OnNewDevice += onDeviceChanged;

@@ -576,7 +576,7 @@ namespace osu.Game.Configuration
         ShowLatencyCounter,
 
         /// <summary>
-        /// Enables Android native AAudio low-latency audio output routed through a BASS decode mixer.
+        /// Enables BASS native AAudio low-latency output matched to the device's hardware burst size on Android.
         /// </summary>
         AndroidLowLatencyAudio,
 

@@ -282,14 +282,7 @@ namespace osu.Game
 
         private Bindable<DisplayRefreshRateMode> displayRefreshRate = null!;
 
-        private Bindable<bool> androidLowLatencyAudio = null!;
-
         private Bindable<bool> androidSustainedPerformance = null!;
-
-        /// <summary>
-        /// Returns the preferred hardware output sample rate in Hz on Android (or 0 to let AAudio choose).
-        /// </summary>
-        protected virtual int GetPreferredAndroidAudioSampleRate() => 0;
 
         /// <summary>
         /// Number of unhandled exceptions to allow before aborting execution.
@@ -440,11 +433,9 @@ namespace osu.Game
 
             if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
             {
-                androidLowLatencyAudio = LocalConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio);
-                androidLowLatencyAudio.BindValueChanged(v =>
-                {
-                    Audio.SetAndroidLowLatencyAudio(!Performance.PotatoMode.Active && v.NewValue, GetPreferredAndroidAudioSampleRate());
-                }, true);
+                // Keep the framework's managed AAudio callback bridge disabled (its runtime .NET thunk has no ELF CFI shadow
+                // and crashes CFI-enabled libaaudio on One UI 9 / Android 16+); osu.Android configures native BASS AAudio instead.
+                Audio.SetAndroidLowLatencyAudio(false);
 
                 androidSustainedPerformance = LocalConfig.GetBindable<bool>(OsuSetting.AndroidSustainedPerformance);
                 androidSustainedPerformance.BindValueChanged(v =>
