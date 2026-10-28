@@ -22,6 +22,8 @@
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <StartupHookSupport>false</StartupHookSupport>
     <CETCompat>false</CETCompat>
+    <TieredPGO>true</TieredPGO>
+    <OptimizationPreference>Speed</OptimizationPreference>
   </PropertyGroup>
 
   <PropertyGroup>
