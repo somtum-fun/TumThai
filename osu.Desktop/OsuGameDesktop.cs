@@ -7,20 +7,21 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
 using osu.Desktop.IPC;
+using osu.Desktop.MacOS;
+using osu.Desktop.Performance;
 using osu.Desktop.Security;
+using osu.Desktop.Updater;
+using osu.Desktop.Windows;
+using osu.Framework;
+using osu.Framework.Allocation;
+using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
-using osu.Desktop.Updater;
-using osu.Framework;
-using osu.Framework.Logging;
-using osu.Game.Updater;
-using osu.Desktop.MacOS;
-using osu.Desktop.Windows;
-using osu.Framework.Allocation;
 using osu.Game.Configuration;
 using osu.Game.IO;
 using osu.Game.IPC;
 using osu.Game.Performance;
+using osu.Game.Updater;
 using osu.Game.Utils;
 
 namespace osu.Desktop
@@ -31,7 +32,7 @@ namespace osu.Desktop
         private ArchiveImportIPCChannel? archiveImportIPCChannel;
 
         [Cached(typeof(IHighPerformanceSessionManager))]
-        private readonly HighPerformanceSessionManager highPerformanceSessionManager = new HighPerformanceSessionManager();
+        private readonly DesktopHighPerformanceSessionManager highPerformanceSessionManager = new DesktopHighPerformanceSessionManager();
 
         public bool IsFirstRun { get; init; }
 
@@ -169,6 +170,8 @@ namespace osu.Desktop
         {
             base.SetHost(host);
 
+            highPerformanceSessionManager.AttachHost(host);
+
             // Apple operating systems use a better icon provided via external assets.
             if (!RuntimeInfo.IsApple)
             {
@@ -185,6 +188,7 @@ namespace osu.Desktop
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+            highPerformanceSessionManager.Dispose();
             osuSchemeLinkIPCChannel?.Dispose();
             archiveImportIPCChannel?.Dispose();
         }
