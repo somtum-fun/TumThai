@@ -28,6 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
         private readonly Bindable<SettingsNote.Data?> dangerousUnlimitedNote = new Bindable<SettingsNote.Data?>();
         private readonly Bindable<SettingsNote.Data?> inputAudioHzNote = new Bindable<SettingsNote.Data?>();
         private readonly Bindable<SettingsNote.Data?> frameSyncNote = new Bindable<SettingsNote.Data?>();
+        private readonly Bindable<SettingsNote.Data?> androidSustainedNote = new Bindable<SettingsNote.Data?>();
         private readonly BindableBool inputAudioHzCustomCanBeShown = new BindableBool();
 
         [BackgroundDependencyLoader]
@@ -137,15 +138,30 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
 
             if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
             {
+                var androidSustained = osuConfig.GetBindable<bool>(OsuSetting.AndroidSustainedPerformance);
+
                 children.Add(new SettingsItemV2(new FormCheckBox
                 {
-                    Caption = "Sustained performance mode",
-                    HintText = "Hints Android to maintain steady CPU/GPU clocks and reduce thermal throttling during long sessions.",
-                    Current = osuConfig.GetBindable<bool>(OsuSetting.AndroidSustainedPerformance),
+                    Caption = "Sustained performance mode (thermal clock cap)",
+                    HintText = "Caps peak CPU/GPU boost frequencies to limit heat on older phones. Leave off on Android 12+ where ADPF boosts gameplay dynamically.",
+                    Current = androidSustained,
                 })
                 {
-                    Keywords = new[] { @"android", @"thermal", @"sustained", @"performance", @"throttling" },
+                    Keywords = new[] { @"android", @"thermal", @"sustained", @"performance", @"throttling", @"one ui", @"gos", @"adpf" },
+                    Note = { BindTarget = androidSustainedNote },
                 });
+
+                androidSustained.BindValueChanged(v =>
+                {
+                    androidSustainedNote.Value = v.NewValue
+                        ? new SettingsNote.Data(
+                            "Active: Android will cap peak CPU and GPU boost clocks from startup. Turn this off if you want maximum refresh rate and lowest input latency.",
+                            SettingsNote.Type.Warning)
+                        : new SettingsNote.Data(
+                            "Recommended: leave off (ADPF dynamic thread boosting runs automatically during gameplay). "
+                            + "On Samsung One UI, also enable Gaming Hub → Game Booster → Labs → 'Alternate game performance management' and 120 Hz Game motion smoothness.",
+                            SettingsNote.Type.Informational);
+                }, true);
             }
 
             children.Add(new PotatoModeToggleAndRestart());

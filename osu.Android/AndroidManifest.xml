@@ -3,10 +3,14 @@
 	<uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
 	<application android:allowBackup="true"
 				 android:supportsRtl="true"
+				 android:isGame="true"
+				 android:appCategory="game"
 				 android:label="TumThai!Next"
 				 android:icon="@mipmap/ic_launcher"
 				 android:roundIcon="@mipmap/ic_launcher"
 				 android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        <meta-data android:name="android.game_mode_config"
+                   android:resource="@xml/game_mode_config" />
         <provider android:name="androidx.core.content.FileProvider"
                   android:authorities="fun.somtum.tumthai.fileprovider"
                   android:grantUriPermissions="true"

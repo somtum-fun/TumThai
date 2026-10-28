@@ -4,6 +4,7 @@
 using System;
 using System.Runtime;
 using System.Threading;
+using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
 
@@ -13,14 +14,34 @@ namespace osu.Game.Performance
     {
         public bool IsSessionActive => activeSessions > 0;
 
+        private const long low_ram_threshold_bytes = (long)(6.5 * 1024 * 1024 * 1024);
+
         private int activeSessions;
 
         private GCLatencyMode originalGCMode;
+        private GCLatencyMode appliedGCMode;
 
         public IDisposable BeginSession()
         {
             enterSession();
             return new InvokeOnDisposal<HighPerformanceSessionManager>(this, static m => m.exitSession());
+        }
+
+        /// <summary>
+        /// Invoked on the transition from zero to one active high-performance session so platform
+        /// subclasses (Android ADPF / thread priority, Desktop MMCSS / power throttling) can engage
+        /// hardware performance hints for gameplay.
+        /// </summary>
+        protected virtual void OnSessionStarted()
+        {
+        }
+
+        /// <summary>
+        /// Invoked when the last active high-performance session finishes so platform subclasses can
+        /// release gameplay-specific OS scheduling and power boosts.
+        /// </summary>
+        protected virtual void OnSessionEnded()
+        {
         }
 
         private void enterSession()
@@ -33,11 +54,29 @@ namespace osu.Game.Performance
 
             Logger.Log("Starting high performance session");
 
-            originalGCMode = GCSettings.LatencyMode;
-            GCSettings.LatencyMode = GCLatencyMode.LowLatency;
+            // Flush beatmap, skin, and sample loading allocations across all generations while still in PlayerLoader
+            // (before gameplay starts) so the Gen 2 heap begins clean and avoids emergency mid-combo collections.
+            GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: false);
 
-            // Without doing this, the new GC mode won't kick in until the next GC, which could be at a more noticeable point in time.
-            GC.Collect(0);
+            originalGCMode = GCSettings.LatencyMode;
+
+            // On memory-tight mobile devices (e.g. <= 6 GB RAM), SustainedLowLatency suppresses blocking Gen 2 pauses
+            // while still permitting concurrent background Gen 2 sweeps on marathon maps instead of hitting a sudden
+            // stop-the-world OOM collection mid-song.
+            long totalMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+            bool useSustainedMode = RuntimeInfo.IsMobile && totalMemory > 0 && totalMemory < low_ram_threshold_bytes;
+
+            appliedGCMode = useSustainedMode ? GCLatencyMode.SustainedLowLatency : GCLatencyMode.LowLatency;
+            GCSettings.LatencyMode = appliedGCMode;
+
+            try
+            {
+                OnSessionStarted();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Platform high-performance session hook failed on start: {ex.Message}", LoggingTarget.Performance);
+            }
         }
 
         private void exitSession()
@@ -50,7 +89,16 @@ namespace osu.Game.Performance
 
             Logger.Log("Ending high performance session");
 
-            if (GCSettings.LatencyMode == GCLatencyMode.LowLatency)
+            try
+            {
+                OnSessionEnded();
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"Platform high-performance session hook failed on exit: {ex.Message}", LoggingTarget.Performance);
+            }
+
+            if (GCSettings.LatencyMode == appliedGCMode)
                 GCSettings.LatencyMode = originalGCMode;
 
             // No GC.Collect() as we were already collecting at a higher frequency in the old mode.

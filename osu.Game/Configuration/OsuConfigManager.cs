@@ -287,7 +287,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.DisplayRefreshRate, DisplayRefreshRateMode.Automatic);
             SetDefault(OsuSetting.ShowLatencyCounter, false);
             SetDefault(OsuSetting.AndroidLowLatencyAudio, true);
-            SetDefault(OsuSetting.AndroidSustainedPerformance, true);
+            SetDefault(OsuSetting.AndroidSustainedPerformance, false);
+            SetDefault(OsuSetting.AndroidSustainedPerformanceMigrated, false);
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)
@@ -584,6 +585,11 @@ namespace osu.Game.Configuration
         /// Requests Android's Sustained Performance Mode on supported devices to reduce thermal throttling during long sessions.
         /// </summary>
         AndroidSustainedPerformance,
+
+        /// <summary>
+        /// Whether existing installs have been migrated once off the old default-enabled <see cref="AndroidSustainedPerformance"/> cap.
+        /// </summary>
+        AndroidSustainedPerformanceMigrated,
 
         /// <summary>
         /// Preferred display refresh rate (in Hz) for Android display mode selection and frame-sync multiplier calculations.

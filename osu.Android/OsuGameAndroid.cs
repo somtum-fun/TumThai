@@ -16,6 +16,7 @@ using osu.Game;
 using osu.Game.Configuration;
 using osu.Game.Performance;
 using osu.Game.Screens;
+using osu.Game.Screens.Play;
 using osu.Game.Updater;
 using osu.Game.Utils;
 using osuTK;
@@ -28,10 +29,11 @@ namespace osu.Android
         private readonly OsuGameActivity gameActivity;
 
         [Cached(typeof(IHighPerformanceSessionManager))]
-        private readonly HighPerformanceSessionManager highPerformanceSessionManager = new HighPerformanceSessionManager();
+        private readonly AndroidHighPerformanceSessionManager highPerformanceSessionManager = new AndroidHighPerformanceSessionManager();
 
         private readonly PackageInfo packageInfo;
 
+        private Bindable<DisplayRefreshRateMode>? displayRefreshRate;
         private Bindable<bool>? androidLowLatencyAudio;
 
         public override Vector2 ScalingContainerTargetDrawSize => new Vector2(1024, 1024 * DrawHeight / DrawWidth);
@@ -59,7 +61,19 @@ namespace osu.Android
         protected override void LoadComplete()
         {
             base.LoadComplete();
-            UserPlayingState.BindValueChanged(_ => updateOrientation());
+
+            UserPlayingState.BindValueChanged(state =>
+            {
+                updateOrientation();
+                gameActivity.SetGameplayTouchProtection(state.NewValue == LocalUserPlayingState.Playing);
+            }, true);
+
+            displayRefreshRate = LocalConfig.GetBindable<DisplayRefreshRateMode>(OsuSetting.DisplayRefreshRate);
+            displayRefreshRate.BindValueChanged(v =>
+            {
+                float resolvedHz = gameActivity.ApplyDisplayRefreshRate((int)v.NewValue);
+                highPerformanceSessionManager.UpdateDisplayRefreshRate(resolvedHz);
+            }, true);
 
             androidLowLatencyAudio = LocalConfig.GetBindable<bool>(OsuSetting.AndroidLowLatencyAudio);
             androidLowLatencyAudio.BindValueChanged(v =>
@@ -76,6 +90,12 @@ namespace osu.Android
         private void onAudioDeviceChanged(string _)
         {
             AndroidAudioOptimizer.ScheduleApplyOnAudioThread(gameActivity, Host?.AudioThread, !PotatoMode.Active && (androidLowLatencyAudio?.Value ?? true));
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            highPerformanceSessionManager.ReportFrameIfNeeded();
         }
 
         protected override void ScreenChanged(IOsuScreen? current, IOsuScreen? newScreen)
@@ -113,7 +133,12 @@ namespace osu.Android
         {
             base.SetHost(host);
             host.Window.CursorState |= CursorState.Hidden;
+            highPerformanceSessionManager.AttachHost(host);
         }
+
+        internal void OnActivityPaused() => highPerformanceSessionManager.OnActivityPaused();
+
+        internal void OnActivityResumed() => highPerformanceSessionManager.OnActivityResumed();
 
         protected override UpdateManager CreateUpdateManager() => new MobileUpdateNotifier();
 
@@ -125,6 +150,7 @@ namespace osu.Android
                 Audio.OnNewDevice -= onAudioDeviceChanged;
 
             base.Dispose(isDisposing);
+            highPerformanceSessionManager.Dispose();
         }
 
         private class AndroidBatteryInfo : BatteryInfo

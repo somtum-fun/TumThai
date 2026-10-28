@@ -433,6 +433,12 @@ namespace osu.Game
 
             if (RuntimeInfo.OS == RuntimeInfo.Platform.Android)
             {
+                if (!LocalConfig.Get<bool>(OsuSetting.AndroidSustainedPerformanceMigrated))
+                {
+                    LocalConfig.SetValue(OsuSetting.AndroidSustainedPerformance, false);
+                    LocalConfig.SetValue(OsuSetting.AndroidSustainedPerformanceMigrated, true);
+                }
+
                 // Keep the framework's managed AAudio callback bridge disabled (its runtime .NET thunk has no ELF CFI shadow
                 // and crashes CFI-enabled libaaudio on One UI 9 / Android 16+); osu.Android configures native BASS AAudio instead.
                 Audio.SetAndroidLowLatencyAudio(false);
@@ -529,6 +535,7 @@ namespace osu.Game
             // if this becomes a more common thing, tracked settings should be reconsidered to allow local DI.
             LocalConfig.LookupSkinName = id => SkinManager.Query(s => s.ID == id)?.ToString() ?? "Unknown";
             LocalConfig.LookupKeyBindings = l => KeyBindingStore.GetBindingsStringFor(l);
+
         }
 
         private void updateLanguage() => CurrentLanguage.Value = LanguageExtensions.GetLanguageFor(frameworkLocale.Value, localisationParameters.Value);
