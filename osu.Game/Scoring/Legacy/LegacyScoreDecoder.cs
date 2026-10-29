@@ -21,6 +21,7 @@ using osu.Game.Replays.Legacy;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Replays;
+using osu.Game.Rulesets.Replays.Types;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
 using SharpCompress.Compressors.LZMA;
@@ -147,6 +148,12 @@ namespace osu.Game.Scoring.Legacy
                             PopulateTotalScoreWithoutMods(score.ScoreInfo);
 
                         score.ScoreInfo.Pauses.AddRange(readScore.Pauses);
+
+                        if (!string.IsNullOrEmpty(readScore.CustomTouchReplay))
+                        {
+                            score.Replay.CustomTouchFrames = LegacyReplaySoloScoreInfo.DecodeTouchFrames(readScore.CustomTouchReplay, beatmapOffset);
+                            ensureCustomTouchFrameTimes(score.Replay);
+                        }
                     });
                 }
             }
@@ -353,6 +360,60 @@ namespace osu.Game.Scoring.Legacy
 
                 replay.Frames.Add(currentFrame = convertFrame(legacyFrame, currentFrame));
             }
+        }
+
+        private void ensureCustomTouchFrameTimes(Replay replay)
+        {
+            if (replay.CustomTouchFrames is not { Count: > 0 } touchFrames)
+                return;
+
+            var merged = new List<ReplayFrame>(replay.Frames.Count + 8);
+            ReplayFrame lastFrame = null;
+            int fi = 0;
+
+            for (int ti = 0; ti < touchFrames.Count; ti++)
+            {
+                double tTime = touchFrames[ti].Time;
+
+                while (fi < replay.Frames.Count && replay.Frames[fi].Time < tTime)
+                    appendMergedFrame(merged, replay.Frames[fi++], ref lastFrame);
+
+                if (fi < replay.Frames.Count && replay.Frames[fi].Time == tTime)
+                {
+                    while (fi < replay.Frames.Count && replay.Frames[fi].Time == tTime)
+                        appendMergedFrame(merged, replay.Frames[fi++], ref lastFrame);
+                }
+                else if (merged.Count == 0 || merged[^1].Time != tTime)
+                {
+                    lastFrame = convertFrame(new LegacyReplayFrame(tTime, 0, 0, ReplayButtonState.None), lastFrame);
+                    merged.Add(lastFrame);
+                }
+            }
+
+            while (fi < replay.Frames.Count)
+                appendMergedFrame(merged, replay.Frames[fi++], ref lastFrame);
+
+            replay.Frames = merged;
+        }
+
+        private void appendMergedFrame(List<ReplayFrame> merged, ReplayFrame candidate, ref ReplayFrame lastFrame)
+        {
+            if (merged.Count > 0 && merged[^1].Time == candidate.Time && isRedundantRulesetFrame(merged[^1], candidate))
+                return;
+
+            lastFrame = candidate;
+            merged.Add(lastFrame);
+        }
+
+        private bool isRedundantRulesetFrame(ReplayFrame previous, ReplayFrame current)
+        {
+            if (!previous.IsEquivalentTo(current))
+                return false;
+
+            if (previous is IConvertibleReplayFrame prevConvertible && current is IConvertibleReplayFrame currConvertible)
+                return prevConvertible.ToLegacy(currentBeatmap).IsEquivalentTo(currConvertible.ToLegacy(currentBeatmap));
+
+            return true;
         }
 
         private ReplayFrame convertFrame(LegacyReplayFrame currentFrame, ReplayFrame lastFrame)

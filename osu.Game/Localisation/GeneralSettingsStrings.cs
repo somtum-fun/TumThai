@@ -75,9 +75,9 @@ namespace osu.Game.Localisation
         public static LocalisableString ChangeFolderLocation => new TranslatableString(getKey(@"change_folder_location"), @"Change folder location...");
 
         /// <summary>
-        /// "Move your current data to a new folder, or point osu! to backed-up data at an existing location."
+        /// "Move your current data to a new folder, or point TumThai to backed-up data at an existing location."
         /// </summary>
-        public static LocalisableString ChangeFolderLocationTooltip => new TranslatableString(getKey(@"change_folder_location_tooltip"), @"Move your current data to a new folder, or point osu! to backed-up data at an existing location.");
+        public static LocalisableString ChangeFolderLocationTooltip => new TranslatableString(getKey(@"tumthai_change_folder_location_tooltip"), @"Move your current data to a new folder, or point TumThai to backed-up data at an existing location.");
 
         /// <summary>
         /// "Run setup wizard"
@@ -85,9 +85,9 @@ namespace osu.Game.Localisation
         public static LocalisableString RunSetupWizard => new TranslatableString(getKey(@"run_setup_wizard"), @"Run setup wizard");
 
         /// <summary>
-        /// "Learn more about lazer"
+        /// "Learn more about TumThai"
         /// </summary>
-        public static LocalisableString LearnMoreAboutLazer => new TranslatableString(getKey(@"learn_more_about_lazer"), @"Learn more about lazer");
+        public static LocalisableString LearnMoreAboutLazer => new TranslatableString(getKey(@"tumthai_learn_more_about"), @"Learn more about TumThai");
 
         /// <summary>
         /// "Check out the feature comparison and FAQ"

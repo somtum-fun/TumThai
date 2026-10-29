@@ -13,6 +13,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Game.Configuration;
@@ -204,6 +205,59 @@ namespace osu.Game.Tests.Visual.UserInterface
 
             AddAssert("overlay shown", () => overlay.State.Value == Visibility.Visible);
             AddAssert("is resumed", () => overlay.CurrentScreen is ScreenUIScale);
+        }
+
+        [Test]
+        public void TestSetupWizardUsesTumThaiBranding()
+        {
+            Type[] expectedScreens =
+            {
+                typeof(ScreenWelcome),
+                typeof(ScreenUIScale),
+                typeof(ScreenBeatmaps),
+                typeof(ScreenBehaviour),
+            };
+
+            for (int i = 0; i < expectedScreens.Length; i++)
+            {
+                Type expected = expectedScreens[i];
+                AddUntilStep($"wait for {expected.Name}", () => overlay.CurrentScreen?.GetType() == expected && overlay.CurrentScreen.IsLoaded);
+                AddAssert($"{expected.Name} has no osu! or lazer text", () =>
+                {
+                    return overlay.ChildrenOfType<IHasText>()
+                                  .Select(t => t.Text.ToString())
+                                  .Where(s => s.Contains("osu!", StringComparison.OrdinalIgnoreCase)
+                                              || s.Contains("lazer", StringComparison.OrdinalIgnoreCase))
+                                  .ToList();
+                }, () => Is.Empty);
+
+                if (i < expectedScreens.Length - 1)
+                    AddStep("advance wizard", () => overlay.NextButton.AsNonNull().TriggerClick());
+            }
+
+            ScreenImportFromStable importScreen = null;
+            AddStep("load ScreenImportFromStable directly", () =>
+            {
+                Add(new DependencyProvidingContainer
+                {
+                    RelativeSizeAxes = osu.Framework.Graphics.Axes.Both,
+                    CachedDependencies = new (Type, object)[]
+                    {
+                        (typeof(OverlayColourProvider), new OverlayColourProvider(OverlayColourScheme.Purple)),
+                        (typeof(LegacyImportManager), new Mock<LegacyImportManager>().Object),
+                    },
+                    Child = new ScreenStack(importScreen = new ScreenImportFromStable()),
+                });
+            });
+            AddUntilStep("wait for ScreenImportFromStable", () => importScreen?.IsLoaded == true);
+            AddAssert("ScreenImportFromStable has no osu! or lazer text", () =>
+            {
+                return importScreen.ChildrenOfType<IHasText>()
+                                   .Select(t => t.Text.ToString())
+                                   .Where(s => s.Contains("osu!", StringComparison.OrdinalIgnoreCase)
+                                               || s.Contains("lazer", StringComparison.OrdinalIgnoreCase))
+                                   .ToList();
+            }, () => Is.Empty);
         }
 
         private void createScreen()

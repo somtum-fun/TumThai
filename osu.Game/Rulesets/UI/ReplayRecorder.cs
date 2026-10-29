@@ -11,7 +11,9 @@ using osu.Framework.Graphics;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
+using osu.Framework.Input.States;
 using osu.Game.Online.Spectator;
+using osu.Game.Replays;
 using osu.Game.Rulesets.Replays;
 using osu.Game.Scoring;
 using osuTK;
@@ -83,11 +85,12 @@ namespace osu.Game.Rulesets.UI
             var position = ScreenSpaceToGamefield?.Invoke(inputManager.CurrentState.Mouse.Position) ?? inputManager.CurrentState.Mouse.Position;
 
             var frame = HandleFrame(position, pressedActions, last);
+            bool touchRecorded = RecordDirectTouch && recordTouchFrame(frame?.Time ?? Time.Current);
 
             if (frame != null)
             {
                 // this reduces redundancy of frames in the resulting replay.
-                if (last?.IsEquivalentTo(frame) == true)
+                if ((!touchRecorded || last?.Time == frame.Time) && last?.IsEquivalentTo(frame) == true)
                     target.Replay.Frames[^1] = frame;
                 else
                     target.Replay.Frames.Add(frame);
@@ -98,12 +101,62 @@ namespace osu.Game.Rulesets.UI
             }
         }
 
+        private bool recordTouchFrame(double time)
+        {
+            if (inputManager == null)
+                return false;
+
+            var touchState = inputManager.CurrentState.Touch;
+            bool hasActiveTouch = touchState.ActiveSources.HasAnyButtonPressed;
+            var touchFrames = target.Replay.CustomTouchFrames;
+            bool hadActiveTouch = touchFrames is { Count: > 0 } && touchFrames[^1].Touches.Length > 0;
+
+            if (!hasActiveTouch && !hadActiveTouch)
+                return false;
+
+            ReplayTouchPoint[] touches;
+
+            if (hasActiveTouch)
+            {
+                var list = new List<ReplayTouchPoint>();
+
+                foreach (var source in touchState.ActiveSources)
+                {
+                    if (touchState.GetTouchPosition(source) is Vector2 screenPos)
+                    {
+                        Vector2 gamefieldPos = ScreenSpaceToGamefield?.Invoke(screenPos) ?? screenPos;
+                        list.Add(new ReplayTouchPoint(source, gamefieldPos));
+                    }
+                }
+
+                touches = list.ToArray();
+            }
+            else
+            {
+                touches = Array.Empty<ReplayTouchPoint>();
+            }
+
+            touchFrames ??= target.Replay.CustomTouchFrames = new List<ReplayTouchFrame>();
+
+            if (touchFrames.Count > 0 && touchFrames[^1].Time == time)
+                touchFrames[^1] = new ReplayTouchFrame(time, touches);
+            else
+                touchFrames.Add(new ReplayTouchFrame(time, touches));
+
+            return true;
+        }
+
         protected abstract ReplayFrame HandleFrame(Vector2 mousePosition, List<T> actions, ReplayFrame previousFrame);
     }
 
     public abstract partial class ReplayRecorder : Component
     {
         public Func<Vector2, Vector2> ScreenSpaceToGamefield;
+
+        /// <summary>
+        /// TumThai: whether active multi-touch gamefield positions should be recorded alongside ruleset frames.
+        /// </summary>
+        internal bool RecordDirectTouch;
 
         public abstract void RecordFrame(bool important);
     }

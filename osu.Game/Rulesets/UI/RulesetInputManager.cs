@@ -14,6 +14,7 @@ using osu.Framework.Input.StateChanges;
 using osu.Framework.Input.StateChanges.Events;
 using osu.Framework.Input.States;
 using osu.Game.Configuration;
+using osu.Game.Extensions;
 using osu.Game.Input;
 using osu.Game.Input.Bindings;
 using osu.Game.Input.Handlers;
@@ -35,6 +36,19 @@ namespace osu.Game.Rulesets.UI
         [Resolved]
         private ScoreProcessor? scoreProcessor { get; set; }
 
+        private readonly bool isLegacyRuleset;
+        private bool? usesDirectTouchReplay;
+
+        /// <summary>
+        /// TumThai: custom rulesets that disable <see cref="InputManager.MapMouseToLatestTouch"/> without installing a custom
+        /// <see cref="TouchEventManager"/> (such as Sentakki) read <see cref="TouchState"/> directly for hit detection, so replays
+        /// must record and emit <see cref="TouchInput"/> directly.
+        /// </summary>
+        internal bool UsesDirectTouchReplay =>
+            usesDirectTouchReplay ??= !isLegacyRuleset
+                                      && !MapMouseToLatestTouch
+                                      && GetButtonEventManagerFor(TouchSource.Touch1).GetType() == typeof(TouchEventManager);
+
         private ReplayRecorder? recorder;
 
         public ReplayRecorder? Recorder
@@ -52,7 +66,10 @@ namespace osu.Game.Rulesets.UI
                 recorder = value;
 
                 if (recorder != null)
+                {
+                    recorder.RecordDirectTouch = UsesDirectTouchReplay;
                     KeyBindingContainer.Add(recorder);
+                }
             }
         }
 
@@ -64,6 +81,8 @@ namespace osu.Game.Rulesets.UI
 
         protected RulesetInputManager(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
         {
+            isLegacyRuleset = ruleset.IsLegacyRuleset();
+
             InternalChild = KeyBindingContainer =
                 CreateKeyBindingContainer(ruleset, variant, unique)
                     .WithChild(content = new Container { RelativeSizeAxes = Axes.Both });
@@ -96,6 +115,10 @@ namespace osu.Game.Rulesets.UI
 
                 default:
                     base.HandleInputStateChange(inputStateChange);
+
+                    if (inputStateChange is TouchStateChangeEvent touchChange && recorder?.RecordDirectTouch == true)
+                        recorder.RecordFrame(touchChange.IsActive != null);
+
                     break;
             }
         }

@@ -57,12 +57,12 @@ TumThai!Next is a heavily modified edition built on the same base as TumThai, fe
         /// <summary>
         /// "Some new defaults for game behaviours have been implemented, with the aim of improving the game experience and making it more accessible to everyone.
         ///
-        /// We recommend you give the new defaults a try, but if you&#39;d like to have things feel more like classic versions of osu!, you can easily apply some sane defaults below."
+        /// We recommend you give the new defaults a try, but if you&#39;d like to have things feel more like classic versions of TumThai, you can easily apply some sane defaults below."
         /// </summary>
-        public static LocalisableString BehaviourDescription => new TranslatableString(getKey(@"behaviour_description"),
+        public static LocalisableString BehaviourDescription => new TranslatableString(getKey(@"tumthai_behaviour_description"),
             @"Some new defaults for game behaviours have been implemented, with the aim of improving the game experience and making it more accessible to everyone.
 
-We recommend you give the new defaults a try, but if you'd like to have things feel more like classic versions of osu!, you can easily apply some sane defaults below.");
+We recommend you give the new defaults a try, but if you'd like to have things feel more like classic versions of TumThai, you can easily apply some sane defaults below.");
 
         /// <summary>
         /// "New defaults"
