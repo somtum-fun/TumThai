@@ -148,7 +148,18 @@ namespace osu.Game.Scoring.Legacy
 
         private byte[] createReplayData() => compress(replayStringContent);
 
-        private byte[] createScoreInfoData() => compress(LegacyReplaySoloScoreInfo.FromScore(score.ScoreInfo).Serialize());
+        private byte[] createScoreInfoData()
+        {
+            var soloScoreInfo = LegacyReplaySoloScoreInfo.FromScore(score.ScoreInfo);
+
+            if (!score.ScoreInfo.Ruleset.IsLegacyRuleset() && score.Replay?.CustomTouchFrames is { Count: > 0 } touchFrames)
+            {
+                double offset = beatmap?.BeatmapVersion < 5 ? -LegacyBeatmapDecoder.EARLY_VERSION_TIMING_OFFSET : 0;
+                soloScoreInfo.CustomTouchReplay = LegacyReplaySoloScoreInfo.EncodeTouchFrames(touchFrames, offset);
+            }
+
+            return compress(soloScoreInfo.Serialize());
+        }
 
         private byte[] compress(string data)
         {

@@ -4,9 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using osu.Framework.Input;
 using osu.Framework.Input.StateChanges;
+using osu.Framework.Input.States;
+using osu.Framework.Utils;
 using osu.Game.Input.Handlers;
 using osu.Game.Replays;
+using osuTK;
 
 namespace osu.Game.Rulesets.Replays
 {
@@ -87,6 +91,10 @@ namespace osu.Game.Rulesets.Replays
         protected List<ReplayFrame> Frames => replay.Frames;
 
         private readonly Replay replay;
+
+        private readonly bool[] replayTouchActive = new bool[TouchState.MAX_TOUCH_COUNT];
+        private readonly Vector2[] replayTouchLastPos = new Vector2[TouchState.MAX_TOUCH_COUNT];
+        private double lastTouchCollectTime = double.NegativeInfinity;
 
         private int currentFrameIndex;
 
@@ -180,8 +188,105 @@ namespace osu.Game.Rulesets.Replays
 
             CollectReplayInputs(inputs);
 
+            collectCustomTouchInputs(inputs);
+
             if (CurrentFrame?.Header != null)
                 inputs.Add(new ReplayStatisticsFrameInput { Frame = CurrentFrame });
+        }
+
+        private void collectCustomTouchInputs(List<IInput> inputs)
+        {
+            if (replay.CustomTouchFrames is not { Count: > 0 } touchFrames || GamefieldToScreenSpace == null)
+                return;
+
+            bool seekedBackwards = CurrentTime < lastTouchCollectTime;
+            lastTouchCollectTime = CurrentTime;
+
+            int idx = findTouchFrameIndex(touchFrames, CurrentTime);
+
+            Span<bool> shouldBeActive = stackalloc bool[TouchState.MAX_TOUCH_COUNT];
+            Span<Vector2> targetScreenPos = stackalloc Vector2[TouchState.MAX_TOUCH_COUNT];
+
+            if (idx >= 0)
+            {
+                var current = touchFrames[idx];
+                var next = idx + 1 < touchFrames.Count ? touchFrames[idx + 1] : null;
+
+                for (int i = 0; i < current.Touches.Length; i++)
+                {
+                    var tp = current.Touches[i];
+                    int s = (int)tp.Source;
+                    if ((uint)s >= (uint)TouchState.MAX_TOUCH_COUNT)
+                        continue;
+
+                    Vector2 gamefieldPos = tp.Position;
+
+                    if (next != null && next.Time > current.Time)
+                    {
+                        for (int j = 0; j < next.Touches.Length; j++)
+                        {
+                            if (next.Touches[j].Source == tp.Source)
+                            {
+                                gamefieldPos = Interpolation.ValueAt(CurrentTime, tp.Position, next.Touches[j].Position, current.Time, next.Time);
+                                break;
+                            }
+                        }
+                    }
+
+                    shouldBeActive[s] = true;
+                    targetScreenPos[s] = GamefieldToScreenSpace(gamefieldPos);
+                }
+            }
+
+            List<Touch>? toDeactivate = null;
+            List<Touch>? toActivate = null;
+
+            for (int s = 0; s < TouchState.MAX_TOUCH_COUNT; s++)
+            {
+                if (shouldBeActive[s])
+                {
+                    toActivate ??= new List<Touch>();
+                    toActivate.Add(new Touch((TouchSource)s, targetScreenPos[s]));
+                    replayTouchActive[s] = true;
+                    replayTouchLastPos[s] = targetScreenPos[s];
+                }
+                else if (replayTouchActive[s] || seekedBackwards)
+                {
+                    toDeactivate ??= new List<Touch>();
+                    toDeactivate.Add(new Touch((TouchSource)s, replayTouchLastPos[s]));
+                    replayTouchActive[s] = false;
+                }
+            }
+
+            if (toDeactivate != null)
+                inputs.Add(new TouchInput(toDeactivate, false));
+
+            if (toActivate != null)
+                inputs.Add(new TouchInput(toActivate, true));
+        }
+
+        private static int findTouchFrameIndex(List<ReplayTouchFrame> frames, double time)
+        {
+            int lo = 0;
+            int hi = frames.Count - 1;
+            int ans = -1;
+
+            while (lo <= hi)
+            {
+                int mid = lo + ((hi - lo) >> 1);
+
+                if (frames[mid].Time <= time)
+                {
+                    ans = mid;
+                    lo = mid + 1;
+                }
+                else
+                {
+                    hi = mid - 1;
+                }
+            }
+
+            return ans;
         }
 
         protected virtual void CollectReplayInputs(List<IInput> inputs)
