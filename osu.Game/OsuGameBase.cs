@@ -283,6 +283,9 @@ namespace osu.Game
         {
             Name = GAME_NAME;
 
+            // TumThai: before anything loads an image from a beatmap or skin.
+            ImageFormatRestrictions.Apply();
+
             allowableExceptions = UnhandledExceptionsBeforeCrash;
         }
 
