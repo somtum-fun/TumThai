@@ -40,7 +40,7 @@ Use it **only** with private servers you are allowed to play on. You are respons
 
 ## Running
 
-Download TumThai from **[dl.blueskychan.dev/lazer](https://dl.blueskychan.dev/lazer/)**:
+Download TumThai from **[somtum.fun's download page](https://osu.somtum.fun/home/download)** (Windows, Linux, macOS and Android). On Windows, the Somtum Launcher there installs and starts it for you. The files:
 
 - **Windows installer** (`TumThai-<version>-win-Setup.exe`): installs TumThai, adds it to the Start menu and keeps it up to date.
 - **Windows portable** (`TumThai-<version>-win-Portable.zip`): unzip anywhere and run `tumthai.exe`. Nothing is installed.
