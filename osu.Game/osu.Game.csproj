@@ -18,7 +18,11 @@
     </None>
   </ItemGroup>
   <ItemGroup Label="Package References">
-    <PackageReference Include="AutoMapper" Version="16.2.0"/>
+    <!-- TumThai: 13.0.1 as in osu!: 15+ is RPL or paid with a licence key. GHSA-rvv3-g6hj-g44x needs very deep object
+         graphs, and AutoMapper here only copies our own Realm objects, with a depth limit (Database/RealmObjectExtensions). -->
+    <PackageReference Include="AutoMapper" Version="13.0.1">
+      <NoWarn>NU1903</NoWarn>
+    </PackageReference>
     <PackageReference Include="DiffPlex" Version="1.9.0"/>
     <PackageReference Include="HtmlAgilityPack" Version="1.13.0"/>
     <PackageReference Include="Humanizer" Version="3.0.10"/>
