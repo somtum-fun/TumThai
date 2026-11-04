@@ -374,7 +374,12 @@ namespace osu.Game.Overlays.Mods
         private void filterMods()
         {
             foreach (var modState in AllAvailableMods)
-                modState.ValidForSelection.Value = modState.Mod.Type != ModType.System && modState.Mod.HasImplementation && IsValidMod.Invoke(modState.Mod);
+            {
+                modState.ValidForSelection.Value = modState.Mod.Type != ModType.System
+                                                   && modState.Mod.HasImplementation
+                                                   && (modState.Mod.UserPlayable || modState.Mod is ICreateReplayData)
+                                                   && IsValidMod.Invoke(modState.Mod);
+            }
         }
 
         private void updateCustomisation()
