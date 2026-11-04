@@ -80,6 +80,19 @@ namespace osu.Game.Rulesets.Osu.Mods
 
             double time = playfield.Clock.CurrentTime;
 
+            if (!hasReplay && osuInputManager.DroidTouchInputMapper is OsuDroidTouchInputMapper droidMapper)
+            {
+                if (!droidMapper.HasActiveTouches)
+                {
+                    if (isDownState)
+                        changeState(false);
+
+                    return;
+                }
+
+                droidMapper.UpdateRelaxCursor(time);
+            }
+
             foreach (var h in playfield.HitObjectContainer.AliveObjects.OfType<DrawableOsuHitObject>())
             {
                 // we are not yet close enough to the object.
