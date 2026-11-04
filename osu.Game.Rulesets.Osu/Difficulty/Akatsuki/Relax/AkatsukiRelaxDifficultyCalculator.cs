@@ -14,6 +14,8 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Osu.Objects;
+using osu.Game.Rulesets.Osu.Scoring;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Utils;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
@@ -42,13 +44,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
         protected override DifficultyAttributes CreateDifficultyAttributes(IBeatmap beatmap, Mod[] mods, Skill[] skills)
         {
             double clockRate = ModUtils.CalculateRateWithMods(mods);
+            OsuModDroid? droidMod = mods.OfType<OsuModDroid>().SingleOrDefault();
+            float effectiveCs = droidMod != null ? beatmap.Difficulty.CircleSize - OsuModDroid.DROID_STANDARD_CS_OFFSET : beatmap.Difficulty.CircleSize;
 
             var attributes = new AkatsukiRelaxDifficultyAttributes
             {
                 Mods = mods,
                 ApproachRate = adjustedApproachRate(beatmap.Difficulty.ApproachRate, clockRate),
-                OverallDifficulty = adjustedOverallDifficulty(beatmap.Difficulty.OverallDifficulty, clockRate),
-                CircleSize = beatmap.Difficulty.CircleSize,
+                OverallDifficulty = droidMod != null
+                    ? adjustedDroidOverallDifficulty(beatmap.Difficulty.OverallDifficulty, clockRate, droidMod.PreciseTiming.Value)
+                    : adjustedOverallDifficulty(beatmap.Difficulty.OverallDifficulty, clockRate),
+                CircleSize = effectiveCs,
                 DrainRate = Math.Min(beatmap.Difficulty.DrainRate, 10.0f),
                 ObjectCount = beatmap.HitObjects.Count,
             };
@@ -56,7 +62,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
             if (beatmap.HitObjects.Count < 2)
                 return attributes;
 
-            var (radius, scalingFactor) = radiusAndScaling(beatmap.Difficulty.CircleSize);
+            var (radius, scalingFactor) = radiusAndScaling(effectiveCs);
             bool hardRock = mods.Any(m => m is OsuModHardRock);
 
             foreach (var h in beatmap.HitObjects)
@@ -102,7 +108,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
             objects.Clear();
 
             double clockRate = ModUtils.CalculateRateWithMods(mods);
-            var (radius, scalingFactor) = radiusAndScaling(beatmap.Difficulty.CircleSize);
+            float effectiveCs = mods.Any(m => m is OsuModDroid)
+                ? beatmap.Difficulty.CircleSize - OsuModDroid.DROID_STANDARD_CS_OFFSET
+                : beatmap.Difficulty.CircleSize;
+            var (radius, scalingFactor) = radiusAndScaling(effectiveCs);
             bool hardRock = mods.Any(m => m is OsuModHardRock);
 
             var baseObjects = new List<AkatsukiRelaxObject>(beatmap.HitObjects.Count);
@@ -160,7 +169,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
 
         private static (float radius, float scalingFactor) radiusAndScaling(float cs)
         {
-            float radius = object_radius * (1.0f - 0.7f * (cs - 5.0f) / 5.0f) / 2.0f;
+            float radius = MathF.Max(object_radius * 1e-3f, object_radius * (1.0f - 0.7f * (cs - 5.0f) / 5.0f) / 2.0f);
             float scalingFactor = normalized_radius / radius;
 
             if (radius < 30.0f)
@@ -183,6 +192,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
         private static double adjustedOverallDifficulty(float od, double clockRate)
         {
             double great = difficultyRange(od, 80.0, 50.0, 20.0) / clockRate;
+
+            return (80.0 - great) / 6.0;
+        }
+
+        private static double adjustedDroidOverallDifficulty(float od, double clockRate, bool precise)
+        {
+            var hitWindows = new OsuDroidHitWindows(precise);
+            hitWindows.SetDifficulty(od);
+            double great = hitWindows.WindowFor(HitResult.Great) / clockRate;
 
             return (80.0 - great) / 6.0;
         }

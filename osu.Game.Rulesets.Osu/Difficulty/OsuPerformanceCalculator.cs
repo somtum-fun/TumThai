@@ -76,7 +76,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             var osuAttributes = (OsuDifficultyAttributes)attributes;
 
-            usingClassicSliderAccuracy = score.Mods.OfType<OsuModClassic>().Any(m => m.NoSliderHeadAccuracy.Value);
+            OsuModDroid? droidMod = score.Mods.OfType<OsuModDroid>().SingleOrDefault();
+            bool isDroid = droidMod != null;
+
+            usingClassicSliderAccuracy = isDroid || score.Mods.OfType<OsuModClassic>().Any(m => m.NoSliderHeadAccuracy.Value);
             usingScoreV2 = score.Mods.Any(m => m is ModScoreV2);
 
             accuracy = Math.Clamp(score.Accuracy, 0, 1);
@@ -95,7 +98,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             clockRate = ModUtils.CalculateRateWithMods(score.Mods);
 
-            HitWindows hitWindows = new OsuHitWindows();
+            HitWindows hitWindows = droidMod != null ? new OsuDroidHitWindows(droidMod.PreciseTiming.Value) : new OsuHitWindows();
             hitWindows.SetDifficulty(difficulty.OverallDifficulty);
 
             greatHitWindow = hitWindows.WindowFor(HitResult.Great) / clockRate;
