@@ -212,7 +212,7 @@ namespace osu.Game.Screens.OnlinePlay.Multiplayer
         {
             var item = new PlaylistItem(Beatmap.Value.BeatmapInfo)
             {
-                RulesetID = Ruleset.Value.OnlineID,
+                RulesetID = Online.SomtumCustomRulesets.ServerIdOf(Ruleset.Value), // TumThai: custom rulesets by the server's id
                 RequiredMods = Mods.Value.Select(m => new APIMod(m)).ToArray(),
                 AllowedMods = FreeMods.Value.Select(m => new APIMod(m)).ToArray(),
                 Freestyle = freestyle.Value

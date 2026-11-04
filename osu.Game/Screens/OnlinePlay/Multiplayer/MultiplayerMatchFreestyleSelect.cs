@@ -62,7 +62,7 @@ namespace osu.Game.Screens.OnlinePlay.Multiplayer
 
             selectionOperation = operationTracker.BeginOperation();
 
-            client.ChangeUserStyle(Beatmap.Value.BeatmapInfo.OnlineID, Ruleset.Value.OnlineID)
+            client.ChangeUserStyle(Beatmap.Value.BeatmapInfo.OnlineID, Online.SomtumCustomRulesets.ServerIdOf(Ruleset.Value))
                   .FireAndForget(onSuccess: () =>
                   {
                       selectionOperation.Dispose();

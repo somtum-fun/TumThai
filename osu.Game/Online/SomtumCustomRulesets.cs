@@ -60,6 +60,42 @@ namespace osu.Game.Online
         private void load()
         {
             apiState.BindTo(api.State);
+            Current = this;
+        }
+
+        /// <summary>The game's instance, for the few places outside the component tree that need a ruleset's server id.</summary>
+        public static SomtumCustomRulesets? Current { get; private set; }
+
+        /// <summary>
+        /// A ruleset's id on the server, for multiplayer, playlists and spectating: osu!'s own id, or a custom ruleset's id when
+        /// the loaded file is the one the server pinned; -1 otherwise (it can't be played online).
+        /// </summary>
+        public static int ServerIdOf(IRulesetInfo ruleset)
+        {
+            if (ruleset.OnlineID >= 0)
+                return ruleset.OnlineID;
+
+            try
+            {
+                return Current?.Submittable(ruleset)?.ID ?? -1;
+            }
+            catch (InvalidOperationException)
+            {
+                return -1; // the list was changing: as if not ranked, this once
+            }
+        }
+
+        /// <summary>The ruleset here for the server's custom ruleset id <paramref name="id"/>, when its pinned file is loaded.</summary>
+        public RulesetInfo? LocalRulesetFor(int id)
+        {
+            try
+            {
+                return rulesets.AvailableRulesets.FirstOrDefault(r => r.OnlineID < 0 && Submittable(r)?.ID == id);
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
         }
 
         protected override void LoadComplete()
