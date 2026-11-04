@@ -133,6 +133,10 @@ namespace osu.Game.Rulesets.Osu.Tests
             [new Mod[] { new OsuModTargetPractice() }, 0.01],
             [new Mod[] { new OsuModDifficultyAdjust() }, 1],
 
+            [new Mod[] { new OsuModDroid() }, 0.5],
+            [new Mod[] { new OsuModDroid { PreciseTiming = { Value = true } } }, 0.53],
+            [new Mod[] { new OsuModDroid(), new OsuModRelax() }, 0.05],
+
             [new Mod[] { new OsuModClassic() }, 0.985],
             [new Mod[] { new OsuModClassic { ClassicNoteLock = { Value = false } } }, 0.96],
 
