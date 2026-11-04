@@ -3,10 +3,7 @@
 
 #nullable disable
 
-using osuTK;
-using osu.Game.Rulesets.Objects.Types;
 using System.Collections.Generic;
-using osu.Game.Rulesets.Objects;
 using System.Linq;
 using System.Threading;
 using JetBrains.Annotations;
@@ -17,9 +14,13 @@ using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Judgements;
+using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
+using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Judgements;
+using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osu.Game.Rulesets.Scoring;
+using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Objects
 {
@@ -123,6 +124,16 @@ namespace osu.Game.Rulesets.Osu.Objects
 
         private bool classicSliderBehaviour;
 
+        /// <summary>
+        /// Multiplier applied to <see cref="OsuHitObject.Radius"/> to determine the expanded slider follow area while tracking.
+        /// </summary>
+        public float FollowCircleArea { get; set; } = DrawableSliderBall.FOLLOW_AREA;
+
+        /// <summary>
+        /// Whether slider tracking must initially use the same <see cref="OsuAction"/> that hit the <see cref="HeadCircle"/> until other held actions are released.
+        /// </summary>
+        public bool RequireInitialActionForTracking { get; set; } = true;
+
         public BindableNumber<double> SliderVelocityMultiplierBindable { get; } = new BindableDouble(1)
         {
             MinValue = 0.1,
@@ -158,6 +169,9 @@ namespace osu.Game.Rulesets.Osu.Objects
             base.ApplyDefaultsToSelf(controlPointInfo, difficulty);
 
             TimingControlPoint timingPoint = controlPointInfo.TimingPointAt(StartTime);
+
+            FollowCircleArea = DrawableSliderBall.FOLLOW_AREA;
+            RequireInitialActionForTracking = true;
 
             Velocity = BASE_SCORING_DISTANCE * difficulty.SliderMultiplier / LegacyRulesetExtensions.GetPrecisionAdjustedBeatLength(this, timingPoint, OsuRuleset.SHORT_NAME);
             // WARNING: this is intentionally not computed as `BASE_SCORING_DISTANCE * difficulty.SliderMultiplier`

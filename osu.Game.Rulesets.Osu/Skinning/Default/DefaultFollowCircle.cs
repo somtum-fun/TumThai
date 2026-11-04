@@ -12,6 +12,8 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
 {
     public partial class DefaultFollowCircle : FollowCircle
     {
+        private float followArea => DrawableObject?.HitObject?.FollowCircleArea ?? DrawableSliderBall.FOLLOW_AREA;
+
         public DefaultFollowCircle()
         {
             InternalChild = new CircularContainer
@@ -37,7 +39,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
             if (Precision.AlmostEquals(0, Alpha))
                 this.ScaleTo(1);
 
-            this.ScaleTo(DrawableSliderBall.FOLLOW_AREA, duration, Easing.OutQuint)
+            this.ScaleTo(followArea, duration, Easing.OutQuint)
                 .FadeIn(duration, Easing.OutQuint);
         }
 
@@ -45,7 +47,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
         {
             const float duration = 150;
 
-            this.ScaleTo(DrawableSliderBall.FOLLOW_AREA * 1.2f, duration, Easing.OutQuint)
+            this.ScaleTo(followArea * 1.2f, duration, Easing.OutQuint)
                 .FadeTo(0, duration, Easing.OutQuint);
         }
 
@@ -59,11 +61,11 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
 
         protected override void OnSliderTick()
         {
-            if (Scale.X >= DrawableSliderBall.FOLLOW_AREA * 0.98f)
+            if (Scale.X >= followArea * 0.98f)
             {
-                this.ScaleTo(DrawableSliderBall.FOLLOW_AREA * 1.08f, 40, Easing.OutQuint)
+                this.ScaleTo(followArea * 1.08f, 40, Easing.OutQuint)
                     .Then()
-                    .ScaleTo(DrawableSliderBall.FOLLOW_AREA, 200f, Easing.OutQuint);
+                    .ScaleTo(followArea, 200f, Easing.OutQuint);
             }
         }
 

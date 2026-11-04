@@ -204,7 +204,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             float radius = (float)slider.HitObject.Radius;
 
             if (expanded)
-                radius *= DrawableSliderBall.FOLLOW_AREA;
+                radius *= slider.HitObject.FollowCircleArea;
 
             return radius;
         }
@@ -273,7 +273,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                 slider.Result.TrackingHistory.Push((Time.Current, Tracking));
         }
 
-        private OsuAction? getInitialHitAction() => slider.HeadCircle?.HitAction;
+        private OsuAction? getInitialHitAction() => slider.HitObject.RequireInitialActionForTracking ? slider.HeadCircle?.HitAction : null;
 
         /// <summary>
         /// Check whether a given user input is a valid tracking action.

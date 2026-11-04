@@ -89,7 +89,14 @@ namespace osu.Game.Rulesets.Osu.Objects
             set => stackHeight.Value = value;
         }
 
-        public virtual Vector2 StackOffset => new Vector2(StackHeight * Scale * -6.4f);
+        /// <summary>
+        /// Default multiplier applied to <see cref="StackHeight"/> and <see cref="Scale"/> when calculating <see cref="StackOffset"/>.
+        /// </summary>
+        public const float DEFAULT_STACK_OFFSET_MULTIPLIER = -6.4f;
+
+        public float StackOffsetMultiplier { get; set; } = DEFAULT_STACK_OFFSET_MULTIPLIER;
+
+        public virtual Vector2 StackOffset => new Vector2(StackHeight * Scale * StackOffsetMultiplier);
 
         public double Radius => OBJECT_RADIUS * Scale;
 
@@ -180,6 +187,7 @@ namespace osu.Game.Rulesets.Osu.Objects
             TimeFadeIn = 400 * Math.Min(1, TimePreempt / PREEMPT_MIN);
 
             Scale = LegacyRulesetExtensions.CalculateScaleFromCircleSize(difficulty.CircleSize, true);
+            StackOffsetMultiplier = DEFAULT_STACK_OFFSET_MULTIPLIER;
         }
 
         public void UpdateComboInformation(IHasComboInformation? lastObj)

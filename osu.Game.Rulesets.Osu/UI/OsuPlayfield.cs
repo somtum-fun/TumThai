@@ -169,7 +169,12 @@ namespace osu.Game.Rulesets.Osu.UI
 
         protected void ApplyCircleSizeToPlayfieldBorder(IBeatmap beatmap)
         {
-            borderContainer.Padding = new MarginPadding(OsuHitObject.OBJECT_RADIUS * -LegacyRulesetExtensions.CalculateScaleFromCircleSize(beatmap.Difficulty.CircleSize, true));
+            ApplyCircleSizeScaleToPlayfieldBorder(LegacyRulesetExtensions.CalculateScaleFromCircleSize(beatmap.Difficulty.CircleSize, true));
+        }
+
+        internal void ApplyCircleSizeScaleToPlayfieldBorder(float scale)
+        {
+            borderContainer.Padding = new MarginPadding(OsuHitObject.OBJECT_RADIUS * -scale);
         }
 
         protected override HitObjectLifetimeEntry CreateLifetimeEntry(HitObject hitObject) => new OsuHitObjectLifetimeEntry(hitObject);
