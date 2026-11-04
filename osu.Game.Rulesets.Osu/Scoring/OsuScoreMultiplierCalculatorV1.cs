@@ -41,6 +41,7 @@ namespace osu.Game.Rulesets.Osu.Scoring
 
             Single<OsuModTargetPractice>(hasMultiplier: 0.1);
             Single<OsuModDifficultyAdjust>(hasMultiplier: 0.5);
+            Single<OsuModDroid>(hasMultiplier: 0.5);
             Single<OsuModClassic>(hasMultiplier: 0.96);
             // Random
             // Mirror

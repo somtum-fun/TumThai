@@ -59,6 +59,7 @@ namespace osu.Game.Rulesets.Osu.Scoring
 
             Single<OsuModTargetPractice>(hasMultiplier: 0.01);
             Single<OsuModDifficultyAdjust>(hasMultiplier: difficultyAdjust => difficultyAdjustMultiplier(difficultyAdjust, Context.BeatmapDifficultyWithoutMods));
+            Single<OsuModDroid>(hasMultiplier: droid => droid.PreciseTiming.Value ? 0.53 : 0.5);
             Single<OsuModClassic>(hasMultiplier: classic => classic.ClassicNoteLock.Value ? 0.985 : 0.96);
             Single<OsuModRandom>(hasMultiplier: 0.7);
             // Mirror (1.0x)

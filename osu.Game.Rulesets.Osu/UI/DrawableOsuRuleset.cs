@@ -71,7 +71,7 @@ namespace osu.Game.Rulesets.Osu.UI
 
         protected override ResumeOverlay CreateResumeOverlay()
         {
-            if (Mods.Any(m => m is OsuModAutopilot or OsuModTouchDevice))
+            if (Mods.Any(m => m is OsuModAutopilot or OsuModTouchDevice or OsuModDroid))
                 return new DelayedResumeOverlay { Scale = new Vector2(0.65f) };
 
             return new OsuResumeOverlay();
