@@ -140,6 +140,11 @@ namespace osu.Game.Screens.Play
         [Resolved]
         private OsuGameBase game { get; set; }
 
+        [Resolved]
+        private SkinManager skinManager { get; set; } = null!;
+
+        private InterfaceTheme interfaceTheme = InterfaceTheme.TumThai;
+
         public GameplayState GameplayState { get; private set; }
 
         private Ruleset ruleset;
@@ -227,6 +232,8 @@ namespace osu.Game.Screens.Play
         [BackgroundDependencyLoader(true)]
         private void load(OsuConfigManager config, OsuGameBase game, CancellationToken cancellationToken)
         {
+            interfaceTheme = config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
+
             var gameplayMods = Mods.Value.Select(m => m.DeepClone()).ToArray();
 
             if (gameplayMods.Any(m => m is UnknownMod))
@@ -481,30 +488,38 @@ namespace osu.Game.Screens.Play
 
         private Drawable createOverlayComponents()
         {
+            HUDOverlay = new HUDOverlay(DrawableRuleset, GameplayState.Mods, Configuration)
+            {
+                HoldToQuit =
+                {
+                    Action = () => PerformExitWithConfirmation(),
+                    IsPaused = { BindTarget = GameplayClockContainer.IsPaused },
+                    ReplayLoaded = { BindTarget = DrawableRuleset.HasReplayLoaded },
+                },
+                InputCountController =
+                {
+                    IsCounting =
+                    {
+                        Value = false
+                    },
+                },
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre
+            };
+
+            Drawable hud = HUDOverlay;
+
+            // TumThai: the stable and droid interface themes use the classic (2013) HUD component set.
+            if (interfaceTheme.IsThemed())
+                hud = new SkinProvidingContainer(new ThemeHudSkin(skinManager.DefaultClassicSkin)) { Child = hud };
+
             var container = new Container
             {
                 RelativeSizeAxes = Axes.Both,
                 Children = new[]
                 {
                     DimmableStoryboard.OverlayLayerContainer.CreateProxy(),
-                    HUDOverlay = new HUDOverlay(DrawableRuleset, GameplayState.Mods, Configuration)
-                    {
-                        HoldToQuit =
-                        {
-                            Action = () => PerformExitWithConfirmation(),
-                            IsPaused = { BindTarget = GameplayClockContainer.IsPaused },
-                            ReplayLoaded = { BindTarget = DrawableRuleset.HasReplayLoaded },
-                        },
-                        InputCountController =
-                        {
-                            IsCounting =
-                            {
-                                Value = false
-                            },
-                        },
-                        Anchor = Anchor.Centre,
-                        Origin = Anchor.Centre
-                    },
+                    hud,
                     BreakOverlay = new BreakOverlay(ScoreProcessor)
                     {
                         Clock = DrawableRuleset.FrameStableClock,

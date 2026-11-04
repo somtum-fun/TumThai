@@ -17,6 +17,7 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Carousel;
@@ -50,6 +51,7 @@ namespace osu.Game.Screens.Select
 
         private Box backgroundBorder = null!;
         private Box backgroundDifficultyTint = null!;
+        private Box contentBackground = null!;
 
         private TrianglesV2 triangles = null!;
 
@@ -94,10 +96,10 @@ namespace osu.Game.Screens.Select
 
             Content.Children = new Drawable[]
             {
-                new Box
+                contentBackground = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4),
+                    Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4)),
                 },
                 backgroundDifficultyTint = new Box
                 {
@@ -109,6 +111,7 @@ namespace osu.Game.Screens.Select
                     Thickness = 0.01f,
                     Velocity = 0.3f,
                     RelativeSizeAxes = Axes.Both,
+                    Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1,
                 },
                 new FillFlowContainer
                 {

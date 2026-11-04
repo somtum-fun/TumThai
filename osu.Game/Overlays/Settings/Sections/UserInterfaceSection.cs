@@ -24,6 +24,7 @@ namespace osu.Game.Overlays.Settings.Sections
             Children = new Drawable[]
             {
                 new GeneralSettings(),
+                new InterfaceThemeSettings(),
                 new MainMenuSettings(),
                 new SongSelectSettings()
             };

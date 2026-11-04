@@ -15,6 +15,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
@@ -94,6 +95,12 @@ namespace osu.Game.Screens.Select
 
         [Resolved]
         private BeatmapCarousel? carousel { get; set; }
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        // TumThai: the interface theme currently selected (osu!stable / osu!droid recolour the listing).
+        protected InterfaceTheme CurrentInterfaceTheme => config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
 
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, OsuColour colours)

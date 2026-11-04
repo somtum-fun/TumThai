@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Carousel;
@@ -58,25 +59,28 @@ namespace osu.Game.Screens.Select
                 },
             };
 
+            Color4 groupBackground = CurrentInterfaceTheme.GroupBackground(colourProvider.Highlight1);
+
             Background = new Box
             {
                 RelativeSizeAxes = Axes.Both,
-                Colour = colourProvider.Highlight1,
+                Colour = groupBackground,
             };
 
-            AccentColour = colourProvider.Highlight1;
+            AccentColour = groupBackground;
             Content.Children = new Drawable[]
             {
                 new Box
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = colourProvider.Background5,
+                    Colour = CurrentInterfaceTheme.GroupBackground(colourProvider.Background5),
                 },
                 triangles = new TrianglesV2
                 {
                     RelativeSizeAxes = Axes.Both,
                     Thickness = 0.02f,
                     SpawnRatio = 0.6f,
+                    Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1,
                     Colour = ColourInfo.GradientHorizontal(colourProvider.Background6, colourProvider.Background5)
                 },
                 glow = new Box

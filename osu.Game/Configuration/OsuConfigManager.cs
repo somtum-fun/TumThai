@@ -289,6 +289,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.AndroidLowLatencyAudio, true);
             SetDefault(OsuSetting.AndroidSustainedPerformance, false);
             SetDefault(OsuSetting.AndroidSustainedPerformanceMigrated, false);
+            // TumThai: the default look; the osu!droid theme is Android-only.
+            SetDefault(OsuSetting.InterfaceTheme, InterfaceTheme.TumThai);
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)
@@ -595,5 +597,10 @@ namespace osu.Game.Configuration
         /// Preferred display refresh rate (in Hz) for Android display mode selection and frame-sync multiplier calculations.
         /// </summary>
         DisplayRefreshRate,
+
+        /// <summary>
+        /// TumThai: the look of the interface (HUD, song select listing and results screen).
+        /// </summary>
+        InterfaceTheme,
     }
 }

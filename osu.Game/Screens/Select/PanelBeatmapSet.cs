@@ -19,6 +19,7 @@ using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Collections;
+using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
@@ -115,6 +116,12 @@ namespace osu.Game.Screens.Select
             Content.Children = new Drawable[]
             {
                 setBackground = new PanelSetBackground(),
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = CurrentInterfaceTheme.SetCardTint(),
+                    Alpha = CurrentInterfaceTheme.IsThemed() ? 0.45f : 0,
+                },
                 new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,

@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Scoring;
 using osu.Game.Screens.Ranking.Contracted;
 using osu.Game.Screens.Ranking.Expanded;
@@ -75,10 +76,10 @@ namespace osu.Game.Screens.Ranking
         /// </summary>
         private const double content_fade_duration = 50;
 
-        private static readonly ColourInfo expanded_top_layer_colour = ColourInfo.GradientVertical(Color4Extensions.FromHex("#444"), Color4Extensions.FromHex("#333"));
-        private static readonly ColourInfo expanded_middle_layer_colour = ColourInfo.GradientVertical(Color4Extensions.FromHex("#555"), Color4Extensions.FromHex("#333"));
-        private static readonly Color4 contracted_top_layer_colour = Color4Extensions.FromHex("#353535");
-        private static readonly Color4 contracted_middle_layer_colour = Color4Extensions.FromHex("#353535");
+        private ColourInfo expanded_top_layer_colour;
+        private ColourInfo expanded_middle_layer_colour;
+        private Color4 contracted_top_layer_colour;
+        private Color4 contracted_middle_layer_colour;
 
         public event Action<PanelState>? StateChanged;
 
@@ -124,8 +125,15 @@ namespace osu.Game.Screens.Ranking
         }
 
         [BackgroundDependencyLoader]
-        private void load(AudioManager audio)
+        private void load(AudioManager audio, OsuConfigManager config)
         {
+            InterfaceTheme interfaceTheme = config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
+
+            expanded_top_layer_colour = interfaceTheme.ResultsTopLayer();
+            expanded_middle_layer_colour = interfaceTheme.ResultsMiddleLayer();
+            contracted_top_layer_colour = interfaceTheme.ResultsContractedLayer();
+            contracted_middle_layer_colour = interfaceTheme.ResultsContractedLayer();
+
             // ScorePanel doesn't include the top extruding area in its own size.
             // Adding a manual offset here allows the expanded version to take on an "acceptable" vertical centre when at 100% UI scale.
             const float vertical_fudge = 20;

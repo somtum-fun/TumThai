@@ -19,6 +19,7 @@ using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Screens;
 using osu.Game.Audio;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
@@ -96,9 +97,11 @@ namespace osu.Game.Screens.Ranking
         }
 
         [BackgroundDependencyLoader]
-        private void load(AudioManager audio)
+        private void load(AudioManager audio, OsuConfigManager config)
         {
             FillFlowContainer buttons;
+
+            InterfaceTheme interfaceTheme = config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
 
             popInSample = audio.Samples.Get(@"UI/overlay-pop-in");
 
@@ -155,7 +158,7 @@ namespace osu.Game.Screens.Ranking
                                     new Box
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Colour = Color4Extensions.FromHex("#333")
+                                        Colour = interfaceTheme.ResultsBottomBar()
                                     },
                                     buttons = new FillFlowContainer
                                     {

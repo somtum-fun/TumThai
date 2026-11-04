@@ -204,6 +204,31 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString UserSearch => new TranslatableString(getKey(@"user_search"), @"User search");
 
+        /// <summary>
+        /// "Interface theme"
+        /// </summary>
+        public static LocalisableString InterfaceThemeHeader => new TranslatableString(getKey(@"interface_theme_header"), @"Interface theme"); // TumThai
+
+        /// <summary>
+        /// "Changes the HUD, song select and results to look like another osu! client."
+        /// </summary>
+        public static LocalisableString InterfaceThemeDescription => new TranslatableString(getKey(@"interface_theme_description"), @"Changes the HUD, song select and results to look like another osu! client."); // TumThai
+
+        /// <summary>
+        /// "TumThai"
+        /// </summary>
+        public static LocalisableString ThemeTumThai => new TranslatableString(getKey(@"theme_tum_thai"), @"TumThai"); // TumThai
+
+        /// <summary>
+        /// "osu!stable"
+        /// </summary>
+        public static LocalisableString ThemeOsuStable => new TranslatableString(getKey(@"theme_osu_stable"), @"osu!stable"); // TumThai
+
+        /// <summary>
+        /// "osu!droid (Android only)"
+        /// </summary>
+        public static LocalisableString ThemeOsuDroid => new TranslatableString(getKey(@"theme_osu_droid"), @"osu!droid (Android only)"); // TumThai
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
