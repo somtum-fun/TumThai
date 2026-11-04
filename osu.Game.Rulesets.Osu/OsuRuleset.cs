@@ -206,6 +206,7 @@ namespace osu.Game.Rulesets.Osu
                     {
                         new OsuModTargetPractice(),
                         new OsuModDifficultyAdjust(),
+                        new OsuModDroid(),
                         new OsuModClassic(),
                         new OsuModRandom(),
                         new OsuModMirror(),
@@ -421,7 +422,15 @@ namespace osu.Game.Rulesets.Osu
             preempt /= rate;
             adjustedDifficulty.ApproachRate = (float)IBeatmapDifficultyInfo.InverseDifficultyRange(preempt, OsuHitObject.PREEMPT_MAX, OsuHitObject.PREEMPT_MID, OsuHitObject.PREEMPT_MIN);
 
-            double greatHitWindow = IBeatmapDifficultyInfo.DifficultyRange(adjustedDifficulty.OverallDifficulty, OsuHitWindows.GREAT_WINDOW_RANGE);
+            OsuModDroid? droidMod = mods.OfType<OsuModDroid>().SingleOrDefault();
+
+            if (droidMod != null)
+                adjustedDifficulty.CircleSize -= OsuModDroid.DROID_STANDARD_CS_OFFSET;
+
+            DifficultyRange greatWindowRange = droidMod != null
+                ? (droidMod.PreciseTiming.Value ? OsuDroidHitWindows.PRECISE_GREAT_WINDOW_RANGE : OsuDroidHitWindows.DROID_GREAT_WINDOW_RANGE)
+                : OsuHitWindows.GREAT_WINDOW_RANGE;
+            double greatHitWindow = IBeatmapDifficultyInfo.DifficultyRange(adjustedDifficulty.OverallDifficulty, greatWindowRange);
             greatHitWindow /= rate;
             adjustedDifficulty.OverallDifficulty = (float)IBeatmapDifficultyInfo.InverseDifficultyRange(greatHitWindow, OsuHitWindows.GREAT_WINDOW_RANGE);
 
@@ -438,6 +447,11 @@ namespace osu.Game.Rulesets.Osu
             var effectiveDifficulty = GetAdjustedDisplayDifficulty(beatmapInfo, mods);
             var colours = new OsuColour();
 
+            OsuModDroid? droidMod = mods.OfType<OsuModDroid>().SingleOrDefault();
+            float circleScale = droidMod != null
+                ? OsuModDroid.CalculateDroidScale(modAdjustedDifficulty.CircleSize)
+                : LegacyRulesetExtensions.CalculateScaleFromCircleSize(effectiveDifficulty.CircleSize, applyFudge: true);
+
             // for circle size, we can use `effectiveDifficulty` directly
             yield return new RulesetBeatmapAttribute(SongSelectStrings.CircleSize, @"CS", originalDifficulty.CircleSize, effectiveDifficulty.CircleSize, 10)
             {
@@ -445,7 +459,7 @@ namespace osu.Game.Rulesets.Osu
                 AdditionalMetrics =
                 [
                     new RulesetBeatmapAttribute.AdditionalMetric(OsuRulesetStrings.HitCircleRadius,
-                        (OsuHitObject.OBJECT_RADIUS * LegacyRulesetExtensions.CalculateScaleFromCircleSize(effectiveDifficulty.CircleSize, applyFudge: true)).ToLocalisableString("0.#"))
+                        (OsuHitObject.OBJECT_RADIUS * circleScale).ToLocalisableString("0.#"))
                 ]
             };
 
@@ -466,7 +480,8 @@ namespace osu.Game.Rulesets.Osu
             // (the floor-and-round needs to happen *before* rate is taken into account, not after).
             // for spinner RPM requirements, we do not want to involve rate-changing mods *at all*,
             // because rate-adjusting mods do not change the spin requirement (see `SpinnerRotationTracker.AddRotation()`).
-            var hitWindows = new OsuHitWindows();
+            OsuHitWindows hitWindows = droidMod != null ? new OsuDroidHitWindows(droidMod.PreciseTiming.Value) : new OsuHitWindows();
+            DifficultyRange spinnerClearRange = droidMod != null ? Spinner.DROID_CLEAR_RPM_RANGE : Spinner.CLEAR_RPM_RANGE;
             hitWindows.SetDifficulty(modAdjustedDifficulty.OverallDifficulty);
             double rate = ModUtils.CalculateRateWithMods(mods);
             yield return new RulesetBeatmapAttribute(SongSelectStrings.Accuracy, @"OD", originalDifficulty.OverallDifficulty, effectiveDifficulty.OverallDifficulty, 10)
@@ -481,7 +496,7 @@ namespace osu.Game.Rulesets.Osu
                                               )).Concat([
                                                   new RulesetBeatmapAttribute.AdditionalMetric(OsuRulesetStrings.RpmRequiredToClearSpinners,
                                                       LocalisableString.Interpolate(
-                                                          $@"{IBeatmapDifficultyInfo.DifficultyRange(modAdjustedDifficulty.OverallDifficulty, Spinner.CLEAR_RPM_RANGE):N0} RPM")),
+                                                          $@"{IBeatmapDifficultyInfo.DifficultyRange(modAdjustedDifficulty.OverallDifficulty, spinnerClearRange):N0} RPM")),
                                                   new RulesetBeatmapAttribute.AdditionalMetric(OsuRulesetStrings.RpmRequiredToGetFullSpinnerBonus,
                                                       LocalisableString.Interpolate(
                                                           $@"{IBeatmapDifficultyInfo.DifficultyRange(modAdjustedDifficulty.OverallDifficulty, Spinner.COMPLETE_RPM_RANGE):N0} RPM")),
