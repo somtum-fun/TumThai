@@ -697,7 +697,7 @@ namespace osu.Game.Screens.Select
                 List<MenuItem> items = new List<MenuItem>();
 
                 // system mods should never be copied across regardless of anything.
-                var copyableMods = Score.Mods.Where(m => IsValidMod.Invoke(m) && m.Type != ModType.System).ToArray();
+                var copyableMods = Score.Mods.Where(m => IsValidMod.Invoke(m) && (m.UserPlayable || m is ICreateReplayData) && m.Type != ModType.System).ToArray();
 
                 if (copyableMods.Length > 0)
                     items.Add(new OsuMenuItem(SongSelectStrings.UseTheseMods, MenuItemType.Highlighted, () => SelectedMods.Value = copyableMods));
