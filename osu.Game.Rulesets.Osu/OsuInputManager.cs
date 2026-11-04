@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Linq;
@@ -6,6 +6,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
+using osu.Framework.Input.StateChanges;
 using osu.Framework.Lists;
 using osu.Framework.Localisation;
 using osu.Game.Input.Bindings;
@@ -36,10 +37,23 @@ namespace osu.Game.Rulesets.Osu
         }
 
         /// <summary>
+        /// Whether non-touch gameplay inputs (mouse buttons, mouse movement, and keyboard gameplay keys) should be allowed.
+        /// </summary>
+        public bool AllowNonTouchGameplayInputs
+        {
+            get => ((OsuKeyBindingContainer)KeyBindingContainer).AllowNonTouchGameplayInputs;
+            set => ((OsuKeyBindingContainer)KeyBindingContainer).AllowNonTouchGameplayInputs = value;
+        }
+
+        /// <summary>
         /// Whether the user's cursor movement events should be accepted.
         /// Can be used to block only movement while still accepting button input.
         /// </summary>
         public bool AllowUserCursorMovement { get; set; } = true;
+
+        private Drawable? touchInputMapper;
+
+        internal OsuDroidTouchInputMapper? DroidTouchInputMapper => touchInputMapper as OsuDroidTouchInputMapper;
 
         protected override KeyBindingContainer<OsuAction> CreateKeyBindingContainer(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
             => new OsuKeyBindingContainer(ruleset, variant, unique);
@@ -56,15 +70,38 @@ namespace osu.Game.Rulesets.Osu
         {
         }
 
+        public void SetTouchInputMapper(Drawable mapper)
+        {
+            if (touchInputMapper != null && LoadState >= LoadState.Loading)
+                Remove(touchInputMapper, true);
+
+            touchInputMapper = mapper;
+
+            if (LoadState >= LoadState.Loading)
+                Add(touchInputMapper);
+        }
+
+        internal void ApplyTouchPosition(Vector2 screenSpacePosition)
+        {
+            if (!AllowUserCursorMovement)
+                return;
+
+            new MousePositionAbsoluteInput { Position = screenSpacePosition }.Apply(CurrentState, this);
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
-            Add(new OsuTouchInputMapper(this) { RelativeSizeAxes = Axes.Both });
+            touchInputMapper ??= new OsuTouchInputMapper(this) { RelativeSizeAxes = Axes.Both };
+            Add(touchInputMapper);
         }
 
         protected override bool Handle(UIEvent e)
         {
             if ((e is MouseMoveEvent || e is TouchMoveEvent) && !AllowUserCursorMovement) return false;
+
+            if (!AllowNonTouchGameplayInputs && ReplayInputHandler == null && e is MouseMoveEvent)
+                return false;
 
             return base.Handle(e);
         }
@@ -72,6 +109,7 @@ namespace osu.Game.Rulesets.Osu
         private partial class OsuKeyBindingContainer : RulesetKeyBindingContainer
         {
             private bool allowGameplayInputs = true;
+            private bool allowNonTouchGameplayInputs = true;
 
             /// <summary>
             /// Whether gameplay input buttons should be allowed.
@@ -90,6 +128,16 @@ namespace osu.Game.Rulesets.Osu
                 }
             }
 
+            public bool AllowNonTouchGameplayInputs
+            {
+                get => allowNonTouchGameplayInputs;
+                set
+                {
+                    allowNonTouchGameplayInputs = value;
+                    ReloadMappings();
+                }
+            }
+
             public OsuKeyBindingContainer(RulesetInfo ruleset, int variant, SimultaneousBindingMode unique)
                 : base(ruleset, variant, unique)
             {
@@ -99,7 +147,7 @@ namespace osu.Game.Rulesets.Osu
             {
                 base.ReloadMappings(realmKeyBindings);
 
-                if (!AllowGameplayInputs)
+                if (!AllowGameplayInputs || !AllowNonTouchGameplayInputs)
                     KeyBindings = KeyBindings.Where(static b => b.GetAction<OsuAction>() == OsuAction.Smoke).ToList();
             }
         }
