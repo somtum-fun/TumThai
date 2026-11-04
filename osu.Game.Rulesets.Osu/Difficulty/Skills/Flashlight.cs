@@ -49,7 +49,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
             double difficulty = FlashlightEvaluator.EvaluateDifficultyOf(current, Mods);
 
-            if (Mods.Any(m => m is OsuModTouchDevice))
+            if (Mods.Any(m => m is OsuModTouchDevice or OsuModDroid))
                 difficulty = DiffUtils.Pow(difficulty, 0.9);
 
             if (Mods.Any(m => m is OsuModMagnetised))

@@ -76,7 +76,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
                 hd = mods.Any(m => m is OsuModHidden);
                 fl = mods.Any(m => m is OsuModFlashlight);
                 so = mods.Any(m => m is OsuModSpunOut);
-                td = mods.Any(m => m is OsuModTouchDevice);
+                td = mods.Any(m => m is OsuModTouchDevice or OsuModDroid);
 
                 // assert_hitresults (all of n300/n100/n50 are given)
                 uint remaining = saturatingSub(saturatingSub(saturatingSub(saturatingSub(nObjects, n300), n100), n50), nMisses);

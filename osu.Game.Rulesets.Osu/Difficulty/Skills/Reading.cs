@@ -57,7 +57,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
             double difficulty = ReadingEvaluator.EvaluateDifficultyOf(current, hasHiddenMod);
 
-            if (Mods.Any(m => m is OsuModTouchDevice))
+            if (Mods.Any(m => m is OsuModTouchDevice or OsuModDroid))
                 difficulty = DiffUtils.Pow(difficulty, 0.89);
 
             if (Mods.Any(m => m is OsuModMagnetised))

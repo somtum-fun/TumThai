@@ -90,7 +90,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             double pSnap = calculateSnapFlowProbability(flowDifficulty / combinedSnapDifficulty);
             double pFlow = 1 - pSnap;
 
-            if (Mods.Any(m => m is OsuModTouchDevice))
+            if (Mods.Any(m => m is OsuModTouchDevice or OsuModDroid))
             {
                 // we don't adjust agility here since agility represents TD difficulty in a decent enough way
                 snapDifficulty = DiffUtils.Pow(snapDifficulty, 0.89);
