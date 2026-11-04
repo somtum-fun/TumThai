@@ -644,7 +644,7 @@ namespace osu.Game.Screens.OnlinePlay.Playlists
             {
                 userStyleSection.Show();
 
-                PlaylistItem gameplayItem = item.With(ruleset: gameplayRuleset.OnlineID, beatmap: new Optional<IBeatmapInfo>(gameplayBeatmap));
+                PlaylistItem gameplayItem = item.With(ruleset: Online.SomtumCustomRulesets.ServerIdOf(gameplayRuleset), beatmap: new Optional<IBeatmapInfo>(gameplayBeatmap));
                 DrawableRoomPlaylistItem? currentDisplay = userStyleDisplayContainer.SingleOrDefault();
 
                 if (!gameplayItem.Equals(currentDisplay?.Item))
@@ -675,7 +675,7 @@ namespace osu.Game.Screens.OnlinePlay.Playlists
             // Required for validation inside the player.
             RulesetInfo gameplayRuleset = UserRuleset.Value ?? rulesets.GetRuleset(item.RulesetID)!;
             IBeatmapInfo gameplayBeatmap = UserBeatmap.Value ?? item.Beatmap;
-            PlaylistItem gameplayItem = item.With(ruleset: gameplayRuleset.OnlineID, beatmap: new Optional<IBeatmapInfo>(gameplayBeatmap));
+            PlaylistItem gameplayItem = item.With(ruleset: Online.SomtumCustomRulesets.ServerIdOf(gameplayRuleset), beatmap: new Optional<IBeatmapInfo>(gameplayBeatmap));
 
             sampleStart?.Play();
 

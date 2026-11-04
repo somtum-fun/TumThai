@@ -235,7 +235,7 @@ namespace osu.Game.Screens.OnlinePlay.Playlists
         private PlaylistItem createItem() => new PlaylistItem(Beatmap.Value.BeatmapInfo)
         {
             ID = room.Playlist.Count == 0 ? 0 : room.Playlist.Max(p => p.ID) + 1,
-            RulesetID = Ruleset.Value.OnlineID,
+            RulesetID = Online.SomtumCustomRulesets.ServerIdOf(Ruleset.Value), // TumThai: custom rulesets by the server's id
             RequiredMods = Mods.Value.Select(m => new APIMod(m)).ToArray(),
             AllowedMods = freeMods.Value.Select(m => new APIMod(m)).ToArray(),
             Freestyle = Freestyle.Value

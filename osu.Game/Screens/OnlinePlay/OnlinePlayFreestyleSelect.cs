@@ -101,7 +101,7 @@ namespace osu.Game.Screens.OnlinePlay
                 return false;
             }
 
-            if (Ruleset.Value.OnlineID < 0)
+            if (Online.SomtumCustomRulesets.ServerIdOf(Ruleset.Value) < 0) // TumThai: a ranked custom ruleset is fine
             {
                 Logger.Log("The selected ruleset is not available online.", level: LogLevel.Error);
                 return false;

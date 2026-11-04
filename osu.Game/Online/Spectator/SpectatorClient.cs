@@ -208,7 +208,8 @@ namespace osu.Game.Online.Spectator
 
                 // transfer state at point of beginning play
                 currentState.BeatmapID = score.ScoreInfo.BeatmapInfo!.OnlineID;
-                currentState.RulesetID = score.ScoreInfo.RulesetID;
+                // TumThai: a custom ruleset goes by the server's id.
+                currentState.RulesetID = SomtumCustomRulesets.ServerIdOf(score.ScoreInfo.Ruleset);
                 currentState.Mods = score.ScoreInfo.Mods.Select(m => new APIMod(m)).ToArray();
                 currentState.State = SpectatedUserState.Playing;
                 currentState.MaximumStatistics = state.ScoreProcessor.MaximumStatistics;
