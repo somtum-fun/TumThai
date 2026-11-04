@@ -24,6 +24,13 @@ namespace osu.Game.Rulesets.Osu.Objects
         public static readonly DifficultyRange CLEAR_RPM_RANGE = new DifficultyRange(90, 150, 225);
 
         /// <summary>
+        /// The RPM required to clear the spinner in osu!droid at ODs [ 0, 5, 10 ] (<c>rps = 2 + 0.2 * OD</c>).
+        /// </summary>
+        public static readonly DifficultyRange DROID_CLEAR_RPM_RANGE = new DifficultyRange(120, 180, 240);
+
+        public bool UseDroidSpinRequirement { get; set; }
+
+        /// <summary>
         /// The RPM required to complete the spinner and receive full score at ODs [ 0, 5, 10 ].
         /// </summary>
         public static readonly DifficultyRange COMPLETE_RPM_RANGE = new DifficultyRange(250, 380, 430);
@@ -63,7 +70,7 @@ namespace osu.Game.Rulesets.Osu.Objects
             base.ApplyDefaultsToSelf(controlPointInfo, difficulty);
 
             // The average RPS required over the length of the spinner to clear the spinner.
-            double minRps = IBeatmapDifficultyInfo.DifficultyRange(difficulty.OverallDifficulty, CLEAR_RPM_RANGE) / 60;
+            double minRps = IBeatmapDifficultyInfo.DifficultyRange(difficulty.OverallDifficulty, UseDroidSpinRequirement ? DROID_CLEAR_RPM_RANGE : CLEAR_RPM_RANGE) / 60;
 
             // The RPS required over the length of the spinner to receive full score (all normal + bonus ticks).
             double maxRps = IBeatmapDifficultyInfo.DifficultyRange(difficulty.OverallDifficulty, COMPLETE_RPM_RANGE) / 60;
