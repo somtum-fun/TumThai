@@ -42,6 +42,7 @@ namespace osu.Game.Screens.Select
         public Bindable<HashSet<BeatmapInfo>?> VisibleBeatmaps { get; } = new Bindable<HashSet<BeatmapInfo>?>();
 
         private Box chevronBackground = null!;
+        private Box themeTintBox = null!;
         private PanelSetBackground setBackground = null!;
         private ScheduledDelegate? scheduledBackgroundRetrieval;
 
@@ -116,7 +117,7 @@ namespace osu.Game.Screens.Select
             Content.Children = new Drawable[]
             {
                 setBackground = new PanelSetBackground(),
-                new Box
+                themeTintBox = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
                     Colour = CurrentInterfaceTheme.SetCardTint(),
@@ -179,6 +180,14 @@ namespace osu.Game.Screens.Select
 
             Expanded.BindValueChanged(_ => onExpanded(), true);
             KeyboardSelected.BindValueChanged(k => KeyboardSelected.Value = k.NewValue, true);
+        }
+
+        protected override void ApplyInterfaceTheme()
+        {
+            base.ApplyInterfaceTheme();
+
+            themeTintBox.Colour = CurrentInterfaceTheme.SetCardTint();
+            themeTintBox.Alpha = CurrentInterfaceTheme.IsThemed() ? 0.45f : 0;
         }
 
         private void onExpanded()

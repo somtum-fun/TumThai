@@ -99,12 +99,16 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
 
+        private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+
         // TumThai: the interface theme currently selected (osu!stable / osu!droid recolour the listing).
-        protected InterfaceTheme CurrentInterfaceTheme => config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
+        protected InterfaceTheme CurrentInterfaceTheme => interfaceTheme.Value.Effective();
 
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, OsuColour colours)
         {
+            config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
+
             Anchor = Anchor.TopRight;
             Origin = Anchor.TopRight;
 
@@ -262,6 +266,8 @@ namespace osu.Game.Screens.Select
         {
             base.LoadComplete();
 
+            interfaceTheme.BindValueChanged(_ => ApplyInterfaceTheme(), true);
+
             Expanded.BindValueChanged(_ =>
             {
                 updateSelectedState();
@@ -287,6 +293,10 @@ namespace osu.Game.Screens.Select
 
                 updateXOffset();
             }, true);
+        }
+
+        protected virtual void ApplyInterfaceTheme()
+        {
         }
 
         protected override void PrepareForUse()

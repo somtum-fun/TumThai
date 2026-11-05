@@ -23,14 +23,19 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
                 ? Enum.GetValues<InterfaceTheme>()
                 : new[] { InterfaceTheme.TumThai, InterfaceTheme.OsuStable };
 
+            var themeBindable = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
+            if (RuntimeInfo.OS != RuntimeInfo.Platform.Android && themeBindable.Value == InterfaceTheme.OsuDroid)
+                themeBindable.Value = InterfaceTheme.TumThai;
+
             Children = new Drawable[]
             {
                 new SettingsItemV2(new FormEnumDropdown<InterfaceTheme>
                 {
                     Caption = UserInterfaceStrings.InterfaceThemeHeader,
                     HintText = UserInterfaceStrings.InterfaceThemeDescription,
-                    Current = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme),
                     Items = items,
+                    Current = themeBindable,
                 })
                 {
                     Keywords = new[] { "theme", "interface", "ui", "stable", "droid", "skin" },

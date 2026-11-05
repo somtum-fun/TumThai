@@ -34,6 +34,8 @@ namespace osu.Game.Screens.Select
         private TrianglesV2 triangles = null!;
         private CircularContainer countPill = null!;
         private OsuSpriteText countText = null!;
+        private Box backgroundBorder = null!;
+        private Box contentBackground = null!;
         private Box glow = null!;
 
         [Resolved]
@@ -61,7 +63,7 @@ namespace osu.Game.Screens.Select
 
             Color4 groupBackground = CurrentInterfaceTheme.GroupBackground(colourProvider.Highlight1);
 
-            Background = new Box
+            Background = backgroundBorder = new Box
             {
                 RelativeSizeAxes = Axes.Both,
                 Colour = groupBackground,
@@ -70,7 +72,7 @@ namespace osu.Game.Screens.Select
             AccentColour = groupBackground;
             Content.Children = new Drawable[]
             {
-                new Box
+                contentBackground = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
                     Colour = CurrentInterfaceTheme.GroupBackground(colourProvider.Background5),
@@ -128,6 +130,17 @@ namespace osu.Game.Screens.Select
             base.LoadComplete();
 
             Expanded.BindValueChanged(_ => onExpanded(), true);
+        }
+
+        protected override void ApplyInterfaceTheme()
+        {
+            base.ApplyInterfaceTheme();
+
+            Color4 groupBackground = CurrentInterfaceTheme.GroupBackground(colourProvider.Highlight1);
+            backgroundBorder.Colour = groupBackground;
+            AccentColour = groupBackground;
+            contentBackground.Colour = CurrentInterfaceTheme.GroupBackground(colourProvider.Background5);
+            triangles.Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1;
         }
 
         private void onExpanded()

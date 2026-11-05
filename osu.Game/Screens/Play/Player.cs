@@ -511,7 +511,7 @@ namespace osu.Game.Screens.Play
 
             // TumThai: the stable and droid interface themes use the classic (2013) HUD component set.
             if (interfaceTheme.IsThemed())
-                hud = new SkinProvidingContainer(new ThemeHudSkin(skinManager.DefaultClassicSkin)) { Child = hud };
+                hud = new SkinProvidingContainer(new ThemeHudSkin(skinManager.DefaultClassicSkin, skinManager)) { Child = hud };
 
             var container = new Container
             {

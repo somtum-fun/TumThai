@@ -76,10 +76,12 @@ namespace osu.Game.Screens.Ranking
         /// </summary>
         private const double content_fade_duration = 50;
 
-        private ColourInfo expanded_top_layer_colour;
-        private ColourInfo expanded_middle_layer_colour;
-        private Color4 contracted_top_layer_colour;
-        private Color4 contracted_middle_layer_colour;
+        private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+
+        private ColourInfo expandedTopLayerColour;
+        private ColourInfo expandedMiddleLayerColour;
+        private Color4 contractedTopLayerColour;
+        private Color4 contractedMiddleLayerColour;
 
         public event Action<PanelState>? StateChanged;
 
@@ -127,12 +129,8 @@ namespace osu.Game.Screens.Ranking
         [BackgroundDependencyLoader]
         private void load(AudioManager audio, OsuConfigManager config)
         {
-            InterfaceTheme interfaceTheme = config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
-
-            expanded_top_layer_colour = interfaceTheme.ResultsTopLayer();
-            expanded_middle_layer_colour = interfaceTheme.ResultsMiddleLayer();
-            contracted_top_layer_colour = interfaceTheme.ResultsContractedLayer();
-            contracted_middle_layer_colour = interfaceTheme.ResultsContractedLayer();
+            config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
+            applyInterfaceTheme(interfaceTheme.Value.Effective(), updateLayerBackgrounds: false);
 
             // ScorePanel doesn't include the top extruding area in its own size.
             // Adding a manual offset here allows the expanded version to take on an "acceptable" vertical centre when at 100% UI scale.
@@ -204,6 +202,22 @@ namespace osu.Game.Screens.Ranking
 
             topLayerBackground.FinishTransforms(false, nameof(Colour));
             middleLayerBackground.FinishTransforms(false, nameof(Colour));
+
+            interfaceTheme.BindValueChanged(t => applyInterfaceTheme(t.NewValue.Effective(), updateLayerBackgrounds: true));
+        }
+
+        private void applyInterfaceTheme(InterfaceTheme theme, bool updateLayerBackgrounds)
+        {
+            expandedTopLayerColour = theme.ResultsTopLayer();
+            expandedMiddleLayerColour = theme.ResultsMiddleLayer();
+            contractedTopLayerColour = theme.ResultsContractedLayer();
+            contractedMiddleLayerColour = theme.ResultsContractedLayer();
+
+            if (!updateLayerBackgrounds)
+                return;
+
+            topLayerBackground.Colour = state == PanelState.Expanded ? expandedTopLayerColour : contractedTopLayerColour;
+            middleLayerBackground.Colour = state == PanelState.Expanded ? expandedMiddleLayerColour : contractedMiddleLayerColour;
         }
 
         private PanelState state = PanelState.Contracted;
@@ -255,8 +269,8 @@ namespace osu.Game.Screens.Ranking
                 case PanelState.Expanded:
                     Size = new Vector2(EXPANDED_WIDTH, expanded_height);
 
-                    topLayerBackground.FadeColour(expanded_top_layer_colour, RESIZE_DURATION, Easing.OutQuint);
-                    middleLayerBackground.FadeColour(expanded_middle_layer_colour, RESIZE_DURATION, Easing.OutQuint);
+                    topLayerBackground.FadeColour(expandedTopLayerColour, RESIZE_DURATION, Easing.OutQuint);
+                    middleLayerBackground.FadeColour(expandedMiddleLayerColour, RESIZE_DURATION, Easing.OutQuint);
 
                     bool firstLoad = topLayerContent == null;
                     topLayerContentContainer.Add(topLayerContent = new ExpandedPanelTopContent(Score.User, firstLoad) { Alpha = 0 });
@@ -269,8 +283,8 @@ namespace osu.Game.Screens.Ranking
                 case PanelState.Contracted:
                     Size = new Vector2(CONTRACTED_WIDTH, CONTRACTED_HEIGHT);
 
-                    topLayerBackground.FadeColour(contracted_top_layer_colour, RESIZE_DURATION, Easing.OutQuint);
-                    middleLayerBackground.FadeColour(contracted_middle_layer_colour, RESIZE_DURATION, Easing.OutQuint);
+                    topLayerBackground.FadeColour(contractedTopLayerColour, RESIZE_DURATION, Easing.OutQuint);
+                    middleLayerBackground.FadeColour(contractedMiddleLayerColour, RESIZE_DURATION, Easing.OutQuint);
 
                     topLayerContentContainer.Add(topLayerContent = new ContractedPanelTopContent
                     {

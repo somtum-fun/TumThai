@@ -70,6 +70,9 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private ISongSelect? songSelect { get; set; }
 
+        [Resolved]
+        private OverlayColourProvider colourProvider { get; set; } = null!;
+
         private BeatmapInfo beatmap => ((GroupedBeatmap)Item!.Model).Beatmap;
 
         public PanelBeatmap()
@@ -78,7 +81,7 @@ namespace osu.Game.Screens.Select
         }
 
         [BackgroundDependencyLoader]
-        private void load(OverlayColourProvider colourProvider)
+        private void load()
         {
             Height = HEIGHT;
 
@@ -202,6 +205,14 @@ namespace osu.Game.Screens.Select
 
             ruleset.BindValueChanged(_ => updateKeyCount());
             mods.BindValueChanged(_ => updateKeyCount(), true);
+        }
+
+        protected override void ApplyInterfaceTheme()
+        {
+            base.ApplyInterfaceTheme();
+
+            contentBackground.Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4));
+            triangles.Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1;
         }
 
         protected override void PrepareForUse()

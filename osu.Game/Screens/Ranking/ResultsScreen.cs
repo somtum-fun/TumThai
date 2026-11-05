@@ -89,6 +89,9 @@ namespace osu.Game.Screens.Ranking
         [Cached]
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Aquamarine);
 
+        private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+        private Box bottomBarBackground = null!;
+
         protected ResultsScreen(ScoreInfo? score)
         {
             Score = score;
@@ -101,7 +104,7 @@ namespace osu.Game.Screens.Ranking
         {
             FillFlowContainer buttons;
 
-            InterfaceTheme interfaceTheme = config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).Effective();
+            config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
 
             popInSample = audio.Samples.Get(@"UI/overlay-pop-in");
 
@@ -155,10 +158,10 @@ namespace osu.Game.Screens.Ranking
                                 Alpha = 0,
                                 Children = new Drawable[]
                                 {
-                                    new Box
+                                    bottomBarBackground = new Box
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Colour = interfaceTheme.ResultsBottomBar()
+                                        Colour = interfaceTheme.Value.Effective().ResultsBottomBar()
                                     },
                                     buttons = new FillFlowContainer
                                     {
@@ -239,6 +242,8 @@ namespace osu.Game.Screens.Ranking
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            interfaceTheme.BindValueChanged(t => bottomBarBackground.Colour = t.NewValue.Effective().ResultsBottomBar(), true);
 
             StatisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
 
