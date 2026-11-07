@@ -22,6 +22,8 @@ using osuTK;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
 
+// TumThai!Next: moved here from osu.Game.Rulesets.Osu (namespace kept) so the osu!stable theme's menu cursor can draw
+// the same trail as gameplay (StableMenuCursorTrail).
 namespace osu.Game.Rulesets.Osu.UI.Cursor
 {
     [DrawVisualiserHidden]

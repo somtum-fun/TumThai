@@ -39,7 +39,19 @@ namespace osu.Game.Graphics.Cursor
             }
         }
 
-        protected override Drawable CreateCursor() => activeCursor = new Cursor();
+        protected override Drawable CreateCursor()
+        {
+            activeCursor = new Cursor();
+            activeCursor.StableTrailChanged += (texture, disjoint, centre, rotate) =>
+            {
+                pendingTrail = (texture, disjoint, centre, rotate);
+
+                // the cursor can report before this container's load has made the trail; it's applied there then
+                if (stableTrail != null)
+                    stableTrail.Apply(texture, disjoint, centre, rotate);
+            };
+            return activeCursor;
+        }
 
         private Cursor activeCursor = null!;
 
@@ -65,7 +77,18 @@ namespace osu.Game.Graphics.Cursor
             tapSample = audio.Samples.Get(@"UI/cursor-tap");
 
             Add(mouseInputDetector = new MouseInputDetector());
+
+            // the osu!stable theme's trail, behind the cursor (the same trail as gameplay)
+            Add(stableTrail = new StableMenuCursorTrail { Depth = 1, Alpha = 0 });
+            gameplayCursorSize = config.GetBindable<float>(OsuSetting.GameplayCursorSize);
+
+            if (pendingTrail is var (texture, disjoint, centre, rotate))
+                stableTrail.Apply(texture, disjoint, centre, rotate);
         }
+
+        private (Texture? texture, bool disjoint, bool centre, bool rotate)? pendingTrail;
+        private StableMenuCursorTrail? stableTrail;
+        private Bindable<float> gameplayCursorSize = null!;
 
         [Resolved]
         private OsuGame? game { get; set; }
@@ -133,6 +156,19 @@ namespace osu.Game.Graphics.Cursor
         {
             base.Update();
 
+            if (stableTrail != null)
+            {
+                bool stable = activeCursor.UsingStableCursor;
+                stableTrail.Alpha = stable ? activeCursor.Alpha : 0;
+
+                if (stable)
+                {
+                    stableTrail.CursorScale = activeCursor.StableScale;
+                    stableTrail.PartRotation = activeCursor.StableRotation;
+                    stableTrail.CursorSizeSetting = gameplayCursorSize.Value;
+                }
+            }
+
             if (dragRotationState != DragRotationState.NotDragging
                 && Vector2.Distance(positionMouseDown, lastMovePosition) > 60)
             {
@@ -175,7 +211,12 @@ namespace osu.Game.Graphics.Cursor
 
         protected override bool OnMouseDown(MouseDownEvent e)
         {
-            if (State.Value == Visibility.Visible)
+            if (State.Value == Visibility.Visible && activeCursor.UsingStableCursor)
+            {
+                activeCursor.StableExpand();
+                playTapSample();
+            }
+            else if (State.Value == Visibility.Visible)
             {
                 // only trigger animation for main mouse buttons
                 activeCursor.Scale = new Vector2(1);
@@ -199,7 +240,11 @@ namespace osu.Game.Graphics.Cursor
 
         protected override void OnMouseUp(MouseUpEvent e)
         {
-            if (!e.HasAnyButtonPressed)
+            if (!e.HasAnyButtonPressed && activeCursor.UsingStableCursor)
+            {
+                activeCursor.StableContract();
+            }
+            else if (!e.HasAnyButtonPressed)
             {
                 activeCursor.AdditiveLayer.FadeOutFromOne(500, Easing.OutQuint);
                 activeCursor.ScaleTo(1, 500, Easing.OutElastic);
@@ -332,9 +377,53 @@ namespace osu.Game.Graphics.Cursor
                 interfaceTheme.BindValueChanged(_ => updateStableCursor(), true);
             }
 
+            /// <summary>
+            /// Whether the osu!stable theme's cursor (the skin's gameplay cursor) is showing instead of lazer's.
+            /// </summary>
+            public bool UsingStableCursor => stableCursor.Alpha > 0;
+
+            /// <summary>
+            /// The stable cursor's scale in this cursor's parent's units (the trail uses it to match the cursor's size).
+            /// </summary>
+            public Vector2 StableScale => stableCursor.Scale;
+
+            /// <summary>
+            /// The stable cursor's spin, which the trail's parts follow (as in gameplay).
+            /// </summary>
+            public float StableRotation => stableCursorSprite.Rotation;
+
+            /// <summary>
+            /// Raised with the trail's set-up whenever the stable cursor changes (theme or skin).
+            /// </summary>
+            public event Action<Texture?, bool, bool, bool>? StableTrailChanged;
+
+            private bool expand = true;
+
+            private static bool skinFlag(Skin? skin, string key, bool fallback)
+            {
+                if (skin is not LegacySkin legacy || !legacy.Configuration.ConfigDictionary.TryGetValue(key, out string? value))
+                    return fallback;
+
+                return value.Trim() != "0";
+            }
+
             private void updateStableCursor()
             {
-                var cursorTexture = interfaceTheme.Value.IsThemed() ? skinManager?.GetClassicTexture(@"cursor") : null;
+                if (!interfaceTheme.Value.IsThemed() || skinManager == null)
+                {
+                    stableCursor.Alpha = 0;
+                    cursorContainer.Alpha = 1;
+                    return;
+                }
+
+                // As gameplay: the cursor and its middle come from the same skin, the first that has a cursor (the player's,
+                // else osu!stable's default). A skin with a cursor but no cursormiddle shows none (and a disjoint trail).
+                Skin? userSkin = skinManager.CurrentSkin.Value;
+                ISkin provider = userSkin is LegacySkin && userSkin != skinManager.DefaultClassicSkin && userSkin.GetTexture(@"cursor") != null
+                    ? userSkin
+                    : skinManager.DefaultClassicSkin;
+
+                var cursorTexture = provider.GetTexture(@"cursor");
 
                 if (cursorTexture == null)
                 {
@@ -343,31 +432,46 @@ namespace osu.Game.Graphics.Cursor
                     return;
                 }
 
+                var middleTexture = provider.GetTexture(@"cursormiddle");
                 stableCursorSprite.Texture = cursorTexture;
-                stableCursorMiddleSprite.Texture = skinManager?.GetClassicTexture(@"cursormiddle");
+                stableCursorMiddleSprite.Texture = middleTexture;
+                stableCursorMiddleSprite.Alpha = middleTexture != null ? 1 : 0;
 
-                // skin.ini CursorCentre (default 1): the cursor's centre is the pointer; 0 puts its top-left there.
-                bool centre = !(skinManager?.CurrentSkin.Value is LegacySkin legacy
-                                && legacy.Configuration.ConfigDictionary.TryGetValue(@"CursorCentre", out string? value)
-                                && value.Trim() == "0");
+                Skin? configSkin = provider as Skin;
+                bool centre = skinFlag(configSkin, @"CursorCentre", true);
+                bool rotate = skinFlag(configSkin, @"CursorRotate", true);
+                expand = skinFlag(configSkin, @"CursorExpand", true);
 
                 var origin = centre ? Anchor.Centre : Anchor.TopLeft;
                 stableCursorSprite.Origin = stableCursorMiddleSprite.Origin = origin;
                 stableCursor.Origin = Anchor.TopLeft;
 
-                // skin.ini CursorRotate (default 1): the cursor spins slowly, as in gameplay.
-                bool rotate = !(skinManager?.CurrentSkin.Value is LegacySkin rotateSkin
-                                && rotateSkin.Configuration.ConfigDictionary.TryGetValue(@"CursorRotate", out string? rotateValue)
-                                && rotateValue.Trim() == "0");
-
                 stableCursorSprite.ClearTransforms();
                 stableCursorSprite.Rotation = 0;
+                stableCursorSprite.Scale = Vector2.One;
                 if (rotate)
                     stableCursorSprite.Spin(stable_revolution_duration, RotationDirection.Clockwise);
 
                 stableCursor.Alpha = 1;
                 cursorContainer.Alpha = 0;
+
+                // the trail: the player's cursortrail, else the default skin's (as gameplay's skin lookup)
+                var trailTexture = (userSkin is LegacySkin ? userSkin.GetTexture(@"cursortrail") : null)
+                                   ?? skinManager.DefaultClassicSkin.GetTexture(@"cursortrail");
+
+                StableTrailChanged?.Invoke(trailTexture, middleTexture == null, centre, skinFlag(userSkin, @"CursorTrailRotate", true));
             }
+
+            /// <summary>
+            /// Gameplay's press: the cursor (not its middle) grows to 1.3 (LegacyCursor), unless the skin turns CursorExpand off.
+            /// </summary>
+            public void StableExpand()
+            {
+                if (expand)
+                    stableCursorSprite.ScaleTo(1f).ScaleTo(1.3f, 100, Easing.Out);
+            }
+
+            public void StableContract() => stableCursorSprite.ScaleTo(1f, 100, Easing.Out);
 
             protected override void Update()
             {
