@@ -284,8 +284,8 @@ namespace osu.Game.Screens.Menu
                                 {
                                     Anchor = Anchor.TopRight,
                                     Origin = Anchor.TopRight,
-                                    Position = new Vector2(-8, 52),
-                                    Size = new Vector2(204, 6),
+                                    Position = new Vector2(-8, 54),
+                                    Size = new Vector2(204, 3),
                                 },
                             },
                         },
@@ -469,13 +469,14 @@ namespace osu.Game.Screens.Menu
                     new Box
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Colour = Color4.Black.Opacity(0.5f),
+                        // a faint track, not a black block: it read as a stray bar while the song had barely started
+                        Colour = Color4.White.Opacity(0.15f),
                     },
                     progressFill = new Box
                     {
                         RelativeSizeAxes = Axes.Both,
                         Width = 0,
-                        Colour = Color4.White.Opacity(0.55f),
+                        Colour = Color4.White.Opacity(0.8f),
                     },
                 };
             }

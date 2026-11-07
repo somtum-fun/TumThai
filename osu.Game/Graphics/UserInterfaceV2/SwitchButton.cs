@@ -27,6 +27,9 @@ namespace osu.Game.Graphics.UserInterfaceV2
         private readonly CircularContainer content;
         private IBindable<InterfaceTheme>? interfaceTheme;
 
+        // the size the user of this switch gave it (e.g. the input settings' narrow 15x22 one), restored outside the stable theme
+        private Vector2 lazerSize;
+
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
@@ -70,6 +73,8 @@ namespace osu.Game.Graphics.UserInterfaceV2
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            lazerSize = Size;
 
             interfaceTheme?.BindValueChanged(_ => updateState());
             Current.BindDisabledChanged(_ => updateState());
@@ -130,7 +135,7 @@ namespace osu.Game.Graphics.UserInterfaceV2
                 return;
             }
 
-            Size = new Vector2(WIDTH, 16);
+            Size = lazerSize;
             content.BorderThickness = 3.2f;
             content.CornerExponent = 2.5f;
 

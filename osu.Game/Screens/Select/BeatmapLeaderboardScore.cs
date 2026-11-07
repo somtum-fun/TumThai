@@ -192,8 +192,8 @@ namespace osu.Game.Screens.Select
                 ? Color4Extensions.FromHex(@"16384C").Opacity(0.75f)
                 : Color4.Black.Opacity(0.6f);
 
-            var classicSkin = skinManager?.DefaultClassicSkin;
-            var smallRankTex = classicSkin?.GetTexture($"ranking-{Score.Rank}-small");
+            // the player's skin first (as stable), osu!stable's default skin for what it doesn't have
+            var smallRankTex = skinManager?.GetClassicTexture($"ranking-{Score.Rank}-small");
 
             Children = new Drawable[]
             {

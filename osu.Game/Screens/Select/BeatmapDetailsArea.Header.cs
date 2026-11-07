@@ -146,17 +146,18 @@ namespace osu.Game.Screens.Select
                         {
                             stableRankingDropdown = new StableRankingModeDropdown
                             {
-                                Width = 210f,
+                                // the three fit on songselect-top's black ledge, left of its curve (about 360 wide)
+                                Width = 150f,
                             },
                             stableVariantDropdown = new StableCyanDropdown<LeaderboardVariant>
                             {
-                                Width = 96f,
+                                Width = 84f,
                                 Items = new[] { LeaderboardVariant.Vanilla },
                                 Current = { BindTarget = variantDropdown.Current },
                             },
                             stableSortDropdown = new StableCyanDropdown<LeaderboardSortMode>
                             {
-                                Width = 88f,
+                                Width = 100f,
                                 Items = Enum.GetValues<LeaderboardSortMode>(),
                                 Current = { BindTarget = sortDropdown.Current },
                             },

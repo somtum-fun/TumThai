@@ -6,7 +6,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
@@ -86,27 +85,25 @@ namespace osu.Game.Users
             var levelBarTex = skinManager.GetClassicTexture(@"levelbar");
 
             Masking = true;
-            CornerRadius = 3f;
+
+            // osu!stable's own player panel (User.cs): user-bg in (1, 1, 1) at 200/255 and user-border in black.
+            Color4 stableBg = new Color4(1, 1, 1, (byte)(opaqueBackground ? 255 : 200));
 
             Children = new Drawable[]
             {
-                new Box
-                {
-                    RelativeSizeAxes = Axes.Both,
-                    Colour = opaqueBackground
-                        ? ColourInfo.GradientVertical(Color4Extensions.FromHex("0A1D4B"), Color4Extensions.FromHex("050F29"))
-                        : Color4.Black.Opacity(0.55f),
-                },
                 userBgTex != null
                     ? new Sprite
                     {
                         Texture = userBgTex,
                         RelativeSizeAxes = Axes.Both,
                         Size = Vector2.One,
-                        Colour = opaqueBackground ? Color4Extensions.FromHex("0A1D4B") : Color4Extensions.FromHex("182850").Opacity(0.65f),
-                        Blending = opaqueBackground ? BlendingParameters.Mixture : BlendingParameters.Additive,
+                        Colour = stableBg,
                     }
-                    : Empty(),
+                    : new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = stableBg,
+                    },
                 hoverLayer = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
@@ -120,7 +117,7 @@ namespace osu.Game.Users
                         Texture = userBorderTex,
                         RelativeSizeAxes = Axes.Both,
                         Size = Vector2.One,
-                        Colour = Color4Extensions.FromHex("0A1D4B"),
+                        Colour = Color4.Black,
                     })
                     : Empty(),
                 new Container
@@ -149,8 +146,8 @@ namespace osu.Game.Users
                     Anchor = Anchor.CentreRight,
                     Origin = Anchor.CentreRight,
                     Position = new Vector2(-8f, 0f),
-                    Font = OsuFont.GetFont(size: 40, weight: FontWeight.Bold),
-                    Colour = Color4.White.Opacity(0.35f),
+                    Font = OsuFont.GetFont(size: 40, weight: FontWeight.Light),
+                    Colour = Color4.White.Opacity(0.39f),
                 },
                 usernameText = new OsuSpriteText
                 {
@@ -191,8 +188,6 @@ namespace osu.Game.Users
                             {
                                 Texture = levelBarBgTex,
                                 Size = new Vector2(level_bar_max_width, 10f),
-                                Colour = Color4.White.Opacity(0.4f),
-                                Blending = BlendingParameters.Additive,
                             }
                             : new Box
                             {
@@ -209,8 +204,7 @@ namespace osu.Game.Users
                                 {
                                     Texture = levelBarTex,
                                     Size = new Vector2(level_bar_max_width, 10f),
-                                    Colour = Color4Extensions.FromHex("FCB806").Opacity(0.85f),
-                                    Blending = BlendingParameters.Additive,
+                                    Colour = new Color4(252, 184, 6, 255),
                                 }
                                 : new Box
                                 {
@@ -285,9 +279,7 @@ namespace osu.Game.Users
             if (stats != null)
             {
                 decimal pp = stats.PP ?? 0;
-                line1Text.Text = pp > 0
-                    ? $"Performance:{pp:#,0}pp"
-                    : $"Score:{stats.RankedScore:#,0}";
+                line1Text.Text = $"Performance:{pp:#,0}pp";
                 line2Text.Text = $"Accuracy:{stats.Accuracy:0.00}%";
                 levelText.Text = $"Lv{stats.Level.Current}";
 
@@ -297,12 +289,17 @@ namespace osu.Game.Users
                 if (stats.GlobalRank is int rank && rank > 0)
                 {
                     rankText.Text = $"#{rank}";
-                    if (rank == 1)
-                        rankText.Colour = Color4Extensions.FromHex("58ABF8").Opacity(0.55f);
-                    else if (rank <= 10)
-                        rankText.Colour = Color4Extensions.FromHex("F4DA49").Opacity(0.55f);
-                    else
-                        rankText.Colour = Color4.White.Opacity(Math.Clamp(0.42f - rank / 500000f, 0.12f, 0.42f));
+                    // User.cs: the rank's colour by how high it is
+                    rankText.Colour = rank switch
+                    {
+                        1 => new Color4(88, 171, 248, 120),
+                        <= 10 => new Color4(244, 218, 73, 120),
+                        <= 1000 => new Color4(255, 255, 255, 100),
+                        <= 50000 => new Color4(255, 255, 255, 80),
+                        <= 100000 => new Color4(255, 255, 255, 60),
+                        <= 200000 => new Color4(255, 255, 255, 40),
+                        _ => new Color4(255, 255, 255, 20),
+                    };
                 }
                 else
                 {
@@ -329,7 +326,7 @@ namespace osu.Game.Users
         protected override void OnHoverLost(HoverLostEvent e)
         {
             hoverLayer.FadeOut(200, Easing.OutQuad);
-            borderSprite?.FadeColour(Color4Extensions.FromHex("0A1D4B"), 300, Easing.OutQuad);
+            borderSprite?.FadeColour(Color4.Black, 300, Easing.OutQuad);
             base.OnHoverLost(e);
         }
 

@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
+using osu.Game.Skinning;
 using osuTK;
 
 namespace osu.Game.Graphics.Cursor
@@ -255,6 +256,16 @@ namespace osu.Game.Graphics.Cursor
 
             public Sprite AdditiveLayer = null!;
 
+            // TumThai!Next: in the osu!stable theme, the skin's own cursor (cursor + cursormiddle), as osu!stable draws it.
+            private Container stableCursor = null!;
+            private Sprite stableCursorSprite = null!;
+            private Sprite stableCursorMiddleSprite = null!;
+            private Bindable<InterfaceTheme> interfaceTheme = null!;
+            private IBindable<Skin>? currentSkin;
+
+            [Resolved]
+            private SkinManager? skinManager { get; set; }
+
             public Cursor()
             {
                 AutoSizeAxes = Axes.Both;
@@ -282,11 +293,67 @@ namespace osu.Game.Graphics.Cursor
                                 Texture = textures.Get(@"Cursor/menu-cursor-additive"),
                             },
                         }
-                    }
+                    },
+                    stableCursor = new Container
+                    {
+                        AutoSizeAxes = Axes.Both,
+                        Alpha = 0,
+                        Children = new Drawable[]
+                        {
+                            stableCursorSprite = new Sprite(),
+                            stableCursorMiddleSprite = new Sprite(),
+                        }
+                    },
                 };
 
                 cursorScale = config.GetBindable<float>(OsuSetting.MenuCursorSize);
-                cursorScale.BindValueChanged(scale => cursorContainer.Scale = new Vector2(scale.NewValue * base_scale), true);
+                cursorScale.BindValueChanged(scale =>
+                {
+                    cursorContainer.Scale = new Vector2(scale.NewValue * base_scale);
+                    stableCursor.Scale = new Vector2(scale.NewValue);
+                }, true);
+
+                interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+            }
+
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+
+                if (skinManager != null)
+                {
+                    currentSkin = skinManager.CurrentSkin.GetBoundCopy();
+                    currentSkin.BindValueChanged(_ => updateStableCursor());
+                }
+
+                interfaceTheme.BindValueChanged(_ => updateStableCursor(), true);
+            }
+
+            private void updateStableCursor()
+            {
+                var cursorTexture = interfaceTheme.Value.IsThemed() ? skinManager?.GetClassicTexture(@"cursor") : null;
+
+                if (cursorTexture == null)
+                {
+                    stableCursor.Alpha = 0;
+                    cursorContainer.Alpha = 1;
+                    return;
+                }
+
+                stableCursorSprite.Texture = cursorTexture;
+                stableCursorMiddleSprite.Texture = skinManager?.GetClassicTexture(@"cursormiddle");
+
+                // skin.ini CursorCentre (default 1): the cursor's centre is the pointer; 0 puts its top-left there.
+                bool centre = !(skinManager?.CurrentSkin.Value is LegacySkin legacy
+                                && legacy.Configuration.ConfigDictionary.TryGetValue(@"CursorCentre", out string? value)
+                                && value.Trim() == "0");
+
+                var origin = centre ? Anchor.Centre : Anchor.TopLeft;
+                stableCursorSprite.Origin = stableCursorMiddleSprite.Origin = origin;
+                stableCursor.Origin = Anchor.TopLeft;
+
+                stableCursor.Alpha = 1;
+                cursorContainer.Alpha = 0;
             }
         }
 

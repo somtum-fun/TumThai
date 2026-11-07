@@ -512,9 +512,9 @@ namespace osu.Game.Screens.Select
             private const float ripple_scale = 1.25f;
             private const float hover_scale = 1.375f;
 
-            private Sprite mainSprite = null!;
-            private Sprite rippleSprite = null!;
-            private Sprite hoverOverlay = null!;
+            private Container mainSprite = null!;
+            private Container rippleSprite = null!;
+            private Container hoverOverlay = null!;
             private ISample? hoverSample;
             private ISample? clickSample;
 
@@ -539,9 +539,9 @@ namespace osu.Game.Screens.Select
                     {
                         RelativeSizeAxes = Axes.Both,
                     },
-                    mainSprite = createSprite(),
-                    rippleSprite = createSprite(),
-                    hoverOverlay = createSprite(),
+                    mainSprite = createLayer(),
+                    rippleSprite = createLayer(),
+                    hoverOverlay = createLayer(),
                 };
 
                 rippleSprite.Blending = BlendingParameters.Additive;
@@ -549,10 +549,10 @@ namespace osu.Game.Screens.Select
                 hoverOverlay.Blending = BlendingParameters.Additive;
                 hoverOverlay.Alpha = 0.01f;
 
-                setTexture(resolveTexture(skinManager));
+                setCookie(skinCookie(skinManager));
             }
 
-            private static Sprite createSprite() => new Sprite
+            private static Container createLayer() => new Container
             {
                 Anchor = Anchor.Centre,
                 Origin = Anchor.Centre,
@@ -562,29 +562,71 @@ namespace osu.Game.Screens.Select
             };
 
             /// <summary>
-            /// The player's own skin's <c>menu-osu</c> when it has one, otherwise the somtum.fun logo.
-            /// TumThai never ships osu!'s cookie itself.
+            /// The player's own skin's <c>menu-osu</c> when it has one, otherwise null (TumThai's green cookie is drawn instead;
+            /// TumThai never ships osu!'s cookie itself).
             /// </summary>
-            private Texture? resolveTexture(SkinManager skinManager)
+            private static Texture? skinCookie(SkinManager skinManager)
             {
                 var skin = skinManager.CurrentSkin.Value;
 
                 if (skin is LegacySkin && skin != skinManager.DefaultClassicSkin)
-                {
-                    var own = skin.GetTexture(@"menu-osu");
-                    if (own != null)
-                        return own;
-                }
+                    return skin.GetTexture(@"menu-osu");
 
-                return textures.Get(@"Menu/logo");
+                return null;
             }
 
-            private void setTexture(Texture? tex)
+            private void setCookie(Texture? skinTexture)
             {
-                mainSprite.Texture = tex;
-                rippleSprite.Texture = tex;
-                hoverOverlay.Texture = tex;
+                foreach (var layer in new[] { mainSprite, rippleSprite, hoverOverlay })
+                    layer.Child = skinTexture != null ? createSkinSprite(skinTexture) : createSomtumCookie();
             }
+
+            private static Drawable createSkinSprite(Texture texture) => new Sprite
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                RelativeSizeAxes = Axes.Both,
+                FillMode = FillMode.Fit,
+                Texture = texture,
+            };
+
+            /// <summary>
+            /// The same green cookie as TumThai's main menu logo (OsuLogo): a white ring, the green gradient and the somtum.fun logo.
+            /// </summary>
+            private Drawable createSomtumCookie() => new Container
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                RelativeSizeAxes = Axes.Both,
+                Children = new Drawable[]
+                {
+                    new Circle
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = Color4.White,
+                    },
+                    new Circle
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Size = new Vector2(0.9f),
+                        Colour = ColourInfo.GradientVertical(Color4Extensions.FromHex(@"86b06c"), Color4Extensions.FromHex(@"5f824b")),
+                    },
+                    new Sprite
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        // the wordmark fills about 72% of logo.png's width: this makes it about 85% of the green circle
+                        Size = new Vector2(1.06f),
+                        FillMode = FillMode.Fit,
+                        Texture = textures.Get(@"Menu/logo"),
+                    },
+                },
+            };
 
             public void UpdateSkin(SkinManager skinManager)
             {
@@ -592,7 +634,7 @@ namespace osu.Game.Screens.Select
                 clickSample = skinManager.GetClassicSample(@"menuhit");
 
                 if (IsLoaded)
-                    setTexture(resolveTexture(skinManager));
+                    setCookie(skinCookie(skinManager));
             }
 
             private void pulseOnBeat(TimingControlPoint timingPoint)
