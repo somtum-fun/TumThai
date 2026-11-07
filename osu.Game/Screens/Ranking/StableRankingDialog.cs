@@ -24,6 +24,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Scoring;
 using osu.Game.Screens.Select;
+using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
@@ -59,6 +60,14 @@ namespace osu.Game.Screens.Ranking
 
         private readonly IBindable<ScoreBasedUserStatisticsUpdate?> latestStatisticsUpdate = new Bindable<ScoreBasedUserStatisticsUpdate?>();
         private ScoreBasedUserStatisticsUpdate? statisticsUpdate;
+
+        // The server's view of this score on the beatmap's leaderboard, once it has processed it.
+        private bool beatmapRankingRequested;
+        private bool beatmapRankingDone;
+        private int? onlineRank;
+        private double? onlinePp;
+        private bool isOnlineBest;
+        private GetScoresRequest? beatmapRankingRequest;
 
         private OsuSpriteText localScoreDiffText = null!;
         private OsuSpriteText localRankHeadlineText = null!;
@@ -418,8 +427,14 @@ namespace osu.Game.Screens.Ranking
 
                     statisticsUpdate = u.NewValue;
                     populateOverallRow();
+
+                    // the server has processed the score: its rank and pp on the beatmap are there now
+                    requestBeatmapRanking();
                 }, true);
             }
+
+            // without word from the server (no spectator connection), ask anyway after a while
+            Scheduler.AddDelayed(requestBeatmapRanking, 15000);
 
             if (currentScore != null)
                 populateFromScore(currentScore);
@@ -488,15 +503,8 @@ namespace osu.Game.Screens.Ranking
 
             localRankHeadlineText.Text = $"You achieved the #{localRank} score on local rankings!";
 
-            double pp = score.PP ?? 0;
-            double prevPp = prevBest?.PP ?? 0;
-
-            // Populate Row 1: Beatmap Ranking. The position is the server's (from score submission), never a local guess.
-            bool rankImproved = prevBest == null || score.TotalScore >= prevBest.TotalScore;
-            beatmapRowCells[0].SetContent(
-                score.Position is int onlinePos ? $"#{onlinePos:N0}" : "-",
-                prevBest == null ? "(new!)" : string.Empty,
-                score.Position != null && rankImproved);
+            // Populate Row 1: Beatmap Ranking. Rank and pp are the server's, "Pending..." until it has processed the score.
+            populateBeatmapServerCells();
 
             double acc = score.Accuracy * 100.0;
             double prevAcc = (prevBest?.Accuracy ?? 0) * 100.0;
@@ -528,13 +536,86 @@ namespace osu.Game.Screens.Ranking
                 "-",
                 false);
 
-            bool ppImproved = pp > 0 && (prevBest == null || pp >= prevPp - 0.01);
-            beatmapRowCells[5].SetContent(
-                $"{pp:0}pp",
-                ppImproved ? $"(+{Math.Max(0, pp - prevPp):0.##}pp)" : (prevPp > 0 ? $"your best: {prevPp:0}pp" : "0pp"),
-                ppImproved);
-
             populateOverallRow();
+        }
+
+        private void requestBeatmapRanking()
+        {
+            if (beatmapRankingRequested || currentScore?.BeatmapInfo == null || currentScore.OnlineID <= 0 || !api.IsLoggedIn)
+                return;
+
+            beatmapRankingRequested = true;
+
+            var score = currentScore;
+            var variant = score.Mods.Any(m => m.Acronym == @"RX") ? LeaderboardVariant.Relax
+                : score.Mods.Any(m => m.Acronym == @"AP") ? LeaderboardVariant.Autopilot
+                : LeaderboardVariant.Vanilla;
+
+            beatmapRankingRequest = new GetScoresRequest(score.BeatmapInfo, score.Ruleset, BeatmapLeaderboardScope.Global, variant: variant);
+            beatmapRankingRequest.Success += response => Schedule(() =>
+            {
+                var own = response.UserScore;
+
+                if (own != null)
+                {
+                    onlineRank = own.Position;
+                    isOnlineBest = own.Score.ID is ulong id && (long)id == score.OnlineID;
+                    onlinePp = isOnlineBest ? own.Score.PP : null;
+                    if (!isOnlineBest)
+                        bestOnlinePp = own.Score.PP;
+                }
+
+                beatmapRankingDone = true;
+                populateBeatmapServerCells();
+            });
+            beatmapRankingRequest.Failure += _ => Schedule(() =>
+            {
+                beatmapRankingDone = true;
+                populateBeatmapServerCells();
+            });
+
+            api.Queue(beatmapRankingRequest);
+        }
+
+        private double? bestOnlinePp;
+
+        /// <summary>
+        /// Row 1's server columns: the score's rank and pp on the beatmap's online leaderboard.
+        /// </summary>
+        private void populateBeatmapServerCells()
+        {
+            if (!IsLoaded)
+                return;
+
+            if (!beatmapRankingDone)
+            {
+                beatmapRowCells[0].SetContent("Pending...", string.Empty, false);
+                beatmapRowCells[5].SetContent("Pending...", string.Empty, false);
+                return;
+            }
+
+            if (onlineRank is int rank)
+            {
+                if (isOnlineBest)
+                    beatmapRowCells[0].SetContent($"#{rank:N0}", "(new best!)", true);
+                else
+                    beatmapRowCells[0].SetContent("-", $"your best: #{rank:N0}", false);
+            }
+            else
+                beatmapRowCells[0].SetContent("-", string.Empty, false);
+
+            if (onlinePp is double pp)
+                beatmapRowCells[5].SetContent($"{pp:N0}pp", string.Empty, pp > 0);
+            else if (bestOnlinePp is double best)
+                beatmapRowCells[5].SetContent("-", $"your best: {best:N0}pp", false);
+            else
+                beatmapRowCells[5].SetContent("-", string.Empty, false);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            beatmapRankingRequest?.Cancel();
+            base.Dispose(isDisposing);
         }
 
         /// <summary>
