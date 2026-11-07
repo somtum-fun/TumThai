@@ -29,6 +29,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
+using osu.Game.Extensions;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
 using osu.Game.Users;
@@ -217,30 +218,44 @@ namespace osu.Game.Screens.Select
 
         private Container createModeMenuOverlay()
         {
-            var modeRows = new FillFlowContainer
+            // osu!stable (SongSelection): the mode menu rises from the Mode button, one 80x80 row (x1.6 here) per mode stacked
+            // upward from just above the bottom bar: osu!, taiko, catch, mania. TumThai!Next adds the other installed
+            // rulesets (custom ones) above them, with their own icons.
+            var modeRows = new Container
             {
-                Anchor = Anchor.Centre,
-                Origin = Anchor.Centre,
-                AutoSizeAxes = Axes.Both,
-                Direction = FillDirection.Vertical,
-                Spacing = new Vector2(0, 12),
+                Anchor = Anchor.BottomLeft,
+                Origin = Anchor.BottomLeft,
+                RelativeSizeAxes = Axes.Both,
             };
 
-            var entries = new (int Index, string ShortName, string Label, string MedTex)[]
-            {
-                (1, @"osu", @"osu!", @"mode-osu-med"),
-                (2, @"taiko", @"osu!taiko", @"mode-taiko-med"),
-                (3, @"fruits", @"osu!catch", @"mode-fruits-med"),
-                (4, @"mania", @"osu!mania", @"mode-mania-med"),
-            };
+            const float row_size = 80f * 1.6f;
+            const float first_row_bottom = (480f - 424f) * 1.6f;
 
-            foreach (var entry in entries)
+            var ordered = rulesets.AvailableRulesets
+                                  .OrderBy(r => r.IsLegacyRuleset() ? 0 : 1)
+                                  .ThenBy(r => r.IsLegacyRuleset() ? r.OnlineID : int.MaxValue)
+                                  .ThenBy(r => r.Name)
+                                  .ToList();
+
+            for (int i = 0; i < ordered.Count; i++)
             {
-                modeRows.Add(new ModeMenuOptionRow(
-                    entry.Index,
-                    entry.Label,
-                    skinManager.DefaultClassicSkin.GetTexture(entry.MedTex),
-                    () => selectRulesetByShortName(entry.ShortName)));
+                var r = ordered[i];
+                string? medTexture = r.IsLegacyRuleset()
+                    ? r.ShortName switch
+                    {
+                        @"taiko" => @"mode-taiko-med",
+                        @"fruits" => @"mode-fruits-med",
+                        @"mania" => @"mode-mania-med",
+                        _ => @"mode-osu-med",
+                    }
+                    : null;
+
+                modeRows.Add(new ModeMenuOptionRow(r, medTexture, () => selectRuleset(r))
+                {
+                    Anchor = Anchor.BottomLeft,
+                    Origin = Anchor.BottomLeft,
+                    Position = new Vector2(224f, -(first_row_bottom + i * row_size)),
+                });
             }
 
             return modeMenuOverlay = new Container
@@ -256,7 +271,7 @@ namespace osu.Game.Screens.Select
                         Child = new Box
                         {
                             RelativeSizeAxes = Axes.Both,
-                            Colour = Color4.Black.Opacity(0.65f),
+                            Colour = Color4.Black.Opacity(0.5f),
                         },
                     },
                     modeRows,
@@ -311,16 +326,14 @@ namespace osu.Game.Screens.Select
                 modeMenuOverlay.FadeIn(150, Easing.OutQuint);
         }
 
-        private void selectRulesetByShortName(string shortName)
+        private void selectRuleset(RulesetInfo target)
         {
             modeMenuOverlay.FadeOut(150, Easing.OutQuint);
 
             if (ruleset is not Bindable<RulesetInfo> mutableRuleset || mutableRuleset.Disabled)
                 return;
 
-            var target = rulesets.AvailableRulesets.FirstOrDefault(r => r.ShortName == shortName);
-            if (target != null)
-                mutableRuleset.Value = target;
+            mutableRuleset.Value = target;
         }
 
         protected override void PopIn() => this.FadeIn(200, Easing.OutQuint);
@@ -710,61 +723,76 @@ namespace osu.Game.Screens.Select
 
         private partial class ModeMenuOptionRow : OsuClickableContainer
         {
-            private readonly int index;
-            private readonly string label;
-            private readonly Texture? iconTex;
+            private const float row_size = 80f * 1.6f;
 
-            private Box bg = null!;
-            private Sprite? iconSprite;
+            private readonly RulesetInfo rulesetInfo;
+            private readonly string? medTexture;
+
+            private Drawable icon = null!;
+            private OsuSpriteText label = null!;
+            private bool iconFromDefaultSkin;
             private ISample? hoverSample;
             private ISample? clickSample;
 
-            public ModeMenuOptionRow(int index, string label, Texture? iconTex, Action action)
+            public ModeMenuOptionRow(RulesetInfo rulesetInfo, string? medTexture, Action action)
             {
-                this.index = index;
-                this.label = label;
-                this.iconTex = iconTex;
+                this.rulesetInfo = rulesetInfo;
+                this.medTexture = medTexture;
                 Action = action;
-                Size = new Vector2(360f, 92f);
+                // osu!stable's row: 80 tall, 3.5x as wide (in 640x480 units)
+                Size = new Vector2(row_size * 3.5f, row_size);
             }
 
             [BackgroundDependencyLoader]
             private void load(AudioManager audio, SkinManager skinManager)
             {
-                var skin = skinManager.DefaultClassicSkin;
-                hoverSample = skin.GetSample(new SampleInfo(@"menuclick")) ?? audio.Samples.Get(@"UI/generic-hover");
-                clickSample = skin.GetSample(new SampleInfo(@"click-short-confirm", @"menuhit")) ?? audio.Samples.Get(@"UI/generic-select");
+                hoverSample = skinManager.GetClassicSample(@"click-short") ?? audio.Samples.Get(@"UI/generic-hover");
+                clickSample = skinManager.GetClassicSample(@"click-short-confirm", @"menuhit") ?? audio.Samples.Get(@"UI/generic-select");
 
-                Masking = true;
-                CornerRadius = 6f;
-                BorderThickness = 2f;
-                BorderColour = Color4.White.Opacity(0.5f);
+                if (medTexture != null)
+                {
+                    // the skin's mode-*-med at its own size (a skin may make it tiny or a big decoration on purpose)
+                    var userSkin = skinManager.CurrentSkin.Value;
+                    var own = userSkin is LegacySkin && userSkin != skinManager.DefaultClassicSkin ? userSkin.GetTexture(medTexture) : null;
+                    iconFromDefaultSkin = own == null;
+
+                    icon = new Sprite
+                    {
+                        Texture = own ?? skinManager.DefaultClassicSkin.GetTexture(medTexture),
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.Centre,
+                        X = row_size / 2,
+                    };
+                }
+                else
+                {
+                    // a custom ruleset: its own icon, the size of osu!stable's mode icons
+                    icon = new Container
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.Centre,
+                        X = row_size / 2,
+                        Size = new Vector2(row_size * 0.6f),
+                        Child = rulesetInfo.CreateInstance().CreateIcon().With(d =>
+                        {
+                            d.RelativeSizeAxes = Axes.Both;
+                            d.Anchor = Anchor.Centre;
+                            d.Origin = Anchor.Centre;
+                        }),
+                    };
+                    iconFromDefaultSkin = true;
+                }
 
                 Children = new Drawable[]
                 {
-                    bg = new Box
-                    {
-                        RelativeSizeAxes = Axes.Both,
-                        Colour = Color4.Black.Opacity(0.8f),
-                    },
-                    iconTex != null
-                        ? (iconSprite = new Sprite
-                        {
-                            Anchor = Anchor.CentreLeft,
-                            Origin = Anchor.Centre,
-                            X = 56f,
-                            Texture = iconTex,
-                            Scale = new Vector2(0.75f),
-                            Blending = BlendingParameters.Additive,
-                        })
-                        : Empty(),
-                    new OsuSpriteText
+                    icon,
+                    label = new OsuSpriteText
                     {
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
-                        X = 112f,
-                        Text = $"{index}. {label}",
-                        Font = OsuFont.GetFont(size: 28, weight: FontWeight.Bold),
+                        X = row_size + 16f,
+                        Text = rulesetInfo.Name,
+                        Font = OsuFont.GetFont(size: 24f * 1.6f),
                         Colour = Color4.White,
                         Shadow = true,
                     },
@@ -774,15 +802,17 @@ namespace osu.Game.Screens.Select
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                bg.FadeColour(Color4Extensions.FromHex(@"0096EC").Opacity(0.75f), 150, Easing.OutQuint);
-                iconSprite?.ScaleTo(0.95f, 350, Easing.OutElastic);
+                if (iconFromDefaultSkin)
+                    icon.ScaleTo(1.1f, 1000, Easing.OutElastic);
+                label.MoveToX(row_size + 32f, 300, Easing.Out);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                bg.FadeColour(Color4.Black.Opacity(0.8f), 150, Easing.OutQuint);
-                iconSprite?.ScaleTo(0.75f, 200, Easing.OutQuint);
+                if (iconFromDefaultSkin)
+                    icon.ScaleTo(1f, 1000, Easing.OutElastic);
+                label.MoveToX(row_size + 16f, 300, Easing.Out);
                 base.OnHoverLost(e);
             }
 
