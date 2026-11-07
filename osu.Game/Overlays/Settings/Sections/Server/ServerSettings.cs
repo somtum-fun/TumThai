@@ -444,8 +444,13 @@ namespace osu.Game.Overlays.Settings.Sections.Server
                 beforeRestart?.Invoke();
                 config.Save();
 
-                if (game?.RestartAppWhenExited() == true)
+                // Always close: a game left running on the old server could save that server's refreshed token over the
+                // one just restored for the new server. It reopens by itself where it can (installed releases).
+                if (game != null)
+                {
+                    game.RestartAppWhenExited();
                     game.AttemptExit();
+                }
                 else
                     customApiUrlTextBox.SetNoticeText("Server switched. Close and reopen TumThai to connect.", false);
             }
@@ -457,7 +462,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
             }
 
             dialogOverlay.Push(new ConfirmDialog(
-                $"Switch to {name}? TumThai restarts to connect. You stay signed in on each server, so you won't need to log in again.",
+                $"Switch to {name}? TumThai closes to connect (and opens again by itself where it can). You stay signed in on each server, so you won't need to log in again.",
                 confirmed,
                 () => onCancelled?.Invoke()));
         }
