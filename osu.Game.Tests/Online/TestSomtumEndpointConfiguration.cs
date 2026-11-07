@@ -106,5 +106,43 @@ namespace osu.Game.Tests.Online
             foreach (string? value in new[] { null, "", "   " })
                 Assert.That(new SomtumEndpointConfiguration(value).APIUrl, Is.EqualTo($"https://{SomtumEndpointConfiguration.API_HOST}"));
         }
+
+        [Test]
+        public void TestPpyShIsBlockedExceptDevPpySh()
+        {
+            Assert.That(ServerHost.IsBlockedPpyHost("osu.ppy.sh"), Is.True);
+            Assert.That(ServerHost.IsBlockedPpyHost("https://osu.ppy.sh/"), Is.True);
+            Assert.That(ServerHost.IsBlockedPpyHost("ppy.sh"), Is.True);
+            Assert.That(ServerHost.IsBlockedPpyHost("a.ppy.sh"), Is.True);
+
+            Assert.That(ServerHost.IsBlockedPpyHost("dev.ppy.sh"), Is.False);
+            Assert.That(ServerHost.IsBlockedPpyHost("https://dev.ppy.sh/"), Is.False);
+            Assert.That(ServerHost.IsBlockedPpyHost("a.dev.ppy.sh"), Is.False);
+            Assert.That(ServerHost.IsBlockedPpyHost("osu.somtum.fun"), Is.False);
+
+            // Blocked ppy.sh falls back to built-in API_HOST
+            Assert.That(new SomtumEndpointConfiguration("osu.ppy.sh").APIUrl, Is.EqualTo($"https://{SomtumEndpointConfiguration.API_HOST}"));
+            Assert.That(SomtumEndpointConfiguration.ResolveAvatarHost("osu.ppy.sh", "a.ppy.sh"), Is.EqualTo(SomtumEndpointConfiguration.AVATAR_HOST));
+
+            // dev.ppy.sh is allowed
+            Assert.That(new SomtumEndpointConfiguration("dev.ppy.sh").APIUrl, Is.EqualTo("https://dev.ppy.sh"));
+            Assert.That(SomtumEndpointConfiguration.ResolveAvatarHost("dev.ppy.sh", null), Is.EqualTo("a.dev.ppy.sh"));
+        }
+
+        [Test]
+        public void TestExternalServerProfileValidationAndCustomClientCredentials()
+        {
+            var blockedProfile = new ExternalServerProfile { Name = "Official", ApiUrl = "osu.ppy.sh" };
+            Assert.That(blockedProfile.Validate(out string err1), Is.False);
+            Assert.That(err1, Does.Contain("dev.ppy.sh"));
+
+            var devProfile = new ExternalServerProfile { Name = "Dev", ApiUrl = "dev.ppy.sh", ClientId = "42", ClientSecret = "secret123" };
+            Assert.That(devProfile.Validate(out _), Is.True);
+
+            var endpoints = new SomtumEndpointConfiguration(devProfile.ApiUrl, devProfile.WebsiteUrl, devProfile.ClientId, devProfile.ClientSecret);
+            Assert.That(endpoints.APIUrl, Is.EqualTo("https://dev.ppy.sh"));
+            Assert.That(endpoints.APIClientID, Is.EqualTo("42"));
+            Assert.That(endpoints.APIClientSecret, Is.EqualTo("secret123"));
+        }
     }
 }

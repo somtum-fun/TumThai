@@ -77,14 +77,20 @@ namespace osu.Game.Online
         /// built-in server.
         /// </param>
         public SomtumEndpointConfiguration(string? customApiServer)
+            : this(customApiServer, null, null, null)
+        {
+        }
+
+        public SomtumEndpointConfiguration(string? customApiServer, string? customWebsiteUrl, string? customClientId, string? customClientSecret)
         {
             // the server validates against osu!'s public client credentials, the same pair
             // ProductionEndpointConfiguration sends. Leaving these empty makes the token endpoint reject
             // every sign-in attempt with "Check the `client_id` parameter" before any username is checked.
-            APIClientID = @"5";
-            APIClientSecret = @"FGc9GAtyHzeQDshWP5Ah7dega8hJACAJpQtw6OXk";
+            APIClientID = !string.IsNullOrWhiteSpace(customClientId) ? customClientId.Trim() : @"5";
+            APIClientSecret = !string.IsNullOrWhiteSpace(customClientSecret) ? customClientSecret.Trim() : @"FGc9GAtyHzeQDshWP5Ah7dega8hJACAJpQtw6OXk";
 
-            string customUrl = ServerHost.ToBaseUrl(customApiServer);
+            string sanitizedApiServer = ServerHost.IsBlockedPpyHost(customApiServer) ? string.Empty : (customApiServer ?? string.Empty);
+            string customUrl = ServerHost.ToBaseUrl(sanitizedApiServer);
 
             if (customUrl.Length == 0)
             {
@@ -101,9 +107,11 @@ namespace osu.Game.Online
 
             APIUrl = customUrl;
 
+            string sanitizedWebsite = ServerHost.IsBlockedPpyHost(customWebsiteUrl) ? string.Empty : ServerHost.ToBaseUrl(customWebsiteUrl);
+
             // prefer a separate website host where the pattern is recognised, so chat and external links
             // resolve against the website rather than the JSON-only API host.
-            WebsiteUrl = DeriveWebsiteUrl(customUrl);
+            WebsiteUrl = sanitizedWebsite.Length > 0 ? sanitizedWebsite : DeriveWebsiteUrl(customUrl);
 
             // an arbitrary server cannot be assumed to have a sibling realtime host, so use the paths that
             // a single-host deployment exposes.
@@ -117,14 +125,22 @@ namespace osu.Game.Online
         /// The host to look up avatars on when the API does not supply an explicit URL. An explicitly
         /// configured avatar host always wins. Otherwise the host follows whichever server is configured,
         /// because every deployment involved serves avatars from an "a." sibling of its registrable domain
-        /// (a.ppy.sh for osu.ppy.sh, <see cref="AVATAR_HOST"/> for <see cref="API_HOST"/>).
+        /// (<see cref="AVATAR_HOST"/> for <see cref="API_HOST"/>).
         /// </summary>
         public static string ResolveAvatarHost(string? customApiServer, string? customAvatarServer)
         {
-            string configured = ServerHost.Normalise(customAvatarServer);
+            string configured = ServerHost.IsBlockedPpyHost(customAvatarServer) ? string.Empty : ServerHost.Normalise(customAvatarServer);
 
             if (configured.Length > 0)
                 return configured;
+
+            if (ServerHost.IsBlockedPpyHost(customApiServer))
+                return AVATAR_HOST;
+
+            string normalisedApi = ServerHost.Normalise(customApiServer);
+            if (normalisedApi.Equals(@"dev.ppy.sh", StringComparison.OrdinalIgnoreCase)
+                || normalisedApi.EndsWith(@".dev.ppy.sh", StringComparison.OrdinalIgnoreCase))
+                return @"a.dev.ppy.sh";
 
             string? domain = ServerHost.RegistrableDomain(customApiServer);
 

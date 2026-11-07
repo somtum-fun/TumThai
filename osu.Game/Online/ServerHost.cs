@@ -70,5 +70,32 @@ namespace osu.Game.Online
 
             return $@"https://{trimmed}";
         }
+
+        /// <summary>
+        /// Returns true if the supplied URL or host points to <c>ppy.sh</c> or any <c>*.ppy.sh</c> subdomain
+        /// other than <c>dev.ppy.sh</c> (and <c>*.dev.ppy.sh</c>), which is the only allowed ppy.sh domain.
+        /// </summary>
+        public static bool IsBlockedPpyHost(string? value)
+        {
+            string host = Normalise(value);
+
+            int colon = host.IndexOf(':');
+            if (colon >= 0)
+                host = host.Substring(0, colon);
+
+            host = host.Trim().TrimEnd('.');
+            if (host.Length == 0)
+                return false;
+
+            if (host.Equals(@"dev.ppy.sh", StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(@".dev.ppy.sh", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (host.Equals(@"ppy.sh", StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith(@".ppy.sh", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
+        }
     }
 }

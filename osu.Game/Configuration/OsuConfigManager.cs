@@ -125,6 +125,14 @@ namespace osu.Game.Configuration
             // so no hostname is repeated here and the avatar host tracks whichever server is configured.
             SetDefault(OsuSetting.CustomApiUrl, string.Empty);
             SetDefault(OsuSetting.CustomAvatarUrl, string.Empty);
+            SetDefault(OsuSetting.CustomWebsiteUrl, string.Empty);
+            SetDefault(OsuSetting.CustomClientId, string.Empty);
+            SetDefault(OsuSetting.CustomClientSecret, string.Empty);
+            SetDefault(OsuSetting.ExternalServerEnabled, false);
+            SetDefault(OsuSetting.ExternalServerProfilesJson, string.Empty);
+            SetDefault(OsuSetting.ActiveExternalServerProfileId, string.Empty);
+            SetDefault(OsuSetting.DefaultServerUsername, string.Empty);
+            SetDefault(OsuSetting.DefaultServerToken, string.Empty);
 
             SetDefault(OsuSetting.NotifyOnUsernameMentioned, true);
             SetDefault(OsuSetting.NotifyOnPrivateMessage, true);
@@ -298,6 +306,10 @@ namespace osu.Game.Configuration
             switch (lookup)
             {
                 case OsuSetting.Token:
+                // TumThai: each server's saved sign-in (and private server OAuth secrets) live in these.
+                case OsuSetting.DefaultServerToken:
+                case OsuSetting.ExternalServerProfilesJson:
+                case OsuSetting.CustomClientSecret:
                     return true;
             }
 
@@ -602,5 +614,22 @@ namespace osu.Game.Configuration
         /// TumThai: the look of the interface (HUD, song select listing and results screen).
         /// </summary>
         InterfaceTheme,
+
+        CustomWebsiteUrl,
+        CustomClientId,
+        CustomClientSecret,
+        ExternalServerEnabled,
+        ExternalServerProfilesJson,
+        ActiveExternalServerProfileId,
+
+        /// <summary>
+        /// TumThai: the built-in server's sign-in, kept while a private server profile is active.
+        /// </summary>
+        DefaultServerUsername,
+
+        /// <summary>
+        /// TumThai: the built-in server's saved token, kept while a private server profile is active.
+        /// </summary>
+        DefaultServerToken,
     }
 }
