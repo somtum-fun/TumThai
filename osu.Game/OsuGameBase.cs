@@ -112,7 +112,11 @@ namespace osu.Game
         {
             // SomtumEndpointConfiguration owns every endpoint, for the built-in server and for a custom one
             // alike, so there is a single place where a server change takes effect.
-            var config = new SomtumEndpointConfiguration(CustomApiServer);
+            var config = new SomtumEndpointConfiguration(
+                CustomApiServer,
+                LocalConfig?.Get<string>(OsuSetting.CustomWebsiteUrl),
+                LocalConfig?.Get<string>(OsuSetting.CustomClientId),
+                LocalConfig?.Get<string>(OsuSetting.CustomClientSecret));
 
             Logger.Log($"API endpoint resolved to {config.APIUrl} (custom server setting={(string.IsNullOrWhiteSpace(CustomApiServer) ? "<default>" : CustomApiServer)})", LoggingTarget.Network);
 

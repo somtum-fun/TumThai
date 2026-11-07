@@ -80,9 +80,7 @@ namespace osu.Game.Overlays
                 new GameplaySection()
             };
 
-            // TumThai: choosing another server is for development; released builds always connect to somtum.fun.
-            if (!game.IsDeployedBuild)
-                sections.Insert(0, new ServerSection());
+            sections.Insert(0, new ServerSection());
 
             foreach (Ruleset ruleset in rulesets.AvailableRulesets.Select(info => info.CreateInstance()))
             {
