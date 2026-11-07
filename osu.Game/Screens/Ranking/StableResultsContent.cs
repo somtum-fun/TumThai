@@ -126,7 +126,8 @@ namespace osu.Game.Screens.Ranking
                             {
                                 Anchor = Anchor.TopLeft,
                                 Origin = Anchor.TopLeft,
-                                Position = new Vector2(0f, 96f),
+                                // osu!stable: below the 60-unit header, at y 64 (x1.6 here)
+                                Position = new Vector2(0f, 64f * 1.6f),
                                 // osu!stable draws ranking-panel at its own size (no extra scale), so a skin's big panel fits as made
                                 AutoSizeAxes = Axes.Both,
                                 Children = new Drawable[]

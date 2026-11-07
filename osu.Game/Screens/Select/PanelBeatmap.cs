@@ -301,7 +301,8 @@ namespace osu.Game.Screens.Select
             Height = isStable ? PanelBeatmapSet.HEIGHT : HEIGHT;
             leftRowFill.Margin = new MarginPadding { Left = isStable ? 86f : 6.5f };
             stableThumbContainer.Alpha = isStable ? 1 : 0;
-            stableModeIcon.Alpha = isStable ? 1 : 0;
+            // osu!stable shows the mode icon only on maps that aren't osu! maps
+            stableModeIcon.Alpha = isStable && Item != null && beatmap.Ruleset.OnlineID != 0 ? 1 : 0;
             stableModeIcon.Colour = isSelectedStable ? activeText : inactiveText;
             stableTitleText.Alpha = isStable ? 1 : 0;
             stableArtistText.Alpha = isStable ? 1 : 0;
@@ -438,6 +439,17 @@ namespace osu.Game.Screens.Select
             // Dirty hack to make sure we don't take up spacing in parent fill flow when not displaying a rank.
             // I can't find a better way to do this.
             mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3) };
+
+            if (CurrentInterfaceTheme.IsThemed())
+            {
+                float textLeft = StableRowOffset(contentBackground, 75f, 86f);
+                float thumbLeft = StableRowOffset(contentBackground, 5.2f, 8f);
+
+                if (Math.Abs(leftRowFill.Margin.Left - textLeft) > 0.5f)
+                    leftRowFill.Margin = new MarginPadding { Left = textLeft };
+                if (Math.Abs(stableThumbContainer.Margin.Left - thumbLeft) > 0.5f)
+                    stableThumbContainer.Margin = new MarginPadding { Left = thumbLeft };
+            }
 
             var diffColour = starRatingDisplay.DisplayedDifficultyColour;
 

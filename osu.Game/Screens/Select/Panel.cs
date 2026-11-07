@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Game.Beatmaps.ControlPoints;
@@ -450,6 +451,22 @@ namespace osu.Game.Screens.Select
             if (CurrentInterfaceTheme.IsThemed())
                 updateXOffset();
             base.OnHoverLost(e);
+        }
+
+        /// <summary>
+        /// TumThai!Next: where osu!stable puts a song row's text (x 75) and thumbnail (x 5.2) on menu-button-background,
+        /// as a share of the image's own width, so they follow the image however wide it's drawn here. A skin's image often
+        /// has a frame for the thumbnail on its left; fixed offsets would put the text inside that frame.
+        /// </summary>
+        /// <param name="background">The row's menu-button-background sprite.</param>
+        /// <param name="stableX">The x in osu!stable's 640x480 units.</param>
+        /// <param name="fallback">Used when there's no image (or before it's laid out).</param>
+        protected static float StableRowOffset(Drawable background, float stableX, float fallback)
+        {
+            if (background is not Sprite { Texture: not null } sprite || sprite.DrawWidth <= 0)
+                return fallback;
+
+            return stableX * 1.6f / sprite.Texture.DisplayWidth * sprite.DrawWidth;
         }
 
         protected override void Update()

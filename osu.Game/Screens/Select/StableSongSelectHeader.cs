@@ -81,6 +81,11 @@ namespace osu.Game.Screens.Select
         private OsuSpriteText line4Objects = null!;
         private OsuSpriteText line5Attributes = null!;
 
+        /// <summary>
+        /// The last line of the beatmap info block; song select keeps the leaderboard's controls below it.
+        /// </summary>
+        public Drawable InfoBlockBottom { get; private set; } = null!;
+
         private StableSearchTextBox searchBox = null!;
         private OsuSpriteText searchMatchCountText = null!;
         private StableSimpleDropdown<GroupMode> groupDropdown = null!;
@@ -220,7 +225,7 @@ namespace osu.Game.Screens.Select
                     Colour = Color4.White.Opacity(0.95f),
                     Shadow = true,
                 },
-                line5Attributes = new OsuSpriteText
+                InfoBlockBottom = line5Attributes = new OsuSpriteText
                 {
                     Position = new Vector2(6f, 75f),
                     Font = OsuFont.GetFont(size: 13.5f, weight: FontWeight.Regular),

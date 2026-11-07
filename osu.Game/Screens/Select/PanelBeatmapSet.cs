@@ -246,12 +246,29 @@ namespace osu.Game.Screens.Select
             mainTextFlow.Padding = new MarginPadding
             {
                 Top = themed ? 6f : 7.5f,
-                Left = themed ? 88f : 15f,
+                Left = themed ? StableRowOffset(themeTintBox, 75f, 88f) : 15f,
                 Bottom = themed ? 6f : 13f,
             };
 
             if (Item != null)
                 updateArtistText(groupedBeatmapSet.BeatmapSet);
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (!CurrentInterfaceTheme.IsThemed())
+                return;
+
+            // osu!stable's offsets on menu-button-background, following the image's drawn width (see StableRowOffset)
+            float textLeft = StableRowOffset(themeTintBox, 75f, 88f);
+            float thumbLeft = StableRowOffset(themeTintBox, 5.2f, 8f);
+
+            if (Math.Abs(mainTextFlow.Padding.Left - textLeft) > 0.5f)
+                mainTextFlow.Padding = mainTextFlow.Padding with { Left = textLeft };
+            if (Math.Abs(stableThumbContainer.Margin.Left - thumbLeft) > 0.5f)
+                stableThumbContainer.Margin = new MarginPadding { Left = thumbLeft };
         }
 
         private void updateArtistText(BeatmapSetInfo beatmapSet)

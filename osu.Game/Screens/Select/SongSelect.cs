@@ -120,6 +120,7 @@ namespace osu.Game.Screens.Select
         protected FilterControl FilterControl { get; private set; } = null!;
 
         private BeatmapTitleWedge titleWedge = null!;
+        private Drawable titleWedgeWrapper = null!;
         private BeatmapDetailsArea detailsArea = null!;
         private FillFlowContainer wedgesContainer = null!;
         private Container leftColumnContainer = null!;
@@ -247,7 +248,7 @@ namespace osu.Game.Screens.Select
                                                         Direction = FillDirection.Vertical,
                                                         Children = new Drawable[]
                                                         {
-                                                            new ShearAligningWrapper(titleWedge = new BeatmapTitleWedge
+                                                            titleWedgeWrapper = new ShearAligningWrapper(titleWedge = new BeatmapTitleWedge
                                                             {
                                                                 TopPadding = TopPadding,
                                                             }),
@@ -518,9 +519,29 @@ namespace osu.Game.Screens.Select
                 logo.ClearTransforms();
                 logo.Alpha = 0f;
             }
-            detailsArea.Height = isStable
-                ? wedgesContainer.ChildSize.Y - 4
-                : wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+            if (isStable)
+            {
+                // TumThai!Next: lazer's title wedge takes no space in the stable theme (hidden, it still did while present,
+                // so the leaderboard's controls jumped up over the beatmap info). They sit just below stable's info block.
+                titleWedgeWrapper.Alpha = 0;
+
+                float naturalTop = wedgesContainer.ToLocalSpace(detailsArea.ScreenSpaceDrawQuad.TopLeft).Y - detailsArea.Margin.Top;
+                float infoBottom = wedgesContainer.ToLocalSpace(stableHeader.InfoBlockBottom.ScreenSpaceDrawQuad.BottomLeft).Y;
+                float top = Math.Max(0, infoBottom + 8 - naturalTop);
+
+                if (Math.Abs(detailsArea.Margin.Top - top) > 0.5f)
+                    detailsArea.Margin = new MarginPadding { Top = top };
+
+                detailsArea.Height = wedgesContainer.ChildSize.Y - 4 - detailsArea.Margin.Top;
+            }
+            else
+            {
+                titleWedgeWrapper.Alpha = 1;
+                if (detailsArea.Margin.Top != 0)
+                    detailsArea.Margin = new MarginPadding();
+
+                detailsArea.Height = wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+            }
 
             float widescreenBonusWidth = Math.Max(0, DrawWidth / DrawHeight - 2f);
 

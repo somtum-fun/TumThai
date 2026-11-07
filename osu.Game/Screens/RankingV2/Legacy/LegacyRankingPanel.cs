@@ -64,10 +64,11 @@ namespace osu.Game.Screens.RankingV2.Legacy
         private const float img_x1 = 40;
         private const float img_x2 = 240;
 
-        private const float row1 = 178;
-        private const float row2 = 232;
-        private const float row3 = 286;
-        private const float row4 = 328;
+        // TumThai!Next: osu!stable's own rows (as ppy/osu master since 2026-11), not 178/232/286/328
+        private const float row1 = 160;
+        private const float row2 = 220;
+        private const float row3 = 280;
+        private const float row4 = 320;
 
         [BackgroundDependencyLoader]
         private void load(ISkinSource skin, OsuConfigManager config)
@@ -167,18 +168,8 @@ namespace osu.Game.Screens.RankingV2.Legacy
                             ScoreText = $@"{score.Value.GetCount50() ?? 0}x",
                             Position = (new Vector2(img_x1, row3) - baselinePosition) * LegacySkin.STABLE_MAGIC_SCALE_FACTOR,
                         },
-                        new LegacyRankingElement
-                        {
-                            ElementName = @"hit300g",
-                            ScoreText = $@"{score.Value.GetCountGeki() ?? 0}x",
-                            Position = (new Vector2(img_x2, row1) - baselinePosition) * LegacySkin.STABLE_MAGIC_SCALE_FACTOR,
-                        },
-                        new LegacyRankingElement
-                        {
-                            ElementName = @"hit100k",
-                            ScoreText = $@"{score.Value.GetCountKatu() ?? 0}x",
-                            Position = (new Vector2(img_x2, row2) - baselinePosition) * LegacySkin.STABLE_MAGIC_SCALE_FACTOR,
-                        },
+                        // Geki count is not available.
+                        // Katu count is not available.
                         new LegacyRankingElement
                         {
                             ElementName = @"hit0",
