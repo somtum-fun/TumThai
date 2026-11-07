@@ -71,12 +71,23 @@ namespace osu.Desktop
 
         private IBindable<APIUser>? user;
 
+        /// <summary>
+        /// TumThai: the host of the server played on when it isn't the built-in one (a private server profile), shown in
+        /// the presence so it doesn't read as somtum.fun. Switching servers restarts the game, so this is read once.
+        /// </summary>
+        private string? otherServerHost;
+
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config, SessionStatics session)
         {
             privacyMode = config.GetBindable<DiscordRichPresenceMode>(OsuSetting.DiscordRichPresence);
             userStatus = config.GetBindable<UserStatus>(OsuSetting.UserOnlineStatus);
             userActivity = session.GetBindable<UserActivity?>(Static.UserOnlineActivity);
+
+            if (Uri.TryCreate(api.Endpoints.WebsiteUrl, UriKind.Absolute, out var site)
+                && Uri.TryCreate(new SomtumEndpointConfiguration().WebsiteUrl, UriKind.Absolute, out var builtIn)
+                && !site.Host.Equals(builtIn.Host, StringComparison.OrdinalIgnoreCase))
+                otherServerHost = site.Host;
 
             client = new DiscordRpcClient(client_id)
             {
@@ -214,12 +225,17 @@ namespace osu.Desktop
 
             // game images:
             // large image tooltip
+            // (a server name identifies no one, so it stays in Limited mode too)
+            string server = otherServerHost != null ? $"on {otherServerHost}" : string.Empty;
+
             if (privacyMode.Value == DiscordRichPresenceMode.Limited)
-                presence.Assets.LargeImageText = string.Empty;
+                presence.Assets.LargeImageText = clampLength(server);
             else
             {
                 var statistics = statisticsProvider.GetStatisticsFor(ruleset.Value);
-                presence.Assets.LargeImageText = $"{user.Value.Username}" + (statistics?.GlobalRank > 0 ? $" (rank #{statistics.GlobalRank:N0})" : string.Empty);
+                presence.Assets.LargeImageText = clampLength($"{user.Value.Username}"
+                                                             + (statistics?.GlobalRank > 0 ? $" (rank #{statistics.GlobalRank:N0})" : string.Empty)
+                                                             + (server.Length > 0 ? $" {server}" : string.Empty));
             }
 
             // small image
