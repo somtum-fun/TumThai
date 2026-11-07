@@ -53,6 +53,7 @@ using osu.Game.Screens.Play;
 using osu.Game.Screens.Ranking;
 using osu.Game.Skinning;
 using osu.Game.Utils;
+using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
 
@@ -121,6 +122,10 @@ namespace osu.Game.Screens.Select
         private BeatmapTitleWedge titleWedge = null!;
         private BeatmapDetailsArea detailsArea = null!;
         private FillFlowContainer wedgesContainer = null!;
+        private Container leftColumnContainer = null!;
+        private Container carouselPaddingContainer = null!;
+        private StableSongSelectHeader stableHeader = null!;
+        private StableSongSelectFooter stableFooter = null!;
         private Box rightGradientBackground = null!;
         private Container mainContent = null!;
         private SkinnableContainer skinnableContent = null!;
@@ -128,6 +133,7 @@ namespace osu.Game.Screens.Select
         private GridContainer mainGridContainer = null!;
 
         private NoResultsPlaceholder noResultsPlaceholder = null!;
+        private Bindable<InterfaceTheme> interfaceTheme = null!;
 
         public override bool? ApplyModTrackAdjustments => true;
 
@@ -210,7 +216,7 @@ namespace osu.Game.Screens.Select
                                     {
                                         new[]
                                         {
-                                            new Container
+                                            leftColumnContainer = new Container
                                             {
                                                 RelativeSizeAxes = Axes.Both,
                                                 // Ensure the left components are on top of the carousel both visually (although they should never overlay)
@@ -268,7 +274,7 @@ namespace osu.Game.Screens.Select
                                                         Colour = ColourInfo.GradientHorizontal(Color4.Black.Opacity(0.0f), Color4.Black.Opacity(0.5f)),
                                                         RelativeSizeAxes = Axes.Both,
                                                     },
-                                                    new Container
+                                                    carouselPaddingContainer = new Container
                                                     {
                                                         RelativeSizeAxes = Axes.Both,
                                                         Padding = new MarginPadding
@@ -306,6 +312,12 @@ namespace osu.Game.Screens.Select
                                         },
                                     }
                                 },
+                                stableHeader = new StableSongSelectHeader(FilterControl)
+                                {
+                                    Anchor = Anchor.TopLeft,
+                                    Origin = Anchor.TopLeft,
+                                },
+                                detailsArea.CreateProxy(),
                             }
                         },
                     }
@@ -320,6 +332,35 @@ namespace osu.Game.Screens.Select
             });
 
             LoadComponent(modSelectOverlay = CreateModSelectOverlay());
+
+            AddInternal(new PopoverContainer
+            {
+                RelativeSizeAxes = Axes.Both,
+                Child = stableFooter = new StableSongSelectFooter(
+                    modSelectOverlay,
+                    () =>
+                    {
+                        if (!carousel.NextRandom())
+                            errorSample?.Play();
+                    },
+                    () =>
+                    {
+                        if (!carousel.PreviousRandom())
+                            errorSample?.Play();
+                    },
+                    () =>
+                    {
+                        ensureGlobalBeatmapValid();
+                        SelectAndRun(Beatmap.Value.BeatmapInfo, OnStart);
+                    },
+                    () =>
+                    {
+                        if (!OnBackButton())
+                            this.Exit();
+                    }),
+            });
+
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
 
             configBackgroundBlur = config.GetBindable<bool>(OsuSetting.SongSelectBackgroundBlur);
             configBackgroundBlur.BindValueChanged(_ =>
@@ -397,27 +438,97 @@ namespace osu.Game.Screens.Select
 
             FilterControl.CriteriaChanged += criteriaChanged;
 
+            interfaceTheme.BindValueChanged(_ => applyInterfaceTheme(), true);
+
             modSelectOverlay.State.BindValueChanged(v =>
             {
                 if (!this.IsCurrentScreen())
                     return;
 
-                if (ShowOsuLogo)
+                if (interfaceTheme.Value.IsThemed())
+                {
+                    if (v.NewValue == Visibility.Visible)
+                        stableFooter.Hide();
+                    else
+                        stableFooter.Show();
+                }
+                else if (ShowOsuLogo)
+                {
                     logo?.FadeTo(v.NewValue == Visibility.Visible ? 0f : 1f, 200, Easing.OutQuint);
+                }
             });
+        }
+
+        private void applyInterfaceTheme()
+        {
+            bool isStable = interfaceTheme.Value.IsThemed();
+
+            leftColumnContainer.Shear = isStable ? Vector2.Zero : OsuGame.SHEAR;
+            leftColumnContainer.Padding = isStable
+                ? new MarginPadding { Top = 112f, Left = 6 }
+                : new MarginPadding { Top = -CORNER_RADIUS_HIDE_OFFSET, Left = -CORNER_RADIUS_HIDE_OFFSET };
+
+            carouselPaddingContainer.Padding = new MarginPadding
+            {
+                Top = isStable ? 124f : FilterControl.HEIGHT_FROM_SCREEN_TOP + 5,
+                Bottom = 5,
+            };
+
+            carousel.BleedTop = isStable ? 0 : FilterControl.HEIGHT_FROM_SCREEN_TOP + 5;
+            carousel.BleedBottom = isStable ? 0 : ScreenFooter.HEIGHT + 5;
+
+            mainContent.Padding = new MarginPadding
+            {
+                Bottom = isStable ? 104 : ScreenFooter.HEIGHT,
+            };
+
+            if (isStable)
+            {
+                stableFooter.Show();
+                FooterContent.Value = ScreenFooterContent.None;
+                Footer?.StopTrackingLogo();
+                if (logo != null)
+                {
+                    logo.ClearTransforms();
+                    logo.Alpha = 0f;
+                    logo.Scale = Vector2.Zero;
+                }
+            }
+            else
+            {
+                stableFooter.Hide();
+                FooterContent.Value = ScreenFooterContent.Argon(leftButtons: CreateFooterButtons);
+                if (ShowOsuLogo && this.IsCurrentScreen() && modSelectOverlay.State.Value != Visibility.Visible)
+                {
+                    logo?.FadeIn(240, Easing.OutQuint);
+                    logo?.ScaleTo(logo_scale, 240, Easing.OutQuint);
+                }
+            }
+
+            updateWedgeVisibility();
         }
 
         protected override void Update()
         {
             base.Update();
 
-            detailsArea.Height = wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+            bool isStable = interfaceTheme.Value.IsThemed();
+            if (isStable && logo != null && this.IsCurrentScreen() && logo.Alpha > 0)
+            {
+                logo.ClearTransforms();
+                logo.Alpha = 0f;
+            }
+            detailsArea.Height = isStable
+                ? wedgesContainer.ChildSize.Y - 4
+                : wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
 
             float widescreenBonusWidth = Math.Max(0, DrawWidth / DrawHeight - 2f);
 
             mainGridContainer.ColumnDimensions = new[]
             {
-                new Dimension(GridSizeMode.Relative, 0.5f, maxSize: 700 + widescreenBonusWidth * 100),
+                isStable
+                    ? new Dimension(GridSizeMode.Absolute, 400f)
+                    : new Dimension(GridSizeMode.Relative, 0.5f, maxSize: 700 + widescreenBonusWidth * 100),
                 new Dimension(),
                 new Dimension(GridSizeMode.Relative, 0.5f, minSize: 500, maxSize: 700 + widescreenBonusWidth * 300),
             };
@@ -784,6 +895,15 @@ namespace osu.Game.Screens.Select
             if (!ShowOsuLogo)
                 return;
 
+            if (interfaceTheme.Value.IsThemed())
+            {
+                Footer?.StopTrackingLogo();
+                logo.ClearTransforms();
+                logo.Alpha = 0f;
+                logo.Scale = Vector2.Zero;
+                return;
+            }
+
             if (logo.Alpha > 0.8f && resuming)
                 Footer?.StartTrackingLogo(logo, 400, Easing.OutQuint);
             else
@@ -829,6 +949,26 @@ namespace osu.Game.Screens.Select
 
         private void updateWedgeVisibility()
         {
+            if (carousel.VisuallyFocusSelected)
+            {
+                titleWedge.Hide();
+                detailsArea.Hide();
+                FilterControl.Hide();
+                stableHeader.Hide();
+                return;
+            }
+
+            if (interfaceTheme.Value.IsThemed())
+            {
+                FilterControl.Hide();
+                stableHeader.Show();
+            }
+            else
+            {
+                FilterControl.Show();
+                stableHeader.Hide();
+            }
+
             // Ensure we don't show an invalid selection before the carousel has finished initially filtering.
             // This avoids a flicker of a placeholder or invalid beatmap before a proper selection.
             //
@@ -836,17 +976,15 @@ namespace osu.Game.Screens.Select
             if (!CarouselItemsPresented && !checkBeatmapValidForSelection(Beatmap.Value.BeatmapInfo))
                 return;
 
-            if (carousel.VisuallyFocusSelected)
+            if (interfaceTheme.Value.IsThemed())
             {
                 titleWedge.Hide();
-                detailsArea.Hide();
-                FilterControl.Hide();
+                detailsArea.Show();
             }
             else
             {
                 titleWedge.Show();
                 detailsArea.Show();
-                FilterControl.Show();
             }
         }
 
@@ -907,6 +1045,7 @@ namespace osu.Game.Screens.Select
             updateNoResultsPlaceholder();
 
             FilterControl.StatusText = SongSelectStrings.MatchesCount(carousel.MatchedBeatmapsCount);
+            stableHeader.SetMatchCountText(SongSelectStrings.MatchesCount(carousel.MatchedBeatmapsCount));
 
             // If there's already a selection update in progress, let's not interrupt it.
             // Interrupting could cause the debounce interval to be reduced.

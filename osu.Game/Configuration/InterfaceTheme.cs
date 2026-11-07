@@ -28,10 +28,9 @@ namespace osu.Game.Configuration
     public static class InterfaceThemeExtensions
     {
         /// <summary>
-        /// The theme that applies on the current platform. The osu!droid theme is Android-only.
+        /// The theme that applies on the current platform.
         /// </summary>
-        public static InterfaceTheme Effective(this InterfaceTheme theme)
-            => theme == InterfaceTheme.OsuDroid && RuntimeInfo.OS != RuntimeInfo.Platform.Android ? InterfaceTheme.TumThai : theme;
+        public static InterfaceTheme Effective(this InterfaceTheme theme) => theme;
 
         public static bool IsThemed(this InterfaceTheme theme) => theme.Effective() != InterfaceTheme.TumThai;
 

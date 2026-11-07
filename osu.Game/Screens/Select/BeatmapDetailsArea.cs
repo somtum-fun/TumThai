@@ -2,9 +2,12 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
+using osuTK;
 
 namespace osu.Game.Screens.Select
 {
@@ -16,6 +19,10 @@ namespace osu.Game.Screens.Select
     {
         private Header header = null!;
         private Container contentContainer = null!;
+        private IBindable<InterfaceTheme> interfaceTheme = null!;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
 
         public BeatmapDetailsArea()
         {
@@ -50,6 +57,15 @@ namespace osu.Game.Screens.Select
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isStable = t.NewValue.IsThemed();
+                header.Shear = isStable ? Vector2.Zero : -OsuGame.SHEAR;
+                contentContainer.Shear = isStable ? Vector2.Zero : -OsuGame.SHEAR;
+                contentContainer.Padding = new MarginPadding { Top = isStable ? 42f : 35f };
+            }, true);
 
             header.Type.BindValueChanged(_ => updateDisplay(), true);
         }

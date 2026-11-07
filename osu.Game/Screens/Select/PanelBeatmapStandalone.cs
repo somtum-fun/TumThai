@@ -7,14 +7,18 @@ using System.Linq;
 using System.Threading;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
+using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
@@ -24,7 +28,9 @@ using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Skinning;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Screens.Select
 {
@@ -64,13 +70,24 @@ namespace osu.Game.Screens.Select
         private ConstrainedIconContainer difficultyIcon = null!;
         private StarRatingDisplay starRatingDisplay = null!;
         private SpreadDisplay spreadDisplay = null!;
+        private StableStarRatingRow stableStars = null!;
+        private Container stableThumbContainer = null!;
+        private Sprite stableThumbSprite = null!;
         private PanelLocalRankDisplay localRank = null!;
         private OsuSpriteText keyCountText = null!;
         private OsuSpriteText difficultyText = null!;
         private OsuSpriteText authorText = null!;
         private FillFlowContainer mainFill = null!;
+        private FillFlowContainer starFill = null!;
 
         private Box backgroundBorder = null!;
+        private Drawable themedTintLayer = null!;
+
+        // osu!stable standalone panel colours: orange when unselected, solid white when selected.
+        private static readonly Color4 stable_orange = Color4Extensions.FromHex(@"E96800");
+        private static readonly Color4 stable_orange_dark = Color4Extensions.FromHex(@"BA5300");
+        private static readonly Color4 stable_selected_white = Color4.White;
+        private static readonly Color4 stable_selected_white_edge = Color4Extensions.FromHex(@"E6E6E6");
 
         private BeatmapInfo beatmap => ((GroupedBeatmap)Item!.Model).Beatmap;
 
@@ -80,9 +97,10 @@ namespace osu.Game.Screens.Select
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(SkinManager skinManager)
         {
             Height = HEIGHT;
+            var menuButtonBgTex = skinManager.GetClassicTexture(@"menu-button-background");
 
             Icon = difficultyIcon = new ConstrainedIconContainer
             {
@@ -99,6 +117,22 @@ namespace osu.Game.Screens.Select
             Content.Children = new Drawable[]
             {
                 beatmapBackground = new PanelSetBackground(),
+                themedTintLayer = menuButtonBgTex != null
+                    ? new Sprite
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Size = new Vector2(1.02f, 1.22f),
+                        FillMode = FillMode.Stretch,
+                        Texture = menuButtonBgTex,
+                        Alpha = 0,
+                    }
+                    : new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Alpha = 0,
+                    },
                 new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
@@ -109,6 +143,30 @@ namespace osu.Game.Screens.Select
                     Direction = FillDirection.Horizontal,
                     Children = new Drawable[]
                     {
+                        stableThumbContainer = new Container
+                        {
+                            Size = new Vector2(72, 54),
+                            Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Masking = true,
+                            CornerRadius = 4,
+                            Alpha = 0,
+                            Children = new Drawable[]
+                            {
+                                new Box
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Colour = Color4.Black.Opacity(0.5f),
+                                },
+                                stableThumbSprite = new Sprite
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    FillMode = FillMode.Fill,
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                }
+                            }
+                        },
                         localRank = new PanelLocalRankDisplay
                         {
                             Scale = new Vector2(0.8f),
@@ -178,7 +236,7 @@ namespace osu.Game.Screens.Select
                                         }
                                     }
                                 },
-                                new FillFlowContainer
+                                starFill = new FillFlowContainer
                                 {
                                     Direction = FillDirection.Horizontal,
                                     Spacing = new Vector2(3),
@@ -198,6 +256,10 @@ namespace osu.Game.Screens.Select
                                             Selected = { BindTarget = Selected },
                                         }
                                     },
+                                },
+                                stableStars = new StableStarRatingRow
+                                {
+                                    Alpha = 0,
                                 }
                             }
                         }
@@ -225,7 +287,12 @@ namespace osu.Game.Screens.Select
 
             var beatmapSet = beatmap.BeatmapSet!;
 
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b => beatmapBackground.Beatmap = beatmaps.GetWorkingBeatmap(b), beatmap, 50);
+            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+            {
+                var working = beatmaps.GetWorkingBeatmap(b);
+                beatmapBackground.Beatmap = working;
+                stableThumbSprite.Texture = working.GetPanelBackground();
+            }, beatmap, 50);
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);
@@ -242,6 +309,7 @@ namespace osu.Game.Screens.Select
             computeStarRating();
             spreadDisplay.Beatmap.Value = beatmap;
             updateKeyCount();
+            ApplyInterfaceTheme();
         }
 
         protected override void FreeAfterUse()
@@ -251,12 +319,73 @@ namespace osu.Game.Screens.Select
             scheduledBackgroundRetrieval?.Cancel();
             scheduledBackgroundRetrieval = null;
             beatmapBackground.Beatmap = null;
+            stableThumbSprite.Texture = null;
             updateButton.BeatmapSet = null;
             localRank.Beatmap = null;
             starDifficultyBindable = null;
             spreadDisplay.Beatmap.Value = null;
 
             starDifficultyCancellationSource?.Cancel();
+        }
+
+        protected override void ApplyInterfaceTheme()
+        {
+            base.ApplyInterfaceTheme();
+
+            if (CurrentInterfaceTheme.IsThemed())
+            {
+                bool isSelected = Selected.Value;
+
+                if (themedTintLayer is Sprite s && SkinManager != null)
+                    s.Texture = SkinManager.GetClassicTexture(@"menu-button-background");
+
+                themedTintLayer.Alpha = isSelected ? 0.96f : 0.94f;
+                if (isSelected)
+                    themedTintLayer.Colour = stable_selected_white;
+                else if (CurrentInterfaceTheme == InterfaceTheme.OsuStable && Item != null)
+                    themedTintLayer.Colour = beatmap.LastPlayed != null ? stable_orange : Color4Extensions.FromHex(@"EB4999");
+                else
+                    themedTintLayer.Colour = CurrentInterfaceTheme.SetCardTint();
+
+                Color4 activeText = SkinManager?.GetSongSelectActiveTextColour() ?? Color4.Black;
+                Color4 inactiveText = SkinManager?.GetSongSelectInactiveTextColour() ?? Color4.White;
+
+                var fgColour = isSelected ? activeText : inactiveText;
+                var secondaryColour = isSelected ? activeText.Opacity(0.85f) : inactiveText.Opacity(0.85f);
+
+                titleText.Colour = fgColour;
+                artistText.Colour = secondaryColour;
+                difficultyText.Colour = fgColour;
+                keyCountText.Colour = fgColour;
+                authorText.Colour = secondaryColour;
+                authorText.Alpha = 0;
+
+                if (Item != null && !string.IsNullOrEmpty(beatmap.Metadata.Author.Username))
+                    artistText.Text = $"{beatmap.Metadata.Artist} // {beatmap.Metadata.Author.Username}";
+
+                statusPill.Alpha = 0;
+                starFill.Alpha = 0;
+                stableStars.Alpha = 1;
+                stableStars.ActiveWhiteCard = isSelected;
+                stableThumbContainer.Alpha = 1;
+                beatmapBackground.Alpha = 0;
+            }
+            else
+            {
+                themedTintLayer.Alpha = 0;
+                titleText.Colour = Color4.White;
+                artistText.Colour = Color4.White;
+                difficultyText.Colour = Color4.White;
+                keyCountText.Colour = Color4.White;
+                authorText.Colour = colourProvider.Content2;
+                authorText.Alpha = 1;
+
+                statusPill.Alpha = 1;
+                starFill.Alpha = 1;
+                stableStars.Alpha = 0;
+                stableThumbContainer.Alpha = 0;
+                beatmapBackground.Alpha = 1;
+            }
         }
 
         private void computeStarRating()
@@ -267,12 +396,14 @@ namespace osu.Game.Screens.Select
             if (Item == null)
                 return;
 
+            var initialStored = new StarDifficulty(beatmap.StarRating, 0);
+            stableStars.Stars = initialStored.Stars;
+
             // Potato mode: use the stored nomod star rating instead of recalculating per panel while scrolling.
             if (PotatoMode.Active)
             {
-                var stored = new StarDifficulty(beatmap.StarRating, 0);
-                starRatingDisplay.Current.Value = stored;
-                spreadDisplay.StarDifficulty.Value = stored;
+                starRatingDisplay.Current.Value = initialStored;
+                spreadDisplay.StarDifficulty.Value = initialStored;
                 return;
             }
 
@@ -281,6 +412,8 @@ namespace osu.Game.Screens.Select
             {
                 starRatingDisplay.Current.Value = starDifficulty.NewValue;
                 spreadDisplay.StarDifficulty.Value = starDifficulty.NewValue;
+                if (starDifficulty.NewValue.Stars > 0 || beatmap.StarRating <= 0)
+                    stableStars.Stars = starDifficulty.NewValue.Stars;
             }, true);
         }
 
@@ -298,13 +431,23 @@ namespace osu.Game.Screens.Select
             // I can't find a better way to do this.
             mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3) };
 
-            var diffColour = starRatingDisplay.DisplayedDifficultyColour;
+            if (CurrentInterfaceTheme.IsThemed())
+            {
+                var borderColour = Selected.Value ? Color4.White : CurrentInterfaceTheme.SetCardTint();
+                AccentColour = borderColour;
+                backgroundBorder.Colour = borderColour;
+                difficultyIcon.Colour = Selected.Value ? Color4.Black : Color4.White;
+            }
+            else
+            {
+                var diffColour = starRatingDisplay.DisplayedDifficultyColour;
 
-            AccentColour = diffColour;
-            spreadDisplay.Current.Colour = diffColour;
+                AccentColour = diffColour;
+                spreadDisplay.Current.Colour = diffColour;
 
-            backgroundBorder.Colour = diffColour;
-            difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
+                backgroundBorder.Colour = diffColour;
+                difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
+            }
         }
 
         private void updateKeyCount()

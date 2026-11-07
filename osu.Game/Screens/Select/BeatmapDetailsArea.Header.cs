@@ -6,11 +6,14 @@ using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
+using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
@@ -19,6 +22,7 @@ using osu.Game.Extensions;
 using osu.Game.Rulesets;
 using osu.Game.Screens.Play.Leaderboards;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Screens.Select
 {
@@ -28,11 +32,19 @@ namespace osu.Game.Screens.Select
         {
             private WedgeSelector<Selection> tabControl = null!;
             private FillFlowContainer leaderboardControls = null!;
+            private Container lazerHeaderContainer = null!;
+            private FillFlowContainer stableHeaderContainer = null!;
 
             private ShearedDropdown<BeatmapLeaderboardScope> scopeDropdown = null!;
             private ShearedDropdown<LeaderboardSortMode> sortDropdown = null!;
             private VariantDropdown variantDropdown = null!;
             private ShearedToggleButton selectedModsToggle = null!;
+
+            private StableRankingModeDropdown stableRankingDropdown = null!;
+            private StableCyanDropdown<LeaderboardVariant> stableVariantDropdown = null!;
+            private StableCyanDropdown<LeaderboardSortMode> stableSortDropdown = null!;
+            private IBindable<InterfaceTheme> interfaceTheme = null!;
+            private bool syncingStableRanking;
 
             [Resolved]
             private IBindable<RulesetInfo> ruleset { get; set; } = null!;
@@ -54,9 +66,11 @@ namespace osu.Game.Screens.Select
             [BackgroundDependencyLoader]
             private void load(OsuConfigManager config)
             {
+                interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
                 InternalChildren = new Drawable[]
                 {
-                    new Container
+                    lazerHeaderContainer = new Container
                     {
                         RelativeSizeAxes = Axes.Both,
                         Padding = new MarginPadding { Left = SongSelect.WEDGE_CONTENT_MARGIN, Right = 5f },
@@ -119,6 +133,35 @@ namespace osu.Game.Screens.Select
                             },
                         },
                     },
+                    stableHeaderContainer = new FillFlowContainer
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Horizontal,
+                        Spacing = new Vector2(6f, 0f),
+                        Padding = new MarginPadding { Left = 4f },
+                        Alpha = 0f,
+                        Children = new Drawable[]
+                        {
+                            stableRankingDropdown = new StableRankingModeDropdown
+                            {
+                                Width = 210f,
+                            },
+                            stableVariantDropdown = new StableCyanDropdown<LeaderboardVariant>
+                            {
+                                Width = 96f,
+                                Items = new[] { LeaderboardVariant.Vanilla },
+                                Current = { BindTarget = variantDropdown.Current },
+                            },
+                            stableSortDropdown = new StableCyanDropdown<LeaderboardSortMode>
+                            {
+                                Width = 88f,
+                                Items = Enum.GetValues<LeaderboardSortMode>(),
+                                Current = { BindTarget = sortDropdown.Current },
+                            },
+                        },
+                    },
                 };
 
                 config.BindWith(OsuSetting.BeatmapDetailTab, configDetailTab);
@@ -172,10 +215,81 @@ namespace osu.Game.Screens.Select
                 {
                     if (scopeDropdown.Current.Value != BeatmapLeaderboardScope.Local)
                     {
-                        sortDropdown.Items = onlineSortModes(variant.NewValue);
+                        var modes = onlineSortModes(variant.NewValue);
+                        sortDropdown.Items = modes;
+                        stableSortDropdown.Items = modes;
                         sortDropdown.Current.Value = defaultOnlineSort(variant.NewValue);
                     }
                 });
+
+                scopeDropdown.Current.BindValueChanged(_ => syncToStableRankingDropdown());
+                selectedModsToggle.Active.BindValueChanged(_ => syncToStableRankingDropdown(), true);
+
+                stableRankingDropdown.Current.BindValueChanged(e =>
+                {
+                    if (syncingStableRanking)
+                        return;
+
+                    syncingStableRanking = true;
+                    switch (e.NewValue)
+                    {
+                        case StableRankingMode.Local:
+                            selectedModsToggle.Active.Value = false;
+                            scopeDropdown.Current.Value = BeatmapLeaderboardScope.Local;
+                            break;
+
+                        case StableRankingMode.Global:
+                            selectedModsToggle.Active.Value = false;
+                            scopeDropdown.Current.Value = BeatmapLeaderboardScope.Global;
+                            break;
+
+                        case StableRankingMode.SelectedMods:
+                            scopeDropdown.Current.Value = BeatmapLeaderboardScope.Global;
+                            selectedModsToggle.Active.Value = true;
+                            break;
+
+                        case StableRankingMode.Friends:
+                            selectedModsToggle.Active.Value = false;
+                            scopeDropdown.Current.Value = BeatmapLeaderboardScope.Friend;
+                            break;
+
+                        case StableRankingMode.Country:
+                            selectedModsToggle.Active.Value = false;
+                            scopeDropdown.Current.Value = BeatmapLeaderboardScope.Country;
+                            break;
+                    }
+                    syncingStableRanking = false;
+                });
+
+                interfaceTheme.BindValueChanged(t =>
+                {
+                    bool isStable = t.NewValue.IsThemed();
+                    lazerHeaderContainer.Alpha = isStable ? 0f : 1f;
+                    stableHeaderContainer.Alpha = isStable ? 1f : 0f;
+                    if (isStable)
+                        tabControl.Current.Value = Selection.Ranking;
+                }, true);
+            }
+
+            private void syncToStableRankingDropdown()
+            {
+                if (syncingStableRanking)
+                    return;
+
+                syncingStableRanking = true;
+                if (selectedModsToggle.Active.Value && scopeDropdown.Current.Value != BeatmapLeaderboardScope.Local)
+                    stableRankingDropdown.Current.Value = StableRankingMode.SelectedMods;
+                else
+                {
+                    stableRankingDropdown.Current.Value = scopeDropdown.Current.Value switch
+                    {
+                        BeatmapLeaderboardScope.Local => StableRankingMode.Local,
+                        BeatmapLeaderboardScope.Friend => StableRankingMode.Friends,
+                        BeatmapLeaderboardScope.Country => StableRankingMode.Country,
+                        _ => StableRankingMode.Global,
+                    };
+                }
+                syncingStableRanking = false;
             }
 
             // Relax/Autopilot boards are by pp only: stable's and lazer's scores there come from two scoring systems.
@@ -197,12 +311,14 @@ namespace osu.Game.Screens.Select
                 var supported = rulesetInfo.SupportedVariants();
 
                 variantDropdown.Items = supported;
+                stableVariantDropdown.Items = supported;
 
                 if (!supported.Contains(variantDropdown.Current.Value))
                     variantDropdown.Current.Value = LeaderboardVariant.Vanilla;
 
                 // Hide the selector for rulesets without RX/AP variants (osu!mania).
                 variantDropdown.FadeTo(supported.Length > 1 ? 1 : 0, 200, Easing.OutQuint);
+                stableVariantDropdown.FadeTo(supported.Length > 1 ? 1 : 0, 200, Easing.OutQuint);
             }
 
             protected override bool OnMouseDown(MouseDownEvent e) => true;
@@ -316,6 +432,62 @@ namespace osu.Game.Screens.Select
 
                         default:
                             return @"Vanilla";
+                    }
+                }
+            }
+
+            public enum StableRankingMode
+            {
+                Local,
+                Global,
+                SelectedMods,
+                Friends,
+                Country,
+            }
+
+            private partial class StableRankingModeDropdown : StableCyanDropdown<StableRankingMode>
+            {
+                public StableRankingModeDropdown()
+                {
+                    Items = Enum.GetValues<StableRankingMode>();
+                }
+
+                protected override LocalisableString GenerateItemText(StableRankingMode item) => item switch
+                {
+                    StableRankingMode.Local => @"Local Ranking",
+                    StableRankingMode.Global => @"Global Ranking",
+                    StableRankingMode.SelectedMods => @"Selected Mods",
+                    StableRankingMode.Friends => @"Friends Ranking",
+                    StableRankingMode.Country => @"Country Ranking",
+                    _ => item.ToString(),
+                };
+            }
+
+            private partial class StableCyanDropdown<T> : OsuDropdown<T>
+                where T : struct, Enum
+            {
+                protected override DropdownHeader CreateHeader() => new StableCyanDropdownHeader();
+
+                protected override LocalisableString GenerateItemText(T item) => item.GetLocalisableDescription();
+
+                private partial class StableCyanDropdownHeader : OsuDropdownHeader
+                {
+                    public StableCyanDropdownHeader()
+                    {
+                        CornerRadius = 2f;
+                        Height = 25f;
+                        Masking = true;
+                        BorderThickness = 1.5f;
+                        BorderColour = Color4Extensions.FromHex(@"1FB8FF");
+                        Foreground.Padding = new MarginPadding { Top = 3, Bottom = 3, Left = 8, Right = 8 };
+                        Text.Font = OsuFont.GetFont(size: 14, weight: FontWeight.Bold);
+                    }
+
+                    [BackgroundDependencyLoader]
+                    private void load()
+                    {
+                        BackgroundColour = Color4.Black.Opacity(0.92f);
+                        BackgroundColourHover = Color4Extensions.FromHex(@"0D293E");
                     }
                 }
             }

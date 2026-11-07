@@ -4,6 +4,7 @@
 #nullable disable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -26,6 +27,7 @@ using osu.Game.Database;
 using osu.Game.IO;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Utils;
+using osuTK.Graphics;
 
 namespace osu.Game.Skinning
 {
@@ -128,6 +130,7 @@ namespace osu.Game.Skinning
                 if (!skin.NewValue.SkinInfo.Equals(CurrentSkinInfo.Value))
                     throw new InvalidOperationException($"Setting {nameof(CurrentSkin)}'s value directly is not supported. Use {nameof(CurrentSkinInfo)} instead.");
 
+                InvalidateStableSkinCache();
                 SourceChanged?.Invoke();
             };
 
@@ -306,6 +309,69 @@ namespace osu.Game.Skinning
         }
 
         public event Action SourceChanged;
+
+        private readonly ConcurrentDictionary<string, Texture> classicTextureCache = new ConcurrentDictionary<string, Texture>(StringComparer.Ordinal);
+        private readonly ConcurrentDictionary<string, ISample> classicSampleCache = new ConcurrentDictionary<string, ISample>(StringComparer.Ordinal);
+        private Color4? cachedSongSelectActiveText;
+        private Color4? cachedSongSelectInactiveText;
+
+        /// <summary>
+        /// Clears the cached classic/stable skin textures, samples, and custom colours when the active skin changes.
+        /// </summary>
+        public void InvalidateStableSkinCache()
+        {
+            classicTextureCache.Clear();
+            classicSampleCache.Clear();
+            cachedSongSelectActiveText = null;
+            cachedSongSelectInactiveText = null;
+        }
+
+        /// <summary>
+        /// Resolves a classic/stable skin texture (cached per active skin), consulting the active user skin first before falling back to <see cref="DefaultClassicSkin"/>.
+        /// </summary>
+        public Texture GetClassicTexture(string componentName)
+        {
+            if (string.IsNullOrEmpty(componentName))
+                return null;
+
+            return classicTextureCache.GetOrAdd(componentName, name =>
+                CurrentSkin.Value?.GetTexture(name) ?? DefaultClassicSkin.GetTexture(name));
+        }
+
+        /// <summary>
+        /// Resolves a classic/stable skin sprite or multi-frame animation (<c>-0</c>, <c>-1</c>, ...), consulting the active user skin first before falling back to <see cref="DefaultClassicSkin"/>.
+        /// </summary>
+        public Drawable GetClassicAnimation(string componentName, bool animatable = true, bool looping = true, bool applyConfigFrameRate = true)
+            => CurrentSkin.Value?.GetAnimation(componentName, animatable, looping, applyConfigFrameRate)
+               ?? DefaultClassicSkin.GetAnimation(componentName, animatable, looping, applyConfigFrameRate);
+
+        /// <summary>
+        /// Returns <c>SongSelectActiveText</c> from the active skin's <c>skin.ini</c> (cached per active skin), or <see cref="Color4.Black"/> by default.
+        /// </summary>
+        public Color4 GetSongSelectActiveTextColour()
+            => cachedSongSelectActiveText ??= CurrentSkin.Value?.GetConfig<SkinCustomColourLookup, Color4>(new SkinCustomColourLookup(@"SongSelectActiveText"))?.Value ?? Color4.Black;
+
+        /// <summary>
+        /// Returns <c>SongSelectInactiveText</c> from the active skin's <c>skin.ini</c> (cached per active skin), or <see cref="Color4.White"/> by default.
+        /// </summary>
+        public Color4 GetSongSelectInactiveTextColour()
+            => cachedSongSelectInactiveText ??= CurrentSkin.Value?.GetConfig<SkinCustomColourLookup, Color4>(new SkinCustomColourLookup(@"SongSelectInactiveText"))?.Value ?? Color4.White;
+
+        /// <summary>
+        /// Resolves a classic/stable skin sample (cached per active skin), consulting the active user skin (when it is a <see cref="LegacySkin"/>) before falling back to <see cref="DefaultClassicSkin"/>.
+        /// </summary>
+        public ISample GetClassicSample(params string[] sampleNames)
+        {
+            string cacheKey = string.Join('|', sampleNames);
+            return classicSampleCache.GetOrAdd(cacheKey, _ =>
+            {
+                var sampleInfo = new SampleInfo(sampleNames);
+                if (CurrentSkin.Value is LegacySkin legacySkin)
+                    return legacySkin.GetSample(sampleInfo) ?? DefaultClassicSkin.GetSample(sampleInfo);
+
+                return DefaultClassicSkin.GetSample(sampleInfo);
+            });
+        }
 
         public Drawable GetDrawableComponent(ISkinComponentLookup lookup) => lookupWithFallback(s => s.GetDrawableComponent(lookup));
 

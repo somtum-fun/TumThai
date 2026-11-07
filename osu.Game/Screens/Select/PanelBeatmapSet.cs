@@ -29,6 +29,7 @@ using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
+using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
 using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
@@ -42,8 +43,12 @@ namespace osu.Game.Screens.Select
         public Bindable<HashSet<BeatmapInfo>?> VisibleBeatmaps { get; } = new Bindable<HashSet<BeatmapInfo>?>();
 
         private Box chevronBackground = null!;
-        private Box themeTintBox = null!;
+        private Drawable themeTintBox = null!;
         private PanelSetBackground setBackground = null!;
+        private Container stableThumbContainer = null!;
+        private PanelSetBackground stableThumbBackground = null!;
+        private FillFlowContainer mainTextFlow = null!;
+        private FillFlowContainer badgesFlow = null!;
         private ScheduledDelegate? scheduledBackgroundRetrieval;
 
         private OsuSpriteText titleText = null!;
@@ -89,9 +94,10 @@ namespace osu.Game.Screens.Select
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(SkinManager skinManager)
         {
             Height = HEIGHT;
+            var menuButtonBgTex = skinManager.GetClassicTexture(@"menu-button-background");
 
             Icon = chevronIcon = new Container
             {
@@ -116,20 +122,45 @@ namespace osu.Game.Screens.Select
 
             Content.Children = new Drawable[]
             {
-                setBackground = new PanelSetBackground(),
-                themeTintBox = new Box
+                // osu!stable draws no full-width set background, only the thumbnail (stableThumbContainer);
+                // a skin's semi-transparent menu-button-background would otherwise show lazer's one through it.
+                setBackground = new PanelSetBackground { Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1 },
+                themeTintBox = menuButtonBgTex != null
+                    ? new Sprite
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Size = new Vector2(1.02f, 1.22f),
+                        FillMode = FillMode.Stretch,
+                        Texture = menuButtonBgTex,
+                        Colour = CurrentInterfaceTheme.SetCardTint(),
+                        Alpha = CurrentInterfaceTheme.IsThemed() ? 0.94f : 0,
+                    }
+                    : new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = CurrentInterfaceTheme.SetCardTint(),
+                        Alpha = CurrentInterfaceTheme.IsThemed() ? 0.88f : 0,
+                    },
+                stableThumbContainer = new Container
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Colour = CurrentInterfaceTheme.SetCardTint(),
-                    Alpha = CurrentInterfaceTheme.IsThemed() ? 0.45f : 0,
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                    Size = new Vector2(72f, 54f),
+                    Margin = new MarginPadding { Left = 8f },
+                    Masking = true,
+                    CornerRadius = 3f,
+                    Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                    Child = stableThumbBackground = new PanelSetBackground(),
                 },
-                new FillFlowContainer
+                mainTextFlow = new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
                     Direction = FillDirection.Vertical,
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.CentreLeft,
-                    Padding = new MarginPadding { Top = 7.5f, Left = 15, Bottom = 13 },
+                    Padding = new MarginPadding { Top = 7.5f, Left = CurrentInterfaceTheme.IsThemed() ? 88f : 15f, Bottom = 13 },
                     Children = new Drawable[]
                     {
                         titleText = new OsuSpriteText
@@ -140,11 +171,12 @@ namespace osu.Game.Screens.Select
                         {
                             Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
                         },
-                        new FillFlowContainer
+                        badgesFlow = new FillFlowContainer
                         {
                             Direction = FillDirection.Horizontal,
                             AutoSizeAxes = Axes.Both,
                             Margin = new MarginPadding { Top = 4f },
+                            Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1,
                             Children = new Drawable[]
                             {
                                 statusPill = new BeatmapSetOnlineStatusPill
@@ -186,8 +218,52 @@ namespace osu.Game.Screens.Select
         {
             base.ApplyInterfaceTheme();
 
-            themeTintBox.Colour = CurrentInterfaceTheme.SetCardTint();
-            themeTintBox.Alpha = CurrentInterfaceTheme.IsThemed() ? 0.45f : 0;
+            bool themed = CurrentInterfaceTheme.IsThemed();
+            if (themeTintBox is Sprite s && SkinManager != null)
+                s.Texture = SkinManager.GetClassicTexture(@"menu-button-background");
+
+            if (themed && CurrentInterfaceTheme == InterfaceTheme.OsuStable && Item != null)
+            {
+                bool hasBeenPlayed = groupedBeatmapSet.BeatmapSet.Beatmaps.Any(b => b.LastPlayed != null);
+                themeTintBox.Colour = hasBeenPlayed
+                    ? osu.Framework.Extensions.Color4Extensions.Color4Extensions.FromHex(@"E96800")
+                    : osu.Framework.Extensions.Color4Extensions.Color4Extensions.FromHex(@"EB4999");
+            }
+            else
+            {
+                themeTintBox.Colour = CurrentInterfaceTheme.SetCardTint();
+            }
+
+            themeTintBox.Alpha = themed ? 0.94f : 0;
+            setBackground.Alpha = themed ? 0 : 1;
+            stableThumbContainer.Alpha = themed ? 1 : 0;
+            badgesFlow.Alpha = themed ? 0 : 1;
+
+            Color4 inactiveText = themed ? (SkinManager?.GetSongSelectInactiveTextColour() ?? Color4.White) : Color4.White;
+            titleText.Colour = inactiveText;
+            artistText.Colour = inactiveText;
+
+            mainTextFlow.Padding = new MarginPadding
+            {
+                Top = themed ? 6f : 7.5f,
+                Left = themed ? 88f : 15f,
+                Bottom = themed ? 6f : 13f,
+            };
+
+            if (Item != null)
+                updateArtistText(groupedBeatmapSet.BeatmapSet);
+        }
+
+        private void updateArtistText(BeatmapSetInfo beatmapSet)
+        {
+            if (CurrentInterfaceTheme.IsThemed() && !string.IsNullOrEmpty(beatmapSet.Metadata.Author.Username))
+            {
+                artistText.Text = $"{beatmapSet.Metadata.Artist} // {beatmapSet.Metadata.Author.Username}";
+            }
+            else
+            {
+                artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);
+            }
         }
 
         private void onExpanded()
@@ -215,13 +291,19 @@ namespace osu.Game.Screens.Select
             var beatmapSet = groupedBeatmapSet.BeatmapSet;
 
             // Choice of background image matches BSS implementation (always uses the lowest `beatmap_id` from the set).
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(s => setBackground.Beatmap = beatmaps.GetWorkingBeatmap(s.Beatmaps.MinBy(b => b.OnlineID)), beatmapSet, 50);
+            scheduledBackgroundRetrieval = Scheduler.AddDelayed(s =>
+            {
+                var working = beatmaps.GetWorkingBeatmap(s.Beatmaps.MinBy(b => b.OnlineID));
+                setBackground.Beatmap = working;
+                stableThumbBackground.Beatmap = working;
+            }, beatmapSet, 50);
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
-            artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);
+            updateArtistText(beatmapSet);
             updateButton.BeatmapSet = beatmapSet;
             statusPill.Status = beatmapSet.Status;
             spreadDisplay.BeatmapSet.Value = beatmapSet;
+            ApplyInterfaceTheme();
         }
 
         protected override void FreeAfterUse()
@@ -231,6 +313,7 @@ namespace osu.Game.Screens.Select
             scheduledBackgroundRetrieval?.Cancel();
             scheduledBackgroundRetrieval = null;
             setBackground.Beatmap = null;
+            stableThumbBackground.Beatmap = null;
             updateButton.BeatmapSet = null;
             spreadDisplay.BeatmapSet.Value = null;
         }

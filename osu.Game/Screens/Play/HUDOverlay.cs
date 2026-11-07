@@ -11,6 +11,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Primitives;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Game.Configuration;
@@ -18,6 +19,7 @@ using osu.Game.Input;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Mods;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -26,6 +28,7 @@ using osu.Game.Rulesets.UI;
 using osu.Game.Screens.Play.HUD;
 using osu.Game.Screens.Play.HUD.ClicksPerSecond;
 using osu.Game.Screens.Play.HUD.JudgementCounter;
+using osu.Game.Graphics.UserInterface;
 using osu.Game.Skinning;
 using osuTK;
 
@@ -76,6 +79,8 @@ namespace osu.Game.Screens.Play
 
         private Bindable<HUDVisibilityMode> configVisibilityMode;
         private Bindable<bool> configLeaderboardVisibility;
+        private Bindable<InterfaceTheme> interfaceTheme;
+        private FillFlowContainer stableModsContainer;
 
         private readonly BindableBool replayLoaded = new BindableBool();
 
@@ -149,6 +154,15 @@ namespace osu.Game.Screens.Play
                         // It would be very nice to remove this, but the version here has special logic with regards to replays
                         // and initial states, so needs a bit of thought before doing so.
                         ModDisplay = CreateModsContainer(),
+                        stableModsContainer = new FillFlowContainer
+                        {
+                            Anchor = Anchor.TopRight,
+                            Origin = Anchor.TopRight,
+                            AutoSizeAxes = Axes.Both,
+                            Direction = FillDirection.Horizontal,
+                            Spacing = new Vector2(-10, 0),
+                            Alpha = 0,
+                        },
                     }
                 },
                 BottomRightElements = new FillFlowContainer
@@ -184,7 +198,7 @@ namespace osu.Game.Screens.Play
         }
 
         [BackgroundDependencyLoader(true)]
-        private void load(OsuConfigManager config, RealmKeyBindingStore keyBindingStore, INotificationOverlay notificationOverlay)
+        private void load(OsuConfigManager config, RealmKeyBindingStore keyBindingStore, INotificationOverlay notificationOverlay, SkinManager skinManager)
         {
             if (drawableRuleset != null)
             {
@@ -195,6 +209,34 @@ namespace osu.Game.Screens.Play
 
             configVisibilityMode = config.GetBindable<HUDVisibilityMode>(OsuSetting.HUDVisibilityMode);
             configLeaderboardVisibility = config.GetBindable<bool>(OsuSetting.GameplayLeaderboard);
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
+            if (skinManager != null)
+            {
+                foreach (var mod in mods)
+                {
+                    string texName = StableModSelectContent.GetStableModTextureName(mod.Acronym);
+                    var tex = texName != null ? skinManager.GetClassicTexture(texName) : null;
+                    if (tex != null)
+                    {
+                        stableModsContainer.Add(new Sprite
+                        {
+                            Texture = tex,
+                            Scale = new Vector2(0.72f),
+                        });
+                    }
+                }
+            }
+
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isThemed = t.NewValue.IsThemed();
+                ModDisplay.ClearTransforms();
+                ModDisplay.Alpha = isThemed ? 0 : 1;
+                stableModsContainer.ClearTransforms();
+                stableModsContainer.Alpha = isThemed ? 1 : 0;
+                HoldToQuit.Alpha = t.NewValue.Effective() == InterfaceTheme.OsuStable ? 0 : 1;
+            }, true);
 
             if (configVisibilityMode.Value == HUDVisibilityMode.Never && !hasShownNotificationOnce)
             {
@@ -225,14 +267,36 @@ namespace osu.Game.Screens.Play
 
             replayLoaded.BindValueChanged(e =>
             {
+                bool isThemed = interfaceTheme.Value.IsThemed();
+
                 if (e.NewValue)
                 {
-                    ModDisplay.FadeIn(1000, FADE_EASING);
+                    if (isThemed)
+                    {
+                        ModDisplay.ClearTransforms();
+                        ModDisplay.Alpha = 0;
+                        stableModsContainer.FadeIn(1000, FADE_EASING);
+                    }
+                    else
+                    {
+                        ModDisplay.FadeIn(1000, FADE_EASING);
+                    }
+
                     InputCountController.Margin = new MarginPadding(10) { Bottom = 30 };
                 }
                 else
                 {
-                    ModDisplay.Delay(2000).FadeOut(200);
+                    if (isThemed)
+                    {
+                        ModDisplay.ClearTransforms();
+                        ModDisplay.Alpha = 0;
+                        stableModsContainer.Delay(2000).FadeOut(200);
+                    }
+                    else
+                    {
+                        ModDisplay.Delay(2000).FadeOut(200);
+                    }
+
                     InputCountController.Margin = new MarginPadding(10);
                 }
 

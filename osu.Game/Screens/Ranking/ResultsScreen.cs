@@ -28,6 +28,7 @@ using osu.Game.Localisation;
 using osu.Game.Online.Placeholders;
 using osu.Game.Overlays;
 using osu.Game.Scoring;
+using osu.Game.Screens.Footer;
 using osu.Game.Screens.Play;
 using osu.Game.Screens.Ranking.Expanded.Accuracy;
 using osu.Game.Screens.Ranking.Statistics;
@@ -91,6 +92,9 @@ namespace osu.Game.Screens.Ranking
 
         private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
         private Box bottomBarBackground = null!;
+        private GridContainer lazerResultsGrid = null!;
+        private StableResultsContent stableResultsContent = null!;
+        private bool showingStableScoreboard;
 
         protected ResultsScreen(ScoreInfo? score)
         {
@@ -111,75 +115,93 @@ namespace osu.Game.Screens.Ranking
             InternalChild = new PopoverContainer
             {
                 RelativeSizeAxes = Axes.Both,
-                Child = new GridContainer
+                Children = new Drawable[]
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Content = new[]
+                    lazerResultsGrid = new GridContainer
                     {
-                        new Drawable[]
+                        RelativeSizeAxes = Axes.Both,
+                        Content = new[]
                         {
-                            VerticalScrollContent = new VerticalScrollContainer
+                            new Drawable[]
                             {
-                                RelativeSizeAxes = Axes.Both,
-                                ScrollbarVisible = false,
-                                Child = new Container
+                                VerticalScrollContent = new VerticalScrollContainer
                                 {
                                     RelativeSizeAxes = Axes.Both,
+                                    ScrollbarVisible = false,
+                                    Child = new Container
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Children = new Drawable[]
+                                        {
+                                            StatisticsPanel = new StatisticsPanel
+                                            {
+                                                RelativeSizeAxes = Axes.Both,
+                                                Score = { BindTarget = SelectedScore },
+                                                AchievedScore = IsLocalPlay && Score != null ? Score : null,
+                                            },
+                                            ScorePanelList = new ScorePanelList
+                                            {
+                                                RelativeSizeAxes = Axes.Both,
+                                                SelectedScore = { BindTarget = SelectedScore },
+                                                PostExpandAction = () => StatisticsPanel.ToggleVisibility()
+                                            },
+                                            detachedPanelContainer = new Container<ScorePanel>
+                                            {
+                                                RelativeSizeAxes = Axes.Both
+                                            },
+                                        }
+                                    }
+                                },
+                            },
+                            new[]
+                            {
+                                bottomPanel = new Container
+                                {
+                                    Anchor = Anchor.BottomLeft,
+                                    Origin = Anchor.BottomLeft,
+                                    RelativeSizeAxes = Axes.X,
+                                    Height = TwoLayerButton.SIZE_EXTENDED.Y,
+                                    Alpha = 0,
                                     Children = new Drawable[]
                                     {
-                                        StatisticsPanel = new StatisticsPanel
+                                        bottomBarBackground = new Box
                                         {
                                             RelativeSizeAxes = Axes.Both,
-                                            Score = { BindTarget = SelectedScore },
-                                            AchievedScore = IsLocalPlay && Score != null ? Score : null,
+                                            Colour = interfaceTheme.Value.Effective().ResultsBottomBar()
                                         },
-                                        ScorePanelList = new ScorePanelList
+                                        buttons = new FillFlowContainer
                                         {
-                                            RelativeSizeAxes = Axes.Both,
-                                            SelectedScore = { BindTarget = SelectedScore },
-                                            PostExpandAction = () => StatisticsPanel.ToggleVisibility()
-                                        },
-                                        detachedPanelContainer = new Container<ScorePanel>
-                                        {
-                                            RelativeSizeAxes = Axes.Both
+                                            Anchor = Anchor.Centre,
+                                            Origin = Anchor.Centre,
+                                            AutoSizeAxes = Axes.Both,
+                                            Spacing = new Vector2(5),
+                                            Direction = FillDirection.Horizontal
                                         },
                                     }
                                 }
-                            },
-                        },
-                        new[]
-                        {
-                            bottomPanel = new Container
-                            {
-                                Anchor = Anchor.BottomLeft,
-                                Origin = Anchor.BottomLeft,
-                                RelativeSizeAxes = Axes.X,
-                                Height = TwoLayerButton.SIZE_EXTENDED.Y,
-                                Alpha = 0,
-                                Children = new Drawable[]
-                                {
-                                    bottomBarBackground = new Box
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Colour = interfaceTheme.Value.Effective().ResultsBottomBar()
-                                    },
-                                    buttons = new FillFlowContainer
-                                    {
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        AutoSizeAxes = Axes.Both,
-                                        Spacing = new Vector2(5),
-                                        Direction = FillDirection.Horizontal
-                                    },
-                                }
                             }
+                        },
+                        RowDimensions = new[]
+                        {
+                            new Dimension(),
+                            new Dimension(GridSizeMode.AutoSize)
                         }
                     },
-                    RowDimensions = new[]
+                    stableResultsContent = new StableResultsContent
                     {
-                        new Dimension(),
-                        new Dimension(GridSizeMode.AutoSize)
-                    }
+                        SelectedScore = { BindTarget = SelectedScore },
+                        AllowRetry = AllowRetry,
+                        AllowWatchingReplay = AllowWatchingReplay,
+                        // The score's online id is only set once the server accepted it (SubmittingPlayer.submitScore).
+                        SubmittedScore = IsLocalPlay && Score?.OnlineID > 0 ? Score : null,
+                        Alpha = 0,
+                        RequestExit = () => this.Exit(),
+                        RequestToggleScoreboard = () =>
+                        {
+                            showingStableScoreboard = true;
+                            updateInterfaceThemeView();
+                        },
+                    },
                 }
             };
 
@@ -243,11 +265,24 @@ namespace osu.Game.Screens.Ranking
         {
             base.LoadComplete();
 
-            interfaceTheme.BindValueChanged(t => bottomBarBackground.Colour = t.NewValue.Effective().ResultsBottomBar(), true);
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bottomBarBackground.Colour = t.NewValue.Effective().ResultsBottomBar();
+                showingStableScoreboard = false;
+                updateInterfaceThemeView();
+            }, true);
 
             StatisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
 
             fetchScores(null);
+        }
+
+        private void updateInterfaceThemeView()
+        {
+            bool useStableLayout = interfaceTheme.Value.IsThemed() && !showingStableScoreboard && SelectedScore.Value != null;
+            stableResultsContent.Alpha = useStableLayout ? 1f : 0f;
+            lazerResultsGrid.Alpha = useStableLayout ? 0f : 1f;
+            FooterContent.Value = useStableLayout ? ScreenFooterContent.None : ScreenFooterContent.Legacy(showBackButton: AllowUserExit);
         }
 
         protected override void Update()
@@ -435,6 +470,13 @@ namespace osu.Game.Screens.Ranking
             if (StatisticsPanel.State.Value == Visibility.Visible)
             {
                 StatisticsPanel.Hide();
+                return true;
+            }
+
+            if (interfaceTheme.Value.IsThemed() && showingStableScoreboard)
+            {
+                showingStableScoreboard = false;
+                updateInterfaceThemeView();
                 return true;
             }
 

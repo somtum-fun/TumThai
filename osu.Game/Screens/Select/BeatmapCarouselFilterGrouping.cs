@@ -48,6 +48,7 @@ namespace osu.Game.Screens.Select
         public required Func<List<BeatmapCollection>> GetCollections { get; init; }
         public required Func<FilterCriteria, IReadOnlyDictionary<Guid, ScoreRank>> GetLocalUserTopRanks { get; init; }
         public required Func<HashSet<int>> GetFavouriteBeatmapSets { get; init; }
+        public Func<bool>? IsThemed { get; init; }
 
         public async Task<List<CarouselItem>> Run(IEnumerable<CarouselItem> items, CancellationToken cancellationToken)
         {
@@ -121,9 +122,12 @@ namespace osu.Game.Screens.Select
                                 groupItem.NestedItemCount++;
                         }
 
+                        bool isThemed = IsThemed?.Invoke() == true;
                         addItem(new CarouselItem(new GroupedBeatmap(group, beatmap))
                         {
-                            DrawHeight = BeatmapSetsGroupedTogether ? PanelBeatmap.HEIGHT : PanelBeatmapStandalone.HEIGHT,
+                            DrawHeight = BeatmapSetsGroupedTogether
+                                ? (isThemed ? PanelBeatmapSet.HEIGHT : PanelBeatmap.HEIGHT)
+                                : PanelBeatmapStandalone.HEIGHT,
                         });
                         lastBeatmap = beatmap;
                         displayedBeatmapsCount++;

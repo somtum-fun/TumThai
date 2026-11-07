@@ -6,16 +6,20 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
+using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Platform;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
@@ -71,6 +75,7 @@ namespace osu.Game.Screens.Play
         public IReadOnlyList<DialogButton> Buttons => InternalButtons;
 
         private TextFlowContainer playInfoText = null!;
+        private Bindable<InterfaceTheme> interfaceTheme = null!;
 
         [Resolved]
         private GlobalActionContainer globalAction { get; set; } = null!;
@@ -81,8 +86,9 @@ namespace osu.Game.Screens.Play
         }
 
         [BackgroundDependencyLoader]
-        private void load(OsuColour colours, GameHost? host)
+        private void load(OsuColour colours, GameHost? host, OsuConfigManager config)
         {
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             Children = new Drawable[]
             {
                 pauseLoop = new SkinnableSound(new SampleInfo("Gameplay/pause-loop"))
@@ -131,7 +137,7 @@ namespace osu.Game.Screens.Play
                                 AutoSizeAxes = Axes.Y,
                                 Direction = FillDirection.Vertical,
                                 Spacing = new Vector2(2),
-                                Masking = true,
+                                Masking = false,
                             },
                         },
                         new Drawable[]
@@ -157,13 +163,13 @@ namespace osu.Game.Screens.Play
             };
 
             if (OnResume != null)
-                AddButton(GameplayMenuOverlayStrings.Continue, colours.Green, () => OnResume.Invoke());
+                AddButton(GameplayMenuOverlayStrings.Continue, colours.Green, () => OnResume.Invoke(), @"pause-continue", @"pause-continue-click");
 
             if (OnRetry != null)
-                AddButton(GameplayMenuOverlayStrings.Retry, colours.YellowDark, () => OnRetry.Invoke());
+                AddButton(GameplayMenuOverlayStrings.Retry, colours.YellowDark, () => OnRetry.Invoke(), @"pause-retry", @"pause-retry-click");
 
             if (OnQuit != null)
-                AddButton(GameplayMenuOverlayStrings.Quit, new Color4(170, 27, 39, 255), () => OnQuit.Invoke());
+                AddButton(GameplayMenuOverlayStrings.Quit, new Color4(170, 27, 39, 255), () => OnQuit.Invoke(), @"pause-back", @"pause-back-click");
 
             State.ValueChanged += _ => InternalButtons.Deselect();
 
@@ -203,9 +209,9 @@ namespace osu.Game.Screens.Play
             stopPauseLoop();
         }
 
-        protected void AddButton(LocalisableString text, Color4 colour, Action? action)
+        protected void AddButton(LocalisableString text, Color4 colour, Action? action, string? stableSpriteName = null, string? stableClickSampleName = null)
         {
-            var button = new Button
+            var button = new Button(stableSpriteName, stableClickSampleName)
             {
                 Text = text,
                 ButtonColour = colour,
@@ -295,6 +301,131 @@ namespace osu.Game.Screens.Play
 
         private partial class Button : DialogButton
         {
+            private readonly string? stableSpriteName;
+            private readonly string? stableClickSampleName;
+            private Sprite? stableSprite;
+            private Sprite? leftArrow;
+            private Sprite? rightArrow;
+            private ISample? hoverSample;
+            private ISample? clickSample;
+            private IBindable<InterfaceTheme>? themeBindable;
+
+            public Button(string? stableSpriteName = null, string? stableClickSampleName = null)
+            {
+                this.stableSpriteName = stableSpriteName;
+                this.stableClickSampleName = stableClickSampleName;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load(OsuConfigManager config, SkinManager skinManager, AudioManager audio)
+            {
+                themeBindable = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+                var arrowTex = skinManager.GetClassicTexture(@"play-warningarrow");
+                var buttonTex = stableSpriteName != null ? skinManager.GetClassicTexture(stableSpriteName) : null;
+
+                hoverSample = skinManager.GetClassicSample(@"pause-hover", @"menuclick") ?? audio.Samples.Get(@"UI/generic-hover");
+                clickSample = stableClickSampleName != null
+                    ? (skinManager.GetClassicSample(stableClickSampleName, @"menuhit") ?? audio.Samples.Get(@"UI/generic-select"))
+                    : null;
+
+                if (buttonTex != null)
+                {
+                    AddInternal(stableSprite = new Sprite
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Texture = buttonTex,
+                        Alpha = 0,
+                    });
+                }
+
+                if (arrowTex != null)
+                {
+                    AddInternal(leftArrow = new Sprite
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreRight,
+                        X = -16,
+                        Size = new Vector2(36, 30),
+                        FillMode = FillMode.Fit,
+                        Texture = arrowTex,
+                        Colour = Color4Extensions.FromHex(@"0072BC"),
+                        Alpha = 0,
+                    });
+                    AddInternal(rightArrow = new Sprite
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        Scale = new Vector2(-1, 1),
+                        X = 16,
+                        Size = new Vector2(36, 30),
+                        FillMode = FillMode.Fit,
+                        Texture = arrowTex,
+                        Colour = Color4Extensions.FromHex(@"0072BC"),
+                        Alpha = 0,
+                    });
+                }
+            }
+
+            protected override void LoadComplete()
+            {
+                base.LoadComplete();
+
+                StateChanged += _ => updateArrowVisibility();
+
+                themeBindable?.BindValueChanged(t =>
+                {
+                    bool isStable = t.NewValue.IsThemed() && stableSprite != null;
+                    if (isStable)
+                    {
+                        RelativeSizeAxes = Axes.None;
+                        Width = 411;
+                        Height = 122;
+                        Margin = new MarginPadding { Vertical = 4 };
+                        stableSprite!.Alpha = 1;
+                        foreach (var child in InternalChildren)
+                        {
+                            if (child != stableSprite && child != leftArrow && child != rightArrow)
+                                child.Alpha = 0;
+                        }
+                    }
+                    else
+                    {
+                        RelativeSizeAxes = Axes.X;
+                        Width = 1f;
+                        Height = button_height;
+                        Margin = default;
+                        if (stableSprite != null)
+                            stableSprite.Alpha = 0;
+                        foreach (var child in InternalChildren)
+                        {
+                            if (child != stableSprite && child != leftArrow && child != rightArrow)
+                                child.Alpha = 1;
+                        }
+                    }
+                    updateArrowVisibility();
+                }, true);
+            }
+
+            private void updateArrowVisibility()
+            {
+                bool isStable = themeBindable?.Value.IsThemed() ?? false;
+                bool selected = State == SelectionState.Selected;
+                bool showArrows = isStable && selected;
+                leftArrow?.FadeTo(showArrows ? 1 : 0, 120, Easing.OutQuint);
+                rightArrow?.FadeTo(showArrows ? 1 : 0, 120, Easing.OutQuint);
+                stableSprite?.ScaleTo(showArrows ? 1.06f : 1.0f, 150, Easing.OutElastic);
+                if (showArrows)
+                    hoverSample?.Play();
+            }
+
+            protected override bool OnClick(ClickEvent e)
+            {
+                if (themeBindable?.Value.IsThemed() ?? false)
+                    clickSample?.Play();
+                return base.OnClick(e);
+            }
+
             // required to ensure keyboard navigation always starts from an extremity (unless the cursor is moved)
             protected override bool OnHover(HoverEvent e) => true;
 

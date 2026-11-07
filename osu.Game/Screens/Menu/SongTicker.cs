@@ -27,6 +27,26 @@ namespace osu.Game.Screens.Menu
 
         public override bool IsPresent => base.IsPresent || Scheduler.HasPendingTasks;
 
+        /// <summary>
+        /// TumThai!Next: while set (the osu!stable theme draws its own "Now Playing"), track changes don't show the ticker.
+        /// </summary>
+        public bool Suppressed
+        {
+            get => suppressed;
+            set
+            {
+                suppressed = value;
+
+                if (value)
+                {
+                    ClearTransforms();
+                    Alpha = 0;
+                }
+            }
+        }
+
+        private bool suppressed;
+
         public SongTicker()
         {
             AutoSizeAxes = Axes.Both;
@@ -100,6 +120,9 @@ namespace osu.Game.Screens.Menu
 
             title.Text = new RomanisableString(metadata.TitleUnicode, metadata.Title);
             artist.Text = new RomanisableString(metadata.ArtistUnicode, metadata.Artist);
+
+            if (suppressed)
+                return;
 
             this.FadeInFromZero(fade_duration / 2f)
                 .Delay(4000)

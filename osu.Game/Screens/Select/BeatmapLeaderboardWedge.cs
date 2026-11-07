@@ -20,6 +20,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Threading;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Cursor;
@@ -75,6 +76,14 @@ namespace osu.Game.Screens.Select
 
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
+
+        [Resolved]
+        private OsuConfigManager config { get; set; } = null!;
+
+        private IBindable<InterfaceTheme> interfaceTheme = null!;
+        private WedgeBackground personalBestWedgeBg = null!;
+        private OsuContextMenuContainer personalBestInnerContainer = null!;
+        private Container personalBestContentPadding = null!;
 
         private Container<Placeholder> placeholderContainer = null!;
         private Placeholder? placeholder;
@@ -171,14 +180,14 @@ namespace osu.Game.Screens.Select
                         Alpha = 0f,
                         Children = new Drawable[]
                         {
-                            new WedgeBackground(),
+                            personalBestWedgeBg = new WedgeBackground(),
                             // Required because wedge background blocks input from passing through
                             // to the main context menu container above.
-                            new OsuContextMenuContainer
+                            personalBestInnerContainer = new OsuContextMenuContainer
                             {
                                 Shear = -OsuGame.SHEAR,
                                 RelativeSizeAxes = Axes.Both,
-                                Child = new Container
+                                Child = personalBestContentPadding = new Container
                                 {
                                     RelativeSizeAxes = Axes.X,
                                     AutoSizeAxes = Axes.Y,
@@ -217,6 +226,39 @@ namespace osu.Game.Screens.Select
         protected override void LoadComplete()
         {
             base.LoadComplete();
+
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isStable = t.NewValue.IsThemed();
+                scoresScroll.Shear = isStable ? Vector2.Zero : OsuGame.SHEAR;
+                scoresContainer.Padding = new MarginPadding
+                {
+                    Top = scores_scroll_top_padding,
+                    Left = isStable ? 8f : scores_scroll_left_padding,
+                    Right = isStable ? 8f : 0f,
+                    Bottom = BeatmapLeaderboardScore.HEIGHT * 3,
+                };
+                personalBestWedgeBg.Alpha = isStable ? 0f : 1f;
+                personalBestDisplay.CornerRadius = isStable ? 0f : 10f;
+                personalBestDisplay.Shear = isStable ? Vector2.Zero : OsuGame.SHEAR;
+                personalBestDisplay.Margin = new MarginPadding { Left = isStable ? 4f : -40f, Right = isStable ? 4f : 0f };
+                personalBestInnerContainer.Shear = isStable ? Vector2.Zero : -OsuGame.SHEAR;
+                personalBestText.Anchor = isStable ? Anchor.TopCentre : Anchor.TopLeft;
+                personalBestText.Origin = isStable ? Anchor.TopCentre : Anchor.TopLeft;
+                personalBestText.Colour = isStable ? Color4.White : colourProvider.Content2;
+                personalBestText.Shadow = isStable;
+                personalBestText.Font = isStable
+                    ? OsuFont.GetFont(size: 18, weight: FontWeight.Bold)
+                    : OsuFont.Style.Caption1.With(weight: FontWeight.SemiBold);
+                personalBestContentPadding.Padding = new MarginPadding
+                {
+                    Top = isStable ? 2f : 5f,
+                    Bottom = isStable ? 2f : 5f,
+                    Left = isStable ? 4f : 70f,
+                    Right = isStable ? 4f : 10f,
+                };
+            }, true);
 
             Scope.BindValueChanged(_ => RefetchScores());
             Sorting.BindValueChanged(_ => RefetchScores());

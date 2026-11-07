@@ -10,7 +10,9 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Overlays;
+using osuTK.Graphics;
 
 namespace osu.Game.Graphics.UserInterfaceV2
 {
@@ -40,23 +42,28 @@ namespace osu.Game.Graphics.UserInterfaceV2
         public LocalisableString HintText { get; init; }
 
         private FormControlBackground background = null!;
+        private Container rowContainer = null!;
+        private Container captionContainer = null!;
         private FormFieldCaption caption = null!;
 
         private SwitchButton switchButton = null!;
+        private IBindable<InterfaceTheme>? interfaceTheme;
 
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        [BackgroundDependencyLoader]
-        private void load()
+        [BackgroundDependencyLoader(true)]
+        private void load(OsuConfigManager? config)
         {
+            interfaceTheme = config?.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
             RelativeSizeAxes = Axes.X;
             AutoSizeAxes = Axes.Y;
 
             InternalChildren = new Drawable[]
             {
                 background = new FormControlBackground(),
-                new Container
+                rowContainer = new Container
                 {
                     RelativeSizeAxes = Axes.X,
                     Height = ExtendedHeight ? 52 : 0,
@@ -64,7 +71,7 @@ namespace osu.Game.Graphics.UserInterfaceV2
                     Padding = new MarginPadding(9),
                     Children = new Drawable[]
                     {
-                        new Container
+                        captionContainer = new Container
                         {
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.CentreLeft,
@@ -95,10 +102,13 @@ namespace osu.Game.Graphics.UserInterfaceV2
         {
             base.LoadComplete();
 
+            interfaceTheme?.BindValueChanged(_ => updateState(), true);
+
             current.BindValueChanged(_ =>
             {
                 updateState();
-                background.FlashOnCommit();
+                if (interfaceTheme?.Value.IsThemed() != true)
+                    background.FlashOnCommit();
 
                 ValueChanged?.Invoke();
             });
@@ -125,6 +135,23 @@ namespace osu.Game.Graphics.UserInterfaceV2
 
         private void updateState()
         {
+            bool isThemed = interfaceTheme?.Value.IsThemed() == true;
+
+            background.Alpha = isThemed ? 0 : 1;
+            if (isThemed)
+            {
+                rowContainer.Padding = new MarginPadding { Vertical = 4, Horizontal = 2 };
+                switchButton.Anchor = Anchor.CentreLeft;
+                switchButton.Origin = Anchor.CentreLeft;
+                captionContainer.Padding = new MarginPadding { Left = 26 };
+                caption.Colour = Current.Disabled ? colourProvider.Background1 : Color4.White;
+                return;
+            }
+
+            rowContainer.Padding = new MarginPadding(9);
+            switchButton.Anchor = Anchor.CentreRight;
+            switchButton.Origin = Anchor.CentreRight;
+            captionContainer.Padding = new MarginPadding { Right = SwitchButton.WIDTH + 5 };
             caption.Colour = Current.Disabled ? colourProvider.Background1 : colourProvider.Content2;
 
             if (IsDisabled)

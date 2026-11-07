@@ -57,6 +57,7 @@ namespace osu.Game.Screens.Select
         private readonly LoadingLayer loading;
 
         private readonly BeatmapCarouselFilterGrouping grouping;
+        private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
 
         /// <summary>
         /// Total number of beatmap difficulties displayed with the filter.
@@ -110,6 +111,7 @@ namespace osu.Game.Screens.Select
                     GetCollections = GetAllCollections,
                     GetLocalUserTopRanks = GetBeatmapInfoGuidToTopRankMapping,
                     GetFavouriteBeatmapSets = GetFavouriteBeatmapSets,
+                    IsThemed = () => interfaceTheme.Value.IsThemed(),
                 }
             };
 
@@ -124,12 +126,18 @@ namespace osu.Game.Screens.Select
             loadSamples(audio);
 
             config.BindWith(OsuSetting.RandomSelectAlgorithm, randomAlgorithm);
+            config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
         }
 
         protected override void LoadComplete()
         {
             base.LoadComplete();
             detachedBeatmaps.BindCollectionChanged(beatmapSetsChanged, true);
+            interfaceTheme.BindValueChanged(_ =>
+            {
+                if (Criteria != null)
+                    FilterAsync(true);
+            });
         }
 
         #region Beatmap source hookup
@@ -620,7 +628,7 @@ namespace osu.Game.Screens.Select
                             case GroupedBeatmapSet groupedSet:
                                 // Case where there are set headers, header should be visible
                                 // and items should use the set's expanded state.
-                                i.IsVisible = true;
+                                i.IsVisible = !interfaceTheme.Value.IsThemed() || !i.IsExpanded;
                                 setExpansionStateOfSetItems(groupedSet, i.IsExpanded);
                                 break;
 
@@ -682,7 +690,10 @@ namespace osu.Game.Screens.Select
                 foreach (var i in items)
                 {
                     if (i.Model is GroupedBeatmapSet)
+                    {
                         i.IsExpanded = expanded;
+                        i.IsVisible = interfaceTheme.Value.IsThemed() ? (canMakeVisible && !expanded) : canMakeVisible;
+                    }
                     else
                         i.IsVisible = canMakeVisible && expanded;
                 }

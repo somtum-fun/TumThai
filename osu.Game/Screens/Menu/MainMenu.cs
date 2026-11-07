@@ -111,6 +111,8 @@ namespace osu.Game.Screens.Menu
         private MenuTipDisplay menuTipDisplay;
         private FillFlowContainer bottomElementsFlow;
         private SupporterDisplay supporterDisplay;
+        private StableMainMenuContent stableMenuContent;
+        private Bindable<InterfaceTheme> interfaceTheme;
 
         private Sample reappearSampleSwoosh;
 
@@ -133,6 +135,7 @@ namespace osu.Game.Screens.Menu
             loginDisplayed = statics.GetBindable<bool>(Static.LoginOverlayDisplayed);
             showMobileDisclaimer = config.GetBindable<bool>(OsuSetting.ShowMobileDisclaimer);
             releaseStream = config.GetBindable<ReleaseStream>(OsuSetting.ReleaseStream);
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
 
             if (host.CanExit)
             {
@@ -186,6 +189,10 @@ namespace osu.Game.Screens.Menu
                         }
                     }
                 },
+                (stableMenuContent = new StableMainMenuContent(Buttons)
+                {
+                    Alpha = 0,
+                }).CreateButtonsProxy(),
                 logoTarget = new Container { RelativeSizeAxes = Axes.Both, },
                 sideFlashes = SeasonalUIConfig.ENABLED ? new SeasonalMenuSideFlashes() : new MenuSideFlashes(),
                 songTicker = new SongTicker
@@ -196,6 +203,7 @@ namespace osu.Game.Screens.Menu
                 },
                 // For now, this is too much alongside the seasonal lighting.
                 SeasonalUIConfig.ENABLED ? Empty() : new KiaiMenuFountains(),
+                stableMenuContent,
                 bottomElementsFlow = new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
@@ -255,6 +263,16 @@ namespace osu.Game.Screens.Menu
         {
             base.LoadComplete();
             GetContainingInputManager();
+
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isStable = t.NewValue.IsThemed();
+                stableMenuContent.Alpha = isStable ? 1 : 0;
+                // SongTicker fades itself in on every track change, so an Alpha of 0 alone doesn't keep it hidden.
+                songTicker.Suppressed = isStable;
+                supporterDisplay.Alpha = isStable ? 0 : 1;
+                bottomElementsFlow.Alpha = t.NewValue.Effective() == InterfaceTheme.OsuDroid ? 0 : 1;
+            }, true);
         }
 
         public void ReturnToOsuLogo() => Buttons.State = ButtonSystemState.Initial;

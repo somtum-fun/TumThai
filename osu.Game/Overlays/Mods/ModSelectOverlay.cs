@@ -114,8 +114,14 @@ namespace osu.Game.Overlays.Mods
         private ColumnScrollContainer columnScroll = null!;
         private ColumnFlowContainer columnFlow = null!;
 
+        private Container lazerMainContainer = null!;
         private Container aboveColumnsContent = null!;
         private ModCustomisationPanel customisationPanel = null!;
+        private StableModSelectContent stableContent = null!;
+        private StableThreeSliceButton returnToStableGridButton = null!;
+
+        private Bindable<InterfaceTheme> interfaceTheme = null!;
+        private bool showingLazerColumnsInStable;
 
         protected virtual SelectAllModsButton? SelectAllModsButton => null;
 
@@ -148,57 +154,88 @@ namespace osu.Game.Overlays.Mods
                     RelativeSizeAxes = Axes.Both,
                     Children = new Drawable[]
                     {
-                        new Container
+                        lazerMainContainer = new Container
                         {
-                            Padding = new MarginPadding
-                            {
-                                Top = RankingInformationDisplay.HEIGHT + PADDING,
-                                Bottom = PADDING
-                            },
                             RelativeSizeAxes = Axes.Both,
-                            RelativePositionAxes = Axes.Both,
                             Children = new Drawable[]
                             {
-                                columnScroll = new ColumnScrollContainer
+                                new Container
+                                {
+                                    Padding = new MarginPadding
+                                    {
+                                        Top = RankingInformationDisplay.HEIGHT + PADDING,
+                                        Bottom = PADDING
+                                    },
+                                    RelativeSizeAxes = Axes.Both,
+                                    RelativePositionAxes = Axes.Both,
+                                    Children = new Drawable[]
+                                    {
+                                        columnScroll = new ColumnScrollContainer
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Masking = false,
+                                            ClampExtension = 100,
+                                            ScrollbarOverlapsContent = false,
+                                            Child = columnFlow = new ColumnFlowContainer
+                                            {
+                                                Anchor = Anchor.BottomLeft,
+                                                Origin = Anchor.BottomLeft,
+                                                Direction = FillDirection.Horizontal,
+                                                Shear = OsuGame.SHEAR,
+                                                RelativeSizeAxes = Axes.Y,
+                                                AutoSizeAxes = Axes.X,
+                                                Margin = new MarginPadding { Horizontal = 70 },
+                                                Padding = new MarginPadding { Bottom = 10 },
+                                                ChildrenEnumerable = createColumns()
+                                            }
+                                        }
+                                    }
+                                },
+                                aboveColumnsContent = new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Masking = false,
-                                    ClampExtension = 100,
-                                    ScrollbarOverlapsContent = false,
-                                    Child = columnFlow = new ColumnFlowContainer
+                                    Padding = new MarginPadding { Horizontal = 100, Bottom = 15f },
+                                    Children = new Drawable[]
                                     {
-                                        Anchor = Anchor.BottomLeft,
-                                        Origin = Anchor.BottomLeft,
-                                        Direction = FillDirection.Horizontal,
-                                        Shear = OsuGame.SHEAR,
-                                        RelativeSizeAxes = Axes.Y,
-                                        AutoSizeAxes = Axes.X,
-                                        Margin = new MarginPadding { Horizontal = 70 },
-                                        Padding = new MarginPadding { Bottom = 10 },
-                                        ChildrenEnumerable = createColumns()
+                                        SearchTextBox = new ShearedSearchTextBox
+                                        {
+                                            HoldFocus = false,
+                                            Width = 300,
+                                        },
+                                        returnToStableGridButton = new StableThreeSliceButton
+                                        {
+                                            Anchor = Anchor.TopLeft,
+                                            Origin = Anchor.TopLeft,
+                                            X = 320,
+                                            Size = new Vector2(210, 36),
+                                            Text = "Classic Mod Grid",
+                                            FontSize = 15,
+                                            BackgroundColour = Colour4.FromHex(@"EE3399"),
+                                            Alpha = 0,
+                                            Action = () =>
+                                            {
+                                                showingLazerColumnsInStable = false;
+                                                applyInterfaceTheme();
+                                            },
+                                        },
+                                        customisationPanel = new ModCustomisationPanel
+                                        {
+                                            Anchor = Anchor.TopRight,
+                                            Origin = Anchor.TopRight,
+                                            Width = 400,
+                                            State = { Value = Visibility.Visible },
+                                        }
                                     }
                                 }
                             }
                         },
-                        aboveColumnsContent = new Container
+                        stableContent = new StableModSelectContent(this, () =>
                         {
-                            RelativeSizeAxes = Axes.Both,
-                            Padding = new MarginPadding { Horizontal = 100, Bottom = 15f },
-                            Children = new Drawable[]
-                            {
-                                SearchTextBox = new ShearedSearchTextBox
-                                {
-                                    HoldFocus = false,
-                                    Width = 300,
-                                },
-                                customisationPanel = new ModCustomisationPanel
-                                {
-                                    Anchor = Anchor.TopRight,
-                                    Origin = Anchor.TopRight,
-                                    Width = 400,
-                                    State = { Value = Visibility.Visible },
-                                }
-                            }
+                            showingLazerColumnsInStable = true;
+                            applyInterfaceTheme();
+                        })
+                        {
+                            Alpha = 0,
                         }
                     },
                 }
@@ -207,14 +244,28 @@ namespace osu.Game.Overlays.Mods
             globalAvailableMods.BindTo(game.AvailableMods);
 
             textSearchStartsActive = configManager.GetBindable<bool>(OsuSetting.ModSelectTextSearchStartsActive);
+            interfaceTheme = configManager.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
         }
 
         public override void Hide()
         {
             base.Hide();
 
+            showingLazerColumnsInStable = false;
+            if (IsLoaded)
+                applyInterfaceTheme();
+
             // clear search for next user interaction with mod overlay
             SearchTextBox.Current.Value = string.Empty;
+        }
+
+        private void applyInterfaceTheme()
+        {
+            // Always use Lazer's mod selection screen across all interface themes
+            stableContent.Alpha = 0;
+            lazerMainContainer.Alpha = 1;
+            Header.Alpha = 1;
+            returnToStableGridButton.Alpha = 0;
         }
 
         protected override void LoadComplete()
@@ -223,6 +274,8 @@ namespace osu.Game.Overlays.Mods
             globalAvailableMods.BindValueChanged(_ => createLocalMods(), true);
 
             base.LoadComplete();
+
+            interfaceTheme.BindValueChanged(_ => applyInterfaceTheme(), true);
 
             State.BindValueChanged(_ => samplePlaybackDisabled.Value = State.Value == Visibility.Hidden, true);
 
@@ -681,6 +734,9 @@ namespace osu.Game.Overlays.Mods
 
         private void setTextBoxFocus(bool focus)
         {
+            if (interfaceTheme.Value.IsThemed() && !showingLazerColumnsInStable)
+                focus = false;
+
             if (focus)
             {
                 SearchTextBox.TakeFocus();

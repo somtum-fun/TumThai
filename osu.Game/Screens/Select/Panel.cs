@@ -21,6 +21,7 @@ using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
+using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
 
@@ -99,7 +100,11 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
 
+        [Resolved(canBeNull: true)]
+        protected SkinManager? SkinManager { get; private set; }
+
         private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+        private IBindable<osu.Game.Skinning.Skin>? currentSkin;
 
         // TumThai: the interface theme currently selected (osu!stable / osu!droid recolour the listing).
         protected InterfaceTheme CurrentInterfaceTheme => interfaceTheme.Value.Effective();
@@ -266,23 +271,31 @@ namespace osu.Game.Screens.Select
         {
             base.LoadComplete();
 
+            if (SkinManager != null)
+            {
+                currentSkin = SkinManager.CurrentSkin.GetBoundCopy();
+                currentSkin.BindValueChanged(_ => ApplyInterfaceTheme());
+            }
+
             interfaceTheme.BindValueChanged(_ => ApplyInterfaceTheme(), true);
 
             Expanded.BindValueChanged(_ =>
             {
                 updateSelectedState();
                 updateXOffset();
+                ApplyInterfaceTheme();
             });
 
             Selected.BindValueChanged(_ =>
             {
                 updateSelectedState();
                 updateXOffset();
+                ApplyInterfaceTheme();
             }, true);
 
             KeyboardSelected.BindValueChanged(selected =>
             {
-                if (selected.NewValue)
+                if (selected.NewValue && !CurrentInterfaceTheme.IsThemed())
                 {
                     keyboardSelectionLayer.FadeIn(80, Easing.Out)
                                           .Then()
@@ -297,6 +310,22 @@ namespace osu.Game.Screens.Select
 
         protected virtual void ApplyInterfaceTheme()
         {
+            bool isThemed = CurrentInterfaceTheme.IsThemed();
+            TopLevelContent.CornerRadius = isThemed ? 0 : CORNER_RADIUS;
+            TopLevelContent.Masking = !isThemed;
+            Content.CornerRadius = isThemed ? 0 : CORNER_RADIUS;
+            Content.Masking = !isThemed;
+            iconContainer.Alpha = isThemed ? 0 : 1;
+            backgroundContainer.Alpha = isThemed ? 0 : 1;
+            if (isThemed)
+            {
+                selectionLayer.Alpha = 0;
+                keyboardSelectionLayer.Alpha = 0;
+            }
+            else if (Item != null)
+            {
+                updateSelectedState(animated: false);
+            }
         }
 
         protected override void PrepareForUse()
@@ -347,6 +376,13 @@ namespace osu.Game.Screens.Select
 
         private void updateSelectedState(bool animated = true)
         {
+            if (CurrentInterfaceTheme.IsThemed())
+            {
+                TopLevelContent.FadeEdgeEffectTo(0, 0);
+                selectionLayer.FadeOut(0);
+                return;
+            }
+
             bool selectedOrExpanded = Expanded.Value || Selected.Value;
 
             var edgeEffectColour = accentColour ?? Color4Extensions.FromHex(@"4EBFFF");
@@ -394,25 +430,32 @@ namespace osu.Game.Screens.Select
             if (!KeyboardSelected.Value)
                 x += active_x_offset;
 
+            if (IsHovered && CurrentInterfaceTheme.IsThemed())
+                x -= 28f;
+
             TopLevelContent.MoveToX(x, animated ? DURATION : 0, Easing.OutQuint);
         }
 
         protected override bool OnHover(HoverEvent e)
         {
             hoverLayer.FadeIn(100, Easing.OutQuint);
+            if (CurrentInterfaceTheme.IsThemed())
+                updateXOffset();
             return true;
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
             hoverLayer.FadeOut(1000, Easing.OutQuint);
+            if (CurrentInterfaceTheme.IsThemed())
+                updateXOffset();
             base.OnHoverLost(e);
         }
 
         protected override void Update()
         {
             base.Update();
-            contentPaddingContainer.Padding = contentPaddingContainer.Padding with { Left = iconContainer.DrawWidth };
+            contentPaddingContainer.Padding = contentPaddingContainer.Padding with { Left = CurrentInterfaceTheme.IsThemed() ? 0 : iconContainer.DrawWidth };
         }
 
         public abstract MenuItem[]? ContextMenuItems { get; }

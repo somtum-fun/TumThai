@@ -15,6 +15,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
+using osu.Framework.Threading;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Configuration;
@@ -29,7 +30,9 @@ using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Skinning;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Screens.Select
 {
@@ -38,12 +41,20 @@ namespace osu.Game.Screens.Select
         public const float HEIGHT = CarouselItem.DEFAULT_HEIGHT;
 
         private StarCounter starCounter = null!;
+        private StableStarRatingRow stableStars = null!;
+        private Container stableThumbContainer = null!;
+        private PanelSetBackground stableThumbBackground = null!;
+        private Sprite stableModeIcon = null!;
+        private OsuSpriteText stableTitleText = null!;
+        private OsuSpriteText stableArtistText = null!;
+        private ScheduledDelegate? scheduledBackgroundRetrieval;
         private ConstrainedIconContainer difficultyIcon = null!;
         private OsuSpriteText variantText = null!;
         private StarRatingDisplay starRatingDisplay = null!;
         private PanelLocalRankDisplay localRank = null!;
         private OsuSpriteText difficultyText = null!;
         private OsuSpriteText authorText = null!;
+        private FillFlowContainer leftRowFill = null!;
         private FillFlowContainer mainFill = null!;
 
         private IBindable<StarDifficulty>? starDifficultyBindable;
@@ -51,12 +62,16 @@ namespace osu.Game.Screens.Select
 
         private Box backgroundBorder = null!;
         private Box backgroundDifficultyTint = null!;
-        private Box contentBackground = null!;
+        private Box lazerContentBackground = null!;
+        private Drawable contentBackground = null!;
 
         private TrianglesV2 triangles = null!;
 
         [Resolved]
         private IRulesetStore rulesets { get; set; } = null!;
+
+        [Resolved]
+        private BeatmapManager beatmaps { get; set; } = null!;
 
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
@@ -81,9 +96,10 @@ namespace osu.Game.Screens.Select
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(SkinManager skinManager)
         {
             Height = HEIGHT;
+            var menuButtonBgTex = skinManager.GetClassicTexture(@"menu-button-background");
 
             Icon = difficultyIcon = new ConstrainedIconContainer
             {
@@ -99,11 +115,30 @@ namespace osu.Game.Screens.Select
 
             Content.Children = new Drawable[]
             {
-                contentBackground = new Box
+                lazerContentBackground = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4)),
+                    Colour = ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4),
+                    Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1,
                 },
+                contentBackground = menuButtonBgTex != null
+                    ? new Sprite
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        RelativeSizeAxes = Axes.Both,
+                        Size = new Vector2(1.02f, 1.22f),
+                        FillMode = FillMode.Stretch,
+                        Texture = menuButtonBgTex,
+                        Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4)),
+                        Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                    }
+                    : new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4)),
+                        Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                    },
                 backgroundDifficultyTint = new Box
                 {
                     RelativeSizeAxes = Axes.Both,
@@ -116,21 +151,51 @@ namespace osu.Game.Screens.Select
                     RelativeSizeAxes = Axes.Both,
                     Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1,
                 },
-                new FillFlowContainer
+                stableThumbContainer = new Container
+                {
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                    Size = new Vector2(72f, 54f),
+                    Margin = new MarginPadding { Left = 8f },
+                    Masking = true,
+                    CornerRadius = 3f,
+                    Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                    Child = stableThumbBackground = new PanelSetBackground(),
+                },
+                leftRowFill = new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Both,
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.CentreLeft,
                     Spacing = new Vector2(5),
-                    Margin = new MarginPadding { Left = 6.5f },
+                    Margin = new MarginPadding { Left = CurrentInterfaceTheme.IsThemed() ? 86f : 6.5f },
                     Direction = FillDirection.Horizontal,
                     Children = new Drawable[]
                     {
-                        localRank = new PanelLocalRankDisplay
+                        new FillFlowContainer
                         {
-                            Scale = new Vector2(0.8f),
-                            Origin = Anchor.CentreLeft,
+                            AutoSizeAxes = Axes.Both,
                             Anchor = Anchor.CentreLeft,
+                            Origin = Anchor.CentreLeft,
+                            Direction = FillDirection.Vertical,
+                            Spacing = new Vector2(0, 2),
+                            Children = new Drawable[]
+                            {
+                                stableModeIcon = new Sprite
+                                {
+                                    Anchor = Anchor.TopCentre,
+                                    Origin = Anchor.TopCentre,
+                                    Size = new Vector2(22),
+                                    FillMode = FillMode.Fit,
+                                    Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                                },
+                                localRank = new PanelLocalRankDisplay
+                                {
+                                    Scale = new Vector2(0.8f),
+                                    Origin = Anchor.TopCentre,
+                                    Anchor = Anchor.TopCentre,
+                                },
+                            },
                         },
                         mainFill = new FillFlowContainer
                         {
@@ -141,11 +206,21 @@ namespace osu.Game.Screens.Select
                             Padding = new MarginPadding { Bottom = 3.5f },
                             Children = new Drawable[]
                             {
+                                stableTitleText = new OsuSpriteText
+                                {
+                                    Font = OsuFont.GetFont(size: 16, weight: FontWeight.SemiBold),
+                                    Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                                },
+                                stableArtistText = new OsuSpriteText
+                                {
+                                    Font = OsuFont.GetFont(size: 12, weight: FontWeight.Regular),
+                                    Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
+                                },
                                 new FillFlowContainer
                                 {
                                     Direction = FillDirection.Horizontal,
                                     AutoSizeAxes = Axes.Both,
-                                    Padding = new MarginPadding { Bottom = 4 },
+                                    Padding = new MarginPadding { Bottom = 2 },
                                     Children = new Drawable[]
                                     {
                                         variantText = new OsuSpriteText
@@ -157,7 +232,7 @@ namespace osu.Game.Screens.Select
                                         },
                                         difficultyText = new OsuSpriteText
                                         {
-                                            Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
+                                            Font = OsuFont.Style.Body.With(weight: FontWeight.Bold),
                                             Anchor = Anchor.BottomLeft,
                                             Origin = Anchor.BottomLeft,
                                             Margin = new MarginPadding { Right = 3f },
@@ -189,6 +264,12 @@ namespace osu.Game.Screens.Select
                                             Anchor = Anchor.CentreLeft,
                                             Origin = Anchor.CentreLeft,
                                             Scale = new Vector2(0.4f)
+                                        },
+                                        stableStars = new StableStarRatingRow
+                                        {
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Alpha = 0,
                                         }
                                     },
                                 }
@@ -211,8 +292,47 @@ namespace osu.Game.Screens.Select
         {
             base.ApplyInterfaceTheme();
 
-            contentBackground.Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4));
-            triangles.Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1;
+            bool isStable = CurrentInterfaceTheme.IsThemed();
+            bool isSelectedStable = isStable && Selected.Value;
+
+            Color4 activeText = SkinManager?.GetSongSelectActiveTextColour() ?? Color4.Black;
+            Color4 inactiveText = SkinManager?.GetSongSelectInactiveTextColour() ?? Color4.White;
+
+            Height = isStable ? PanelBeatmapSet.HEIGHT : HEIGHT;
+            leftRowFill.Margin = new MarginPadding { Left = isStable ? 86f : 6.5f };
+            stableThumbContainer.Alpha = isStable ? 1 : 0;
+            stableModeIcon.Alpha = isStable ? 1 : 0;
+            stableModeIcon.Colour = isSelectedStable ? activeText : inactiveText;
+            stableTitleText.Alpha = isStable ? 1 : 0;
+            stableArtistText.Alpha = isStable ? 1 : 0;
+            authorText.Alpha = isStable ? 0 : 1;
+
+            if (contentBackground is Sprite s && SkinManager != null)
+                s.Texture = SkinManager.GetClassicTexture(@"menu-button-background");
+
+            lazerContentBackground.Alpha = isStable ? 0 : 1;
+            contentBackground.Alpha = isStable ? 1 : 0;
+
+            if (isSelectedStable)
+                contentBackground.Colour = Color4.White;
+            else
+                contentBackground.Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4));
+
+            triangles.Alpha = isStable ? 0 : 1;
+            backgroundDifficultyTint.Alpha = isStable ? 0 : 1;
+
+            stableTitleText.Colour = isSelectedStable ? activeText : inactiveText.Opacity(0.75f);
+            stableArtistText.Colour = isSelectedStable ? activeText.Opacity(0.85f) : inactiveText.Opacity(0.75f);
+            difficultyText.Colour = isSelectedStable ? activeText : (isStable ? inactiveText : Color4.White);
+            variantText.Colour = isSelectedStable ? activeText : (isStable ? inactiveText : Color4.White);
+            authorText.Colour = isSelectedStable
+                ? activeText.Opacity(0.75f)
+                : (isStable ? inactiveText.Opacity(0.85f) : colourProvider.Content2);
+
+            starRatingDisplay.Alpha = isStable ? 0 : 1;
+            starCounter.Alpha = isStable ? 0 : 1;
+            stableStars.Alpha = isStable ? 1 : 0;
+            stableStars.ActiveWhiteCard = isSelectedStable;
         }
 
         protected override void PrepareForUse()
@@ -221,12 +341,35 @@ namespace osu.Game.Screens.Select
 
             difficultyIcon.Icon = getRulesetIcon(beatmap.Ruleset);
 
+            if (SkinManager != null)
+            {
+                string modeTex = beatmap.Ruleset.ShortName switch
+                {
+                    @"taiko" => @"mode-taiko-small",
+                    @"fruits" => @"mode-fruits-small",
+                    @"mania" => @"mode-mania-small",
+                    _ => @"mode-osu-small",
+                };
+                // BeatmapTreeItem.cs lines 450-464 loads mode-*-small from SkinSource.Osu (internal default skin only)
+                stableModeIcon.Texture = SkinManager.DefaultClassicSkin.GetTexture(modeTex);
+            }
+
+            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+            {
+                stableThumbBackground.Beatmap = beatmaps.GetWorkingBeatmap(b);
+            }, beatmap, 50);
+
             localRank.Beatmap = beatmap;
+            stableTitleText.Text = new RomanisableString(beatmap.Metadata.TitleUnicode, beatmap.Metadata.Title);
+            stableArtistText.Text = !string.IsNullOrEmpty(beatmap.Metadata.Author.Username)
+                ? $"{beatmap.Metadata.Artist} // {beatmap.Metadata.Author.Username}"
+                : new RomanisableString(beatmap.Metadata.ArtistUnicode, beatmap.Metadata.Artist);
             difficultyText.Text = beatmap.DifficultyName;
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
 
             computeStarRating();
             updateKeyCount();
+            ApplyInterfaceTheme();
         }
 
         private Drawable getRulesetIcon(RulesetInfo rulesetInfo)
@@ -243,6 +386,9 @@ namespace osu.Game.Screens.Select
         {
             base.FreeAfterUse();
 
+            scheduledBackgroundRetrieval?.Cancel();
+            scheduledBackgroundRetrieval = null;
+            stableThumbBackground.Beatmap = null;
             localRank.Beatmap = null;
             starDifficultyBindable = null;
 
@@ -257,13 +403,15 @@ namespace osu.Game.Screens.Select
             if (Item == null)
                 return;
 
+            var initialStored = new StarDifficulty(beatmap.StarRating, 0);
+            stableStars.Stars = initialStored.Stars;
+
             // Potato mode: carousel rows use the stored nomod star rating instead of recalculating
             // per panel while scrolling (the wedge still shows mod-adjusted difficulty).
             if (PotatoMode.Active)
             {
-                var stored = new StarDifficulty(beatmap.StarRating, 0);
-                starRatingDisplay.Current.Value = stored;
-                starCounter.Current = (float)stored.Stars;
+                starRatingDisplay.Current.Value = initialStored;
+                starCounter.Current = (float)initialStored.Stars;
                 return;
             }
 
@@ -272,6 +420,8 @@ namespace osu.Game.Screens.Select
             {
                 starRatingDisplay.Current.Value = starDifficulty.NewValue;
                 starCounter.Current = (float)starDifficulty.NewValue.Stars;
+                if (starDifficulty.NewValue.Stars > 0 || beatmap.StarRating <= 0)
+                    stableStars.Stars = starDifficulty.NewValue.Stars;
             }, true);
         }
 

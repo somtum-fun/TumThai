@@ -4,6 +4,7 @@
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
@@ -11,6 +12,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
@@ -22,7 +24,8 @@ namespace osu.Game.Graphics.UserInterfaceV2
         public const float WIDTH = 56;
 
         private readonly Box fill;
-        private readonly Container content;
+        private readonly CircularContainer content;
+        private IBindable<InterfaceTheme>? interfaceTheme;
 
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
@@ -57,8 +60,9 @@ namespace osu.Game.Graphics.UserInterfaceV2
         }
 
         [BackgroundDependencyLoader(true)]
-        private void load(AudioManager audio)
+        private void load(AudioManager audio, OsuConfigManager? config)
         {
+            interfaceTheme = config?.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             sampleChecked = audio.Samples.Get(@"UI/check-on");
             sampleUnchecked = audio.Samples.Get(@"UI/check-off");
         }
@@ -67,6 +71,7 @@ namespace osu.Game.Graphics.UserInterfaceV2
         {
             base.LoadComplete();
 
+            interfaceTheme?.BindValueChanged(_ => updateState());
             Current.BindDisabledChanged(_ => updateState());
             Current.BindValueChanged(_ => updateState(), true);
 
@@ -101,6 +106,34 @@ namespace osu.Game.Graphics.UserInterfaceV2
 
         private void updateState()
         {
+            bool isThemed = interfaceTheme?.Value.IsThemed() == true;
+
+            if (isThemed)
+            {
+                Size = new Vector2(18, 18);
+                content.BorderThickness = 2f;
+                content.CornerExponent = 2f;
+
+                Color4 stablePink = Color4Extensions.FromHex(@"EB459E");
+                Color4 stableFill = Current.Value ? stablePink : Color4.Black.Opacity(0.4f);
+                Color4 stableBorder = IsHovered ? stablePink.Lighten(0.25f) : stablePink;
+
+                if (Current.Disabled)
+                {
+                    stableFill = stableFill.Darken(0.4f);
+                    stableBorder = stableBorder.Darken(0.4f);
+                }
+
+                fill.FadeColour(stableFill, 150, Easing.OutQuint);
+                content.TransformTo(nameof(BorderColour), (ColourInfo)stableBorder, 150, Easing.OutQuint);
+                content.ResizeWidthTo(1f, 100, Easing.OutQuint);
+                return;
+            }
+
+            Size = new Vector2(WIDTH, 16);
+            content.BorderThickness = 3.2f;
+            content.CornerExponent = 2.5f;
+
             Color4 fillColour = colourProvider.Background5.Opacity(0);
             Color4 borderColour = colourProvider.Light4;
 

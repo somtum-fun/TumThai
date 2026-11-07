@@ -136,10 +136,19 @@ namespace osu.Game.Screens.Select
         {
             base.ApplyInterfaceTheme();
 
-            Color4 groupBackground = CurrentInterfaceTheme.GroupBackground(colourProvider.Highlight1);
-            backgroundBorder.Colour = groupBackground;
-            AccentColour = groupBackground;
-            contentBackground.Colour = CurrentInterfaceTheme.GroupBackground(colourProvider.Background5);
+            bool isStableExpanded = CurrentInterfaceTheme.IsThemed() && Expanded.Value;
+
+            Color4 borderCol = isStableExpanded
+                ? Color4Extensions.FromHex("A3F02C")
+                : CurrentInterfaceTheme.GroupBackground(colourProvider.Highlight1);
+            Color4 contentCol = isStableExpanded
+                ? Color4Extensions.FromHex("A3F02C")
+                : CurrentInterfaceTheme.GroupBackground(colourProvider.Background5);
+
+            backgroundBorder.Colour = borderCol;
+            AccentColour = borderCol;
+            contentBackground.Colour = contentCol;
+            titleText.Colour = isStableExpanded ? Color4.Black : Color4.White;
             triangles.Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1;
         }
 

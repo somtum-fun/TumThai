@@ -19,6 +19,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Framework.Threading;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input;
@@ -146,9 +147,12 @@ namespace osu.Game.Screens.Menu
         [Resolved]
         private LoginOverlay? loginOverlay { get; set; }
 
+        private IBindable<InterfaceTheme> interfaceTheme = null!;
+
         [BackgroundDependencyLoader]
-        private void load(AudioManager audio, IdleTracker? idleTracker, GameHost host)
+        private void load(AudioManager audio, IdleTracker? idleTracker, GameHost host, OsuConfigManager config)
         {
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             buttonsPlay.Add(new MainMenuButton(ButtonSystemStrings.Solo, @"button-default-select", OsuIcon.Player, new Color4(102, 68, 204, 255), (_, _) => OnSolo?.Invoke(), Key.P)
             {
                 Padding = new MarginPadding { Left = WEDGE_WIDTH },
@@ -207,6 +211,18 @@ namespace osu.Game.Screens.Menu
 
             sampleBackToLogo = audio.Samples.Get(@"Menu/back-to-logo");
             sampleLogoSwoosh = audio.Samples.Get(@"Menu/osu-logo-swoosh");
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isStable = t.NewValue.IsThemed();
+                logoTrackingContainer.Alpha = isStable ? 0 : 1;
+                updateLogoState(state);
+            }, true);
         }
 
         private void onMultiplayer(MainMenuButton mainMenuButton, UIEvent uiEvent)
@@ -457,6 +473,8 @@ namespace osu.Game.Screens.Menu
         {
             if (logo == null) return;
 
+            bool isStable = interfaceTheme.Value.IsThemed();
+
             switch (state)
             {
                 case ButtonSystemState.Exit:
@@ -472,7 +490,7 @@ namespace osu.Game.Screens.Menu
                         logo?.ClearTransforms(targetMember: nameof(Position));
                         logo?.MoveTo(new Vector2(0.5f), 800, Easing.OutExpo);
                         logo?.ScaleTo(1, 800, Easing.OutExpo);
-                    }, buttonArea.Alpha * 150);
+                    }, isStable ? 0 : buttonArea.Alpha * 150);
 
                     if (lastState == ButtonSystemState.TopLevel)
                         sampleLogoSwoosh?.Play();
@@ -480,6 +498,23 @@ namespace osu.Game.Screens.Menu
 
                 case ButtonSystemState.TopLevel:
                 case ButtonSystemState.Play:
+                case ButtonSystemState.Multi:
+                case ButtonSystemState.Edit:
+                    if (isStable)
+                    {
+                        logoDelayedAction?.Cancel();
+                        logoTracking?.Dispose();
+                        logoTracking = null;
+
+                        game?.Toolbar.Hide();
+
+                        float targetX = DrawWidth > 0 ? 0.5f - (192f / DrawWidth) : 0.35f;
+                        logo.ClearTransforms(targetMember: nameof(Position));
+                        logo.MoveTo(new Vector2(targetX, 0.5f), 320, Easing.OutBack);
+                        logo.ScaleTo(1.02f, 320, Easing.OutBack);
+                        break;
+                    }
+
                     switch (lastState)
                     {
                         case ButtonSystemState.TopLevel: // coming from toplevel to play
@@ -518,8 +553,11 @@ namespace osu.Game.Screens.Menu
                     break;
 
                 case ButtonSystemState.EnteringMode:
-                    logoTracking?.Dispose();
-                    logoTracking = logoTrackingContainer.StartTracking(logo, lastState == ButtonSystemState.Initial ? MainMenu.FADE_OUT_DURATION : 0, Easing.InSine);
+                    if (!isStable)
+                    {
+                        logoTracking?.Dispose();
+                        logoTracking = logoTrackingContainer.StartTracking(logo, lastState == ButtonSystemState.Initial ? MainMenu.FADE_OUT_DURATION : 0, Easing.InSine);
+                    }
                     break;
             }
         }

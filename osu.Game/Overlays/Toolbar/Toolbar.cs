@@ -16,8 +16,10 @@ using osu.Framework.Bindables;
 using osu.Framework.Input.Events;
 using osu.Game.Rulesets;
 using osu.Framework.Input.Bindings;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
+using osu.Game.Screens.Menu;
 
 namespace osu.Game.Overlays.Toolbar
 {
@@ -62,9 +64,13 @@ namespace osu.Game.Overlays.Toolbar
         [Resolved]
         private Bindable<RulesetInfo> ruleset { get; set; }
 
+        private Bindable<InterfaceTheme> interfaceTheme;
+
         [BackgroundDependencyLoader(true)]
-        private void load(OsuGame osuGame)
+        private void load(OsuGame osuGame, OsuConfigManager config)
         {
+            interfaceTheme = config?.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
             ToolbarBackground background;
             HoverInterceptor interceptor;
 
@@ -201,6 +207,14 @@ namespace osu.Game.Overlays.Toolbar
             base.LoadComplete();
 
             rulesetSelector.Current.BindTo(ruleset);
+
+            interfaceTheme?.BindValueChanged(theme =>
+            {
+                if (theme.NewValue.IsThemed())
+                    Hide();
+                else if (!hiddenByUser && OverlayActivationMode.Value != OverlayActivation.Disabled)
+                    Show();
+            }, true);
         }
 
         public partial class ToolbarBackground : Container
@@ -273,7 +287,7 @@ namespace osu.Game.Overlays.Toolbar
 
         protected override void UpdateState(ValueChangedEvent<Visibility> state)
         {
-            bool blockShow = hiddenByUser || OverlayActivationMode.Value == OverlayActivation.Disabled;
+            bool blockShow = hiddenByUser || OverlayActivationMode.Value == OverlayActivation.Disabled || (interfaceTheme?.Value.IsThemed() ?? false);
 
             if (state.NewValue == Visibility.Visible && blockShow)
             {

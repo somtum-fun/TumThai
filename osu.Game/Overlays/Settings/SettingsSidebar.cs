@@ -3,17 +3,20 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Overlays.Settings
 {
@@ -27,6 +30,9 @@ namespace osu.Game.Overlays.Settings
         protected override bool ExpandOnHover => false;
 
         private readonly bool showBackButton;
+        private Box background = null!;
+        private BackButton? backButton;
+        private IBindable<InterfaceTheme> interfaceTheme = null!;
 
         public SettingsSidebar(bool showBackButton)
             : base(CONTRACTED_WIDTH, EXPANDED_WIDTH)
@@ -36,9 +42,11 @@ namespace osu.Game.Overlays.Settings
         }
 
         [BackgroundDependencyLoader]
-        private void load(OverlayColourProvider colourProvider)
+        private void load(OverlayColourProvider colourProvider, OsuConfigManager config)
         {
-            AddInternal(new Box
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
+            AddInternal(background = new Box
             {
                 Colour = colourProvider.Background5,
                 RelativeSizeAxes = Axes.Both,
@@ -47,13 +55,22 @@ namespace osu.Game.Overlays.Settings
 
             if (showBackButton)
             {
-                AddInternal(new BackButton
+                AddInternal(backButton = new BackButton
                 {
                     Anchor = Anchor.BottomCentre,
                     Origin = Anchor.BottomCentre,
                     Action = () => BackButtonAction?.Invoke(),
                 });
             }
+
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isThemed = t.NewValue.IsThemed();
+                Expanded.Value = !isThemed;
+                background.Colour = isThemed ? Color4.Black : colourProvider.Background5;
+                if (backButton != null)
+                    backButton.Alpha = isThemed ? 0 : 1;
+            }, true);
         }
 
         public partial class BackButton : SidebarButton

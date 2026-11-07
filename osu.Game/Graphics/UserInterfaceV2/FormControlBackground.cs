@@ -3,11 +3,13 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osuTK.Graphics;
@@ -20,6 +22,7 @@ namespace osu.Game.Graphics.UserInterfaceV2
         public const float BORDER_THICKNESS = 2.5f;
 
         private VisualStyle visualStyle;
+        private IBindable<InterfaceTheme>? interfaceTheme;
 
         public VisualStyle VisualStyle
         {
@@ -66,10 +69,17 @@ namespace osu.Game.Graphics.UserInterfaceV2
             };
         }
 
+        [BackgroundDependencyLoader(true)]
+        private void load(OsuConfigManager? config)
+        {
+            interfaceTheme = config?.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+        }
+
         protected override void LoadComplete()
         {
             base.LoadComplete();
 
+            interfaceTheme?.BindValueChanged(_ => updateStyle());
             updateStyle();
             FinishTransforms(true);
         }
@@ -93,6 +103,24 @@ namespace osu.Game.Graphics.UserInterfaceV2
         private void updateStyle()
         {
             sounds.Enabled.Value = visualStyle != VisualStyle.Disabled;
+
+            bool isThemed = interfaceTheme?.Value.IsThemed() == true;
+            if (isThemed)
+            {
+                CornerRadius = 3;
+                BorderThickness = 1.5f;
+                Color4 stableBg = Color4.Black.Opacity(0.55f);
+                Color4 stableBorder = visualStyle == VisualStyle.Hovered || visualStyle == VisualStyle.Focused
+                    ? Color4Extensions.FromHex(@"EB459E")
+                    : Color4.White.Opacity(0.22f);
+
+                this.TransformTo(nameof(BorderColour), (ColourInfo)stableBorder, 150, Easing.OutQuint);
+                box.FadeColour(stableBg, 150, Easing.OutQuint);
+                return;
+            }
+
+            CornerRadius = 5;
+            BorderThickness = BORDER_THICKNESS;
 
             ColourInfo colour;
             ColourInfo borderColour;

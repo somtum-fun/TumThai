@@ -19,12 +19,14 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Input.Bindings;
 using osu.Game.Screens.Ranking;
+using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
 
@@ -81,7 +83,7 @@ namespace osu.Game.Screens.Play
         }
 
         [BackgroundDependencyLoader(true)]
-        private void load(OsuColour colours)
+        private void load(OsuColour colours, OsuConfigManager config)
         {
             InternalChild = buttonContainer = new ButtonContainer
             {
@@ -103,6 +105,15 @@ namespace osu.Game.Screens.Play
                     }
                 }
             };
+
+            if (config != null && config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).IsThemed())
+            {
+                Position = new Vector2(0.5f, 0.88f);
+                button.Anchor = Anchor.CentreRight;
+                button.Origin = Anchor.CentreRight;
+                button.RelativeSizeAxes = Axes.Y;
+                button.Width = 240;
+            }
         }
 
         /// <summary>
@@ -321,25 +332,29 @@ namespace osu.Game.Screens.Play
             private AspectContainer aspect;
 
             private Sample sampleConfirm;
+            private Sprite stableSkipSprite;
+            private bool isStable;
 
             public Button()
             {
                 RelativeSizeAxes = Axes.Both;
             }
 
-            [BackgroundDependencyLoader]
-            private void load(OsuColour colours, AudioManager audio)
+            [BackgroundDependencyLoader(true)]
+            private void load(OsuColour colours, AudioManager audio, OsuConfigManager config, SkinManager skinManager)
             {
                 colourNormal = colours.Orange3;
                 colourHover = colours.Orange3.Lighten(0.2f);
 
                 sampleConfirm = audio.Samples.Get(@"UI/submit-select");
+                isStable = config != null && config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).IsThemed();
+                var skipTex = isStable ? skinManager?.GetClassicTexture(@"play-skip") : null;
 
                 Children = new Drawable[]
                 {
                     background = new Box
                     {
-                        Alpha = 0.2f,
+                        Alpha = skipTex != null ? 0f : 0.2f,
                         Colour = Color4.Black,
                         RelativeSizeAxes = Axes.Both,
                     },
@@ -351,6 +366,7 @@ namespace osu.Game.Screens.Play
                         Height = 0.6f,
                         Masking = true,
                         CornerRadius = 15,
+                        Alpha = skipTex != null ? 0f : 1f,
                         Children = new Drawable[]
                         {
                             box = new Box
@@ -388,7 +404,16 @@ namespace osu.Game.Screens.Play
                                 Text = @"SKIP",
                             },
                         }
-                    }
+                    },
+                    skipTex != null
+                        ? (stableSkipSprite = new Sprite
+                        {
+                            Anchor = Anchor.BottomRight,
+                            Origin = Anchor.BottomRight,
+                            Texture = skipTex,
+                            Scale = new Vector2(0.8f),
+                        })
+                        : Empty(),
                 };
             }
 
@@ -396,7 +421,10 @@ namespace osu.Game.Screens.Play
             {
                 flow.TransformSpacingTo(new Vector2(5), 500, Easing.OutQuint);
                 box.FadeColour(colourHover, 500, Easing.OutQuint);
-                background.FadeTo(0.4f, 500, Easing.OutQuint);
+                if (stableSkipSprite == null)
+                    background.FadeTo(0.4f, 500, Easing.OutQuint);
+                else
+                    stableSkipSprite.ScaleTo(0.88f, 200, Easing.OutQuint);
                 return true;
             }
 
@@ -404,7 +432,10 @@ namespace osu.Game.Screens.Play
             {
                 flow.TransformSpacingTo(new Vector2(0), 500, Easing.OutQuint);
                 box.FadeColour(colourNormal, 500, Easing.OutQuint);
-                background.FadeTo(0.2f, 500, Easing.OutQuint);
+                if (stableSkipSprite == null)
+                    background.FadeTo(0.2f, 500, Easing.OutQuint);
+                else
+                    stableSkipSprite.ScaleTo(0.8f, 200, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
 

@@ -471,20 +471,28 @@ namespace osu.Game.Screens.Play
             return container;
         }
 
-        private Drawable createGameplayComponents() => new ScalingContainer(ScalingMode.Gameplay)
+        private Drawable createGameplayComponents()
         {
-            Children = new Drawable[]
+            Drawable gameplay = new ScalingContainer(ScalingMode.Gameplay)
             {
-                DrawableRuleset.With(r =>
-                    r.FrameStableComponents.Children = new Drawable[]
-                    {
-                        ScoreProcessor,
-                        HealthProcessor,
-                        new ComboEffects(ScoreProcessor),
-                        breakTracker,
-                    }),
-            }
-        };
+                Children = new Drawable[]
+                {
+                    DrawableRuleset.With(r =>
+                        r.FrameStableComponents.Children = new Drawable[]
+                        {
+                            ScoreProcessor,
+                            HealthProcessor,
+                            new ComboEffects(ScoreProcessor),
+                            breakTracker,
+                        }),
+                }
+            };
+
+            if (interfaceTheme.IsThemed() && skinManager.CurrentSkin.Value is not LegacySkin)
+                gameplay = new SkinProvidingContainer(skinManager.DefaultClassicSkin) { Child = gameplay };
+
+            return gameplay;
+        }
 
         private Drawable createOverlayComponents()
         {

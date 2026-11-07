@@ -27,6 +27,14 @@ namespace osu.Game.Skinning
 
         public Drawable? GetDrawableComponent(ISkinComponentLookup lookup)
         {
+            if (lookup is UserSkinComponentLookup userLookup && userLookup.Component is GlobalSkinnableContainerLookup globalUser && globalUser.Lookup == GlobalSkinnableContainers.MainHUDComponents)
+            {
+                if (userSkinSource is SkinManager sm && sm.CurrentSkin.Value is LegacySkin legacyUserSkin)
+                    return legacyUserSkin.GetDrawableComponent(lookup) ?? hudSource.GetDrawableComponent(globalUser);
+
+                return hudSource.GetDrawableComponent(globalUser);
+            }
+
             if (lookup is GlobalSkinnableContainerLookup global && global.Lookup == GlobalSkinnableContainers.MainHUDComponents)
                 return hudSource.GetDrawableComponent(lookup);
 
@@ -34,17 +42,21 @@ namespace osu.Game.Skinning
         }
 
         public Texture? GetTexture(string componentName, WrapMode wrapModeS, WrapMode wrapModeT)
-            => userSkinSource?.GetTexture(componentName, wrapModeS, wrapModeT)
+            => (userSkinSource is SkinManager sm ? sm.CurrentSkin.Value?.GetTexture(componentName, wrapModeS, wrapModeT) : userSkinSource?.GetTexture(componentName, wrapModeS, wrapModeT))
                ?? hudSource.GetTexture(componentName, wrapModeS, wrapModeT);
 
         public ISample? GetSample(ISampleInfo sampleInfo)
-            => userSkinSource?.GetSample(sampleInfo)
+            => (userSkinSource is SkinManager sm
+                   ? (sm.CurrentSkin.Value is LegacySkin legacy ? legacy.GetSample(sampleInfo) : null)
+                   : userSkinSource?.GetSample(sampleInfo))
                ?? hudSource.GetSample(sampleInfo);
 
         public IBindable<TValue>? GetConfig<TLookup, TValue>(TLookup lookup)
             where TLookup : notnull
             where TValue : notnull
-            => userSkinSource?.GetConfig<TLookup, TValue>(lookup)
+            => (userSkinSource is SkinManager sm
+                   ? (sm.CurrentSkin.Value is LegacySkin legacy ? legacy.GetConfig<TLookup, TValue>(lookup) : null)
+                   : userSkinSource?.GetConfig<TLookup, TValue>(lookup))
                ?? hudSource.GetConfig<TLookup, TValue>(lookup);
     }
 }

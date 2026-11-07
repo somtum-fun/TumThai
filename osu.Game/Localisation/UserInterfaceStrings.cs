@@ -225,9 +225,9 @@ namespace osu.Game.Localisation
         public static LocalisableString ThemeOsuStable => new TranslatableString(getKey(@"theme_osu_stable"), @"osu!stable"); // TumThai
 
         /// <summary>
-        /// "osu!droid (Android only)"
+        /// "osu!droid"
         /// </summary>
-        public static LocalisableString ThemeOsuDroid => new TranslatableString(getKey(@"theme_osu_droid"), @"osu!droid (Android only)"); // TumThai
+        public static LocalisableString ThemeOsuDroid => new TranslatableString(getKey(@"theme_osu_droid"), @"osu!droid"); // TumThai
 
         private static string getKey(string key) => $@"{prefix}:{key}";
     }

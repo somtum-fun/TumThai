@@ -18,9 +18,11 @@ using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Settings;
+using osu.Game.Screens;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays
@@ -64,6 +66,9 @@ namespace osu.Game.Overlays
         private readonly bool showBackButton;
 
         private LoadingLayer loading;
+        private Box panelBackground;
+        private StableBackButton stableBackButton;
+        private IBindable<InterfaceTheme> interfaceTheme;
 
         private readonly List<SettingsSection> loadableSections = new List<SettingsSection>();
 
@@ -72,7 +77,7 @@ namespace osu.Game.Overlays
         public IBindable<SettingsSection> CurrentSection = new Bindable<SettingsSection>();
 
         [Cached]
-        private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
+        private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Pink);
 
         protected SettingsPanel(bool showBackButton)
         {
@@ -82,8 +87,10 @@ namespace osu.Game.Overlays
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
             InternalChild = ContentContainer = new NonMaskedContent
             {
                 X = -WIDTH + ExpandedPosition,
@@ -91,7 +98,7 @@ namespace osu.Game.Overlays
                 RelativeSizeAxes = Axes.Y,
                 Children = new Drawable[]
                 {
-                    new Box
+                    panelBackground = new Box
                     {
                         Anchor = Anchor.TopRight,
                         Origin = Anchor.TopRight,
@@ -152,6 +159,24 @@ namespace osu.Game.Overlays
                 BackButtonAction = Hide,
                 Width = sidebar_width
             });
+
+            AddInternal(stableBackButton = new StableBackButton
+            {
+                Action = Hide,
+                Anchor = Anchor.BottomLeft,
+                Origin = Anchor.BottomLeft,
+                Alpha = 0,
+            });
+
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isThemed = t.NewValue.IsThemed();
+                panelBackground.Colour = isThemed ? Color4.Black.Opacity(0.85f) : colourProvider.Background4;
+                if (SectionsContainer.HeaderBackground != null)
+                    SectionsContainer.HeaderBackground.Colour = isThemed ? Color4.Black.Opacity(0.92f) : colourProvider.Background5;
+                if (stableBackButton != null)
+                    stableBackButton.Alpha = isThemed ? 1f : 0f;
+            }, true);
         }
 
         protected void AddSection(SettingsSection section)
@@ -263,8 +288,23 @@ namespace osu.Game.Overlays
                 {
                     selectedSidebarButton?.Selected = false;
 
-                    selectedSidebarButton = Sidebar.Children.OfType<SidebarIconButton>().FirstOrDefault(b => b.Section == section.NewValue);
+                    var iconButtons = Sidebar.Children.OfType<SidebarIconButton>().ToList();
+                    var match = iconButtons.FirstOrDefault(b => b.Section == section.NewValue);
 
+                    if (match != null && match.Section.UseSmallerSidebarButton && interfaceTheme.Value.IsThemed())
+                    {
+                        int idx = iconButtons.IndexOf(match);
+                        for (int i = idx - 1; i >= 0; i--)
+                        {
+                            if (!iconButtons[i].Section.UseSmallerSidebarButton)
+                            {
+                                match = iconButtons[i];
+                                break;
+                            }
+                        }
+                    }
+
+                    selectedSidebarButton = match;
                     selectedSidebarButton?.Selected = true;
                 }, true);
             });

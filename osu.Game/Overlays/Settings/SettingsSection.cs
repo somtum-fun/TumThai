@@ -7,14 +7,17 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Overlays.Settings
 {
@@ -24,8 +27,11 @@ namespace osu.Game.Overlays.Settings
         protected override Container<Drawable> Content => FlowContent;
 
         private IBindable<SettingsSection> selectedSection;
+        private IBindable<InterfaceTheme> interfaceTheme;
 
         private Box dim;
+        private Box separator;
+        private OsuSpriteText headerText;
 
         private const float inactive_alpha = 0.8f;
 
@@ -84,11 +90,13 @@ namespace osu.Game.Overlays.Settings
         }
 
         [BackgroundDependencyLoader]
-        private void load(OverlayColourProvider colourProvider)
+        private void load(OverlayColourProvider colourProvider, OsuConfigManager config)
         {
+            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
             AddRangeInternal(new Drawable[]
             {
-                new Box
+                separator = new Box
                 {
                     Name = "separator",
                     Colour = colourProvider.Background6,
@@ -113,7 +121,7 @@ namespace osu.Game.Overlays.Settings
                             },
                             Children = new Drawable[]
                             {
-                                new OsuSpriteText
+                                headerText = new OsuSpriteText
                                 {
                                     Font = OsuFont.TorusAlternate.With(size: header_size),
                                     Text = Header,
@@ -134,6 +142,14 @@ namespace osu.Game.Overlays.Settings
 
             selectedSection = settingsPanel?.CurrentSection.GetBoundCopy() ?? new Bindable<SettingsSection>(this);
             selectedSection.BindValueChanged(_ => updateContentFade(), true);
+
+            interfaceTheme.BindValueChanged(t =>
+            {
+                bool isThemed = t.NewValue.IsThemed();
+                headerText.Colour = isThemed ? Color4Extensions.FromHex(@"58ABF8") : Color4.White;
+                separator.Colour = isThemed ? Color4.White.Opacity(0.12f) : colourProvider.Background6;
+                updateContentFade();
+            }, true);
         }
 
         private bool isCurrentSection => selectedSection.Value == this;
@@ -170,7 +186,7 @@ namespace osu.Game.Overlays.Settings
         {
             float dimFade = 0;
 
-            if (!isCurrentSection)
+            if (!isCurrentSection && interfaceTheme?.Value.IsThemed() != true)
             {
                 dimFade = IsHovered ? 0.5f : inactive_alpha;
             }
