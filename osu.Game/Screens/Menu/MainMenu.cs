@@ -271,7 +271,6 @@ namespace osu.Game.Screens.Menu
                 // SongTicker fades itself in on every track change, so an Alpha of 0 alone doesn't keep it hidden.
                 songTicker.Suppressed = isStable;
                 supporterDisplay.Alpha = isStable ? 0 : 1;
-                bottomElementsFlow.Alpha = t.NewValue.Effective() == InterfaceTheme.OsuDroid ? 0 : 1;
             }, true);
         }
 

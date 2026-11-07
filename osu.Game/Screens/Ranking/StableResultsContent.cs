@@ -127,7 +127,7 @@ namespace osu.Game.Screens.Ranking
                                 Anchor = Anchor.TopLeft,
                                 Origin = Anchor.TopLeft,
                                 Position = new Vector2(0f, 96f),
-                                Scale = new Vector2(0.92f),
+                                // osu!stable draws ranking-panel at its own size (no extra scale), so a skin's big panel fits as made
                                 AutoSizeAxes = Axes.Both,
                                 Children = new Drawable[]
                                 {
@@ -164,7 +164,6 @@ namespace osu.Game.Screens.Ranking
                                     {
                                         Origin = Anchor.Centre,
                                         Position = new Vector2(416f, 592f),
-                                        Scale = new Vector2(0.56f),
                                         AutoSizeAxes = Axes.Both,
                                         Alpha = 0f,
                                     },
@@ -286,9 +285,9 @@ namespace osu.Game.Screens.Ranking
                             {
                                 Anchor = Anchor.TopRight,
                                 Origin = Anchor.TopRight,
-                                Position = new Vector2(-24f, 4f),
+                                // osu!stable: ranking-title at its own size, top-right, 20 in (x1.6 here)
+                                Position = new Vector2(-32f, 0f),
                                 AutoSizeAxes = Axes.Both,
-                                Scale = new Vector2(0.78f),
                             },
                         },
                     },
@@ -433,6 +432,8 @@ namespace osu.Game.Screens.Ranking
             int missCount = score.GetCountMiss() ?? 0;
             bool isFullCombo = score.Passed && missCount == 0 && (score.Statistics.GetValueOrDefault(HitResult.LargeTickMiss) == 0);
             perfectBadgeContainer.Alpha = isFullCombo ? 1f : 0f;
+            if (isFullCombo)
+                perfectBadgeContainer.ScaleTo(1.1f).ScaleTo(1f, 300, Easing.Out);
 
             var classicSkin = skinManager.DefaultClassicSkin;
             ISkin hudSkin = new ThemeHudSkin(classicSkin, skinManager);
@@ -453,12 +454,13 @@ namespace osu.Game.Screens.Ranking
             gradePulseSprite.Texture = rankTex;
 
             gradeSprite.FinishTransforms();
-            gradeSprite.ScaleTo(1.5f).FadeOut().Then().ScaleTo(0.85f, 800, Easing.OutQuint).FadeIn(400, Easing.OutQuint);
+            // osu!stable (Ranking): the grade at its own size, coming in from 2x over a second
+            gradeSprite.ScaleTo(2f).FadeOut().Then().ScaleTo(1f, 1000, Easing.OutQuint).FadeIn(1000, Easing.OutQuint);
 
             gradePulseSprite.FinishTransforms();
             if (score.Rank >= ScoreRank.B && rankTex != null)
             {
-                gradePulseSprite.ScaleTo(0.85f).FadeTo(0.4f).Then().ScaleTo(1.0f, 1200, Easing.OutQuad).FadeOut(1200, Easing.OutQuad);
+                gradePulseSprite.ScaleTo(1f).FadeTo(1f).Delay(1000).ScaleTo(1.05f, 2400, Easing.Out).FadeOut(2400, Easing.Out);
             }
 
             modsFlow.Clear();
@@ -551,7 +553,7 @@ namespace osu.Game.Screens.Ranking
                 this.fallbackColour = fallbackColour;
 
                 AutoSizeAxes = Axes.Both;
-                Alpha = 0.78f;
+                Alpha = 0.7f;
             }
 
             [BackgroundDependencyLoader]
@@ -565,8 +567,8 @@ namespace osu.Game.Screens.Ranking
                 {
                     Child = sprite = new Sprite
                     {
+                        // osu!stable: ranking-retry / ranking-replay at their own size, 178/255 until hovered
                         Texture = texture,
-                        Scale = new Vector2(0.85f),
                     };
                 }
                 else
@@ -592,15 +594,13 @@ namespace osu.Game.Screens.Ranking
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                this.FadeTo(1f, 150, Easing.OutQuad);
-                this.ScaleTo(1.05f, 150, Easing.OutQuad);
+                this.FadeTo(1f, 200, Easing.OutQuad);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                this.FadeTo(0.78f, 150, Easing.OutQuad);
-                this.ScaleTo(1f, 150, Easing.OutQuad);
+                this.FadeTo(0.7f, 200, Easing.OutQuad);
                 base.OnHoverLost(e);
             }
 

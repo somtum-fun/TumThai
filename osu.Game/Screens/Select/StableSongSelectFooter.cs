@@ -75,7 +75,6 @@ namespace osu.Game.Screens.Select
         private SkinManager skinManager { get; set; } = null!;
 
         private IBindable<Skin> currentSkin = null!;
-        private IBindable<InterfaceTheme> interfaceTheme = null!;
 
         private Drawable bottomBarDrawable = null!;
         private Sprite modeSmallSprite = null!;
@@ -103,7 +102,6 @@ namespace osu.Game.Screens.Select
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             var bottomTex = skinManager.GetClassicTexture(@"songselect-bottom");
 
             InternalChildren = new Drawable[]
@@ -161,13 +159,13 @@ namespace osu.Game.Screens.Select
                     toggleModeMenu)
                 {
                     X = 224f,
+                    // osu!stable: the skin's mode-*-small at its own size, centred 28.8 right of the button and 35 up from the
+                    // bottom (640x480 units, x1.6 here); a skin can make it a large decoration on purpose.
                     ExtraOverlay = modeSmallSprite = new Sprite
                     {
-                        Anchor = Anchor.Centre,
+                        Anchor = Anchor.BottomLeft,
                         Origin = Anchor.Centre,
-                        Position = new Vector2(0f, -10f),
-                        Alpha = 0.65f,
-                        Blending = BlendingParameters.Additive,
+                        Position = new Vector2(28.8f * 1.6f, -35f * 1.6f),
                     },
                 },
                 modsButton = new StableSelectionSpriteButton(
@@ -273,11 +271,6 @@ namespace osu.Game.Screens.Select
             currentSkin = skinManager.CurrentSkin.GetBoundCopy();
             currentSkin.BindValueChanged(_ => updateSkin());
 
-            interfaceTheme.BindValueChanged(t =>
-            {
-                bool isDroid = t.NewValue.Effective() == InterfaceTheme.OsuDroid;
-                bottomBarDrawable.Alpha = isDroid ? 0f : 1f;
-            }, true);
 
             ruleset.BindValueChanged(_ => updateModeSprites(), true);
         }
@@ -304,8 +297,9 @@ namespace osu.Game.Screens.Select
                 @"mania" => (@"mode-mania-small", @"mode-mania"),
                 _ => (@"mode-osu-small", @"mode-osu"),
             };
-            // mode-*-small uses internal default texture (SkinManager.LoadPermanent in osu!stable)
-            modeSmallSprite.Texture = skinManager.DefaultClassicSkin.GetTexture(smallTex);
+            // osu!stable's song select loads mode-*-small from the skin (only the player panel's icon is always the default one)
+            modeSmallSprite.Texture = skinManager.GetClassicTexture(smallTex);
+            modeSmallSprite.ScaleTo(0f).ScaleTo(1f, 1000, Easing.OutElastic);
             modeWatermarkSprite.Texture = skinManager.GetClassicTexture(bigTex);
         }
 
@@ -345,6 +339,16 @@ namespace osu.Game.Screens.Select
             private ISample? clickSample;
 
             public Drawable? ExtraOverlay { get; init; }
+
+            // osu!stable's default button size (77x90 at 1x): clicks and hover only count there, so a skin's oversized
+            // selection-* image (drawn at its own size, as a decoration) can't cover the other buttons or the song list.
+            private static readonly Vector2 hit_size = new Vector2(77f, 90f);
+
+            public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+            {
+                Vector2 local = ToLocalSpace(screenSpacePos);
+                return local.X >= 0 && local.X <= hit_size.X && local.Y <= DrawHeight && local.Y >= DrawHeight - hit_size.Y;
+            }
 
             public StableSelectionSpriteButton(string normalTexName, string overTexName, string fallbackLabel, Action action, Action? rightClickAction = null)
             {

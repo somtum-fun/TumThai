@@ -74,7 +74,6 @@ namespace osu.Game.Screens.Menu
         private SkinManager skinManager { get; set; } = null!;
 
         private IBindable<Skin> currentSkin = null!;
-        private IBindable<InterfaceTheme> interfaceTheme = null!;
 
         private OsuSpriteText beatmapCountText = null!;
         private OsuSpriteText uptimeText = null!;
@@ -82,8 +81,6 @@ namespace osu.Game.Screens.Menu
         private OsuSpriteText nowPlayingText = null!;
         private Box musicProgressFill = null!;
         private Sprite? npSprite;
-        private Container stableBottomBar = null!;
-        private Container droidVersionBadge = null!;
         private FillFlowContainer statsTextFlow = null!;
         private OsuDirectTab osuDirectTab = null!;
 
@@ -91,7 +88,6 @@ namespace osu.Game.Screens.Menu
         private FillFlowContainer topLevelStack = null!;
         private FillFlowContainer playLevelStack = null!;
         private FillFlowContainer editLevelStack = null!;
-        private StableMenuPillButton editTopButton = null!;
 
         private readonly Stopwatch sessionStopwatch = Stopwatch.StartNew();
 
@@ -117,7 +113,6 @@ namespace osu.Game.Screens.Menu
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             var npTex = skinManager.GetClassicTexture(@"menu-np");
             var osuDirectTex = skinManager.GetClassicTexture(@"menu-osudirect");
             var osuDirectOverTex = skinManager.GetClassicTexture(@"menu-osudirect-over");
@@ -135,7 +130,7 @@ namespace osu.Game.Screens.Menu
                     Children = new Drawable[]
                     {
                         new StableMenuPillButton(@"menu-button-play", @"menu-play-click", "Play", Color4Extensions.FromHex(@"6844CC"), () => buttonSystem.State = ButtonSystemState.Play),
-                        editTopButton = new StableMenuPillButton(@"menu-button-edit", @"menu-edit-click", "Edit", Color4Extensions.FromHex(@"E96800"), () => buttonSystem.OnEditBeatmap?.Invoke()),
+                        new StableMenuPillButton(@"menu-button-edit", @"menu-edit-click", "Edit", Color4Extensions.FromHex(@"E96800"), () => buttonSystem.OnEditBeatmap?.Invoke()),
                         new StableMenuPillButton(@"menu-button-options", @"menuhit", "Options", Color4Extensions.FromHex(@"0096EC"), () => settingsOverlay?.ToggleVisibility()),
                         new StableMenuPillButton(@"menu-button-exit", @"seeya", "Exit", Color4Extensions.FromHex(@"EE3399"), () => buttonSystem.OnExit?.Invoke(null!)),
                     },
@@ -292,7 +287,7 @@ namespace osu.Game.Screens.Menu
                     },
                 },
                 // Bottom letterbox bar with bottom-right tabs (menu-copyright and menu-subscriber removed per TumThai!Next design)
-                stableBottomBar = new Container
+                new Container
                 {
                     Anchor = Anchor.BottomLeft,
                     Origin = Anchor.BottomLeft,
@@ -318,32 +313,6 @@ namespace osu.Game.Screens.Menu
                                 new StableBottomTabButton("Online Users", () => dashboardOverlay?.ToggleVisibility()),
                                 new StableBottomTabButton("^ Show Chat", () => chatOverlay?.ToggleVisibility()),
                             },
-                        },
-                    },
-                },
-                // osu!droid bottom-left rounded version badge (MainScene.java lines 188-198)
-                droidVersionBadge = new Container
-                {
-                    Anchor = Anchor.BottomLeft,
-                    Origin = Anchor.BottomLeft,
-                    Position = new Vector2(10, -10),
-                    AutoSizeAxes = Axes.Both,
-                    Masking = true,
-                    CornerRadius = 12,
-                    Alpha = 0,
-                    Children = new Drawable[]
-                    {
-                        new Box
-                        {
-                            RelativeSizeAxes = Axes.Both,
-                            Colour = Color4.Black.Opacity(0.5f),
-                        },
-                        new OsuSpriteText
-                        {
-                            Margin = new MarginPadding { Horizontal = 12, Vertical = 4 },
-                            Text = "osu!droid (TumThai!Next)",
-                            Font = OsuFont.GetFont(size: 16, weight: FontWeight.SemiBold),
-                            Colour = Color4.White,
                         },
                     },
                 },
@@ -387,22 +356,12 @@ namespace osu.Game.Screens.Menu
                         btn.UpdateSkin(skinManager);
                 }
             });
-
-            interfaceTheme.BindValueChanged(t =>
-            {
-                bool isDroid = t.NewValue.Effective() == InterfaceTheme.OsuDroid;
-                stableBottomBar.Alpha = isDroid ? 0f : 1f;
-                droidVersionBadge.Alpha = isDroid ? 1f : 0f;
-                editTopButton.Alpha = isDroid ? 0f : 1f;
-                updateMenuState(buttonSystem.State);
-            }, true);
         }
 
         private void updateMenuState(ButtonSystemState state)
         {
-            bool isDroid = interfaceTheme.Value.Effective() == InterfaceTheme.OsuDroid;
             bool isExpanded = state == ButtonSystemState.TopLevel || state == ButtonSystemState.Play || state == ButtonSystemState.Multi || state == ButtonSystemState.Edit;
-            statsTextFlow.FadeTo(!isDroid && isExpanded ? 1f : 0f, 300, Easing.OutQuint);
+            statsTextFlow.FadeTo(isExpanded ? 1f : 0f, 300, Easing.OutQuint);
 
             showStack(topLevelStack, state == ButtonSystemState.TopLevel);
             showStack(playLevelStack, state == ButtonSystemState.Play || state == ButtonSystemState.Multi);

@@ -320,7 +320,8 @@ namespace osu.Game.Screens.Play
             private void load(OsuConfigManager config, SkinManager skinManager, AudioManager audio)
             {
                 themeBindable = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
-                var arrowTex = skinManager.GetClassicTexture(@"play-warningarrow");
+                // osu!stable's pause menu points at the selected button with arrow-pause
+                var arrowTex = skinManager.GetClassicTexture(@"arrow-pause") ?? skinManager.GetClassicTexture(@"play-warningarrow");
                 var buttonTex = stableSpriteName != null ? skinManager.GetClassicTexture(stableSpriteName) : null;
 
                 hoverSample = skinManager.GetClassicSample(@"pause-hover", @"menuclick") ?? audio.Samples.Get(@"UI/generic-hover");
@@ -346,8 +347,7 @@ namespace osu.Game.Screens.Play
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreRight,
                         X = -16,
-                        Size = new Vector2(36, 30),
-                        FillMode = FillMode.Fit,
+                        // osu!stable draws arrow-pause at its own size
                         Texture = arrowTex,
                         Colour = Color4Extensions.FromHex(@"0072BC"),
                         Alpha = 0,
@@ -358,8 +358,7 @@ namespace osu.Game.Screens.Play
                         Origin = Anchor.CentreRight,
                         Scale = new Vector2(-1, 1),
                         X = 16,
-                        Size = new Vector2(36, 30),
-                        FillMode = FillMode.Fit,
+                        // osu!stable draws arrow-pause at its own size
                         Texture = arrowTex,
                         Colour = Color4Extensions.FromHex(@"0072BC"),
                         Alpha = 0,

@@ -59,6 +59,16 @@ namespace osu.Game.Graphics.UserInterface
             Size = new Vector2(HOVER_WIDTH, HEIGHT);
         }
 
+        // osu!stable: a skin's menu-back is clickable over its whole image (drawn at its own size from the bottom-left),
+        // not just the default button's box.
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
+        {
+            if (IsLoaded && customMenuBackContainer.Alpha > 0 && customMenuBackContainer.Children.Count > 0)
+                return customMenuBackContainer.ReceivePositionalInputAt(screenSpacePos);
+
+            return base.ReceivePositionalInputAt(screenSpacePos);
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {

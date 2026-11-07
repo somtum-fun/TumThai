@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
@@ -26,9 +27,12 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            InterfaceTheme[] items = Enum.GetValues<InterfaceTheme>();
+            // TumThai!Next: the osu!droid theme is gone; a setting still saying so is osu!stable.
+            InterfaceTheme[] items = Enum.GetValues<InterfaceTheme>().Where(t => t != InterfaceTheme.OsuDroid).ToArray();
 
             var themeBindable = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+            if (themeBindable.Value == InterfaceTheme.OsuDroid)
+                themeBindable.Value = InterfaceTheme.OsuStable;
 
             Children = new Drawable[]
             {
@@ -40,7 +44,7 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
                     Current = themeBindable,
                 })
                 {
-                    Keywords = new[] { "theme", "interface", "ui", "stable", "droid", "skin" },
+                    Keywords = new[] { "theme", "interface", "ui", "stable", "skin" },
                 },
             };
 

@@ -21,6 +21,9 @@ namespace osu.Game.Configuration
         [LocalisableDescription(typeof(UserInterfaceStrings), nameof(UserInterfaceStrings.ThemeOsuStable))]
         OsuStable,
 
+        /// <summary>
+        /// The osu!droid theme, removed. Kept only so a setting saved with it still loads; it's treated as <see cref="OsuStable"/>.
+        /// </summary>
         [LocalisableDescription(typeof(UserInterfaceStrings), nameof(UserInterfaceStrings.ThemeOsuDroid))]
         OsuDroid,
     }
@@ -30,55 +33,48 @@ namespace osu.Game.Configuration
         /// <summary>
         /// The theme that applies on the current platform.
         /// </summary>
-        public static InterfaceTheme Effective(this InterfaceTheme theme) => theme;
+        public static InterfaceTheme Effective(this InterfaceTheme theme) => theme == InterfaceTheme.OsuDroid ? InterfaceTheme.OsuStable : theme;
 
         public static bool IsThemed(this InterfaceTheme theme) => theme.Effective() != InterfaceTheme.TumThai;
 
         public static ColourInfo DifficultyRowBackground(this InterfaceTheme theme, ColourInfo fallback) => theme.Effective() switch
         {
             InterfaceTheme.OsuStable => ColourInfo.GradientHorizontal(Color4Extensions.FromHex("0096EC"), Color4Extensions.FromHex("0072B5")),
-            InterfaceTheme.OsuDroid => ColourInfo.GradientHorizontal(Color4Extensions.FromHex("1919F0"), Color4Extensions.FromHex("1212B0")),
             _ => fallback,
         };
 
         public static Color4 SetCardTint(this InterfaceTheme theme) => theme.Effective() switch
         {
             InterfaceTheme.OsuStable => Color4Extensions.FromHex("E96800"),
-            InterfaceTheme.OsuDroid => Color4Extensions.FromHex("F09600"),
             _ => Color4.White,
         };
 
         public static Color4 GroupBackground(this InterfaceTheme theme, Color4 fallback) => theme.Effective() switch
         {
             InterfaceTheme.OsuStable => Color4Extensions.FromHex("23328F"),
-            InterfaceTheme.OsuDroid => Color4Extensions.FromHex("1E1E2E"),
             _ => fallback,
         };
 
         public static Color4 ResultsBottomBar(this InterfaceTheme theme) => theme.Effective() switch
         {
-            InterfaceTheme.OsuDroid => Color4Extensions.FromHex("1E1E2E"),
             _ => Color4Extensions.FromHex("333333"),
         };
 
         public static ColourInfo ResultsTopLayer(this InterfaceTheme theme) => theme.Effective() switch
         {
             InterfaceTheme.OsuStable => ColourInfo.GradientVertical(Color4Extensions.FromHex("3A4A63"), Color4Extensions.FromHex("2B374A")),
-            InterfaceTheme.OsuDroid => ColourInfo.GradientVertical(Color4Extensions.FromHex("3E7DD3"), Color4Extensions.FromHex("2B5EA6")),
             _ => ColourInfo.GradientVertical(Color4Extensions.FromHex("444444"), Color4Extensions.FromHex("333333")),
         };
 
         public static ColourInfo ResultsMiddleLayer(this InterfaceTheme theme) => theme.Effective() switch
         {
             InterfaceTheme.OsuStable => ColourInfo.GradientVertical(Color4Extensions.FromHex("465772"), Color4Extensions.FromHex("243247")),
-            InterfaceTheme.OsuDroid => ColourInfo.GradientVertical(Color4Extensions.FromHex("2B5EA6"), Color4Extensions.FromHex("234C86")),
             _ => ColourInfo.GradientVertical(Color4Extensions.FromHex("555555"), Color4Extensions.FromHex("333333")),
         };
 
         public static Color4 ResultsContractedLayer(this InterfaceTheme theme) => theme.Effective() switch
         {
             InterfaceTheme.OsuStable => Color4Extensions.FromHex("2B374A"),
-            InterfaceTheme.OsuDroid => Color4Extensions.FromHex("2B5EA6"),
             _ => Color4Extensions.FromHex("353535"),
         };
     }

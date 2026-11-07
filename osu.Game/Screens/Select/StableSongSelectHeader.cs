@@ -70,7 +70,6 @@ namespace osu.Game.Screens.Select
         private SkinManager skinManager { get; set; } = null!;
 
         private IBindable<Skin> currentSkin = null!;
-        private IBindable<InterfaceTheme> interfaceTheme = null!;
         private Sprite? topSprite;
         private Container widescreenTopExtension = null!;
         private Container tabsContainer = null!;
@@ -108,7 +107,6 @@ namespace osu.Game.Screens.Select
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config)
         {
-            interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             var topTexture = skinManager.GetClassicTexture(@"songselect-top");
             var tabTexture = skinManager.GetClassicTexture(@"selection-tab");
 
@@ -367,14 +365,6 @@ namespace osu.Game.Screens.Select
                 Scheduler.AddOnce(updateMetadata);
             });
 
-            interfaceTheme.BindValueChanged(t =>
-            {
-                bool isDroid = t.NewValue.Effective() == InterfaceTheme.OsuDroid;
-                if (topSprite != null)
-                    topSprite.Alpha = isDroid ? 0.6f : 1f;
-                widescreenTopExtension.Alpha = isDroid ? 0.55f : 1f;
-                tabsContainer.Alpha = isDroid ? 0f : 1f;
-            }, true);
             mods.BindValueChanged(m =>
             {
                 settingChangeTracker?.Dispose();
