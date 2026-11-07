@@ -80,7 +80,7 @@ namespace osu.Game.Graphics.Cursor
 
             // the osu!stable theme's trail, behind the cursor (the same trail as gameplay)
             Add(stableTrail = new StableMenuCursorTrail { Depth = 1, Alpha = 0 });
-            gameplayCursorSize = config.GetBindable<float>(OsuSetting.GameplayCursorSize);
+            menuCursorSize = config.GetBindable<float>(OsuSetting.MenuCursorSize);
 
             if (pendingTrail is var (texture, disjoint, centre, rotate))
                 stableTrail.Apply(texture, disjoint, centre, rotate);
@@ -88,7 +88,7 @@ namespace osu.Game.Graphics.Cursor
 
         private (Texture? texture, bool disjoint, bool centre, bool rotate)? pendingTrail;
         private StableMenuCursorTrail? stableTrail;
-        private Bindable<float> gameplayCursorSize = null!;
+        private Bindable<float> menuCursorSize = null!;
 
         [Resolved]
         private OsuGame? game { get; set; }
@@ -165,7 +165,7 @@ namespace osu.Game.Graphics.Cursor
                 {
                     stableTrail.CursorScale = activeCursor.StableScale;
                     stableTrail.PartRotation = activeCursor.StableRotation;
-                    stableTrail.CursorSizeSetting = gameplayCursorSize.Value;
+                    stableTrail.CursorSizeSetting = menuCursorSize.Value;
                 }
             }
 
@@ -306,7 +306,6 @@ namespace osu.Game.Graphics.Cursor
             private Sprite stableCursorSprite = null!;
             private Sprite stableCursorMiddleSprite = null!;
             private Bindable<InterfaceTheme> interfaceTheme = null!;
-            private Bindable<float> gameplayCursorScale = null!;
             private IBindable<Skin>? currentSkin;
 
             // the gameplay cursor's spin (LegacyCursor.REVOLUTION_DURATION)
@@ -358,8 +357,6 @@ namespace osu.Game.Graphics.Cursor
                 cursorScale = config.GetBindable<float>(OsuSetting.MenuCursorSize);
                 cursorScale.BindValueChanged(scale => cursorContainer.Scale = new Vector2(scale.NewValue * base_scale), true);
 
-                // the stable theme's cursor is the gameplay one, at the gameplay cursor size
-                gameplayCursorScale = config.GetBindable<float>(OsuSetting.GameplayCursorSize);
 
                 interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             }
@@ -480,8 +477,9 @@ namespace osu.Game.Graphics.Cursor
                 if (stableCursor.Alpha == 0 || Parent == null)
                     return;
 
-                // Sized as osu!stable (and the gameplay cursor) draws it: skin pixels in a 480-line-high screen. The menu
-                // cursor lives outside the UI's scaling, so work it out from the window's height in this cursor's units.
+                // Sized as the gameplay cursor draws it: the playfield's 480-line scale, which NonPlayfieldSprite then shrinks by
+                // 1.6 (LegacySkin.STABLE_MAGIC_SCALE_FACTOR), i.e. skin pixels on a 768-line-high screen; times "Menu cursor size".
+                // The menu cursor lives outside the UI's scaling, so work it out from the window's height in this cursor's units.
                 Drawable root = this;
                 while (root.Parent != null)
                     root = root.Parent;
@@ -490,7 +488,7 @@ namespace osu.Game.Graphics.Cursor
                 float windowHeight = root.ScreenSpaceDrawQuad.Height;
 
                 if (pixelsPerUnit > 0 && windowHeight > 0)
-                    stableCursor.Scale = new Vector2(windowHeight / 480f / pixelsPerUnit * gameplayCursorScale.Value);
+                    stableCursor.Scale = new Vector2(windowHeight / 768f / pixelsPerUnit * cursorScale.Value);
             }
         }
 

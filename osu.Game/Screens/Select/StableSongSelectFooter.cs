@@ -576,10 +576,21 @@ namespace osu.Game.Screens.Select
                 return null;
             }
 
+            // osu!stable's ripple (0.65) and hover (0.4) are additive copies of its pink cookie; on the white-and-green
+            // somtum cookie that washes it out to white, so it gets a plain faint ripple and a slight hover lift instead.
+            private bool somtumCookie;
+
+            private float ripplePeak => somtumCookie ? 0.3f : 0.65f;
+            private float hoverPeak => somtumCookie ? 0.1f : 0.4f;
+
             private void setCookie(Texture? skinTexture)
             {
+                somtumCookie = skinTexture == null;
+
                 foreach (var layer in new[] { mainSprite, rippleSprite, hoverOverlay })
                     layer.Child = skinTexture != null ? createSkinSprite(skinTexture) : createSomtumCookie();
+
+                rippleSprite.Blending = somtumCookie ? BlendingParameters.Inherit : BlendingParameters.Additive;
             }
 
             private static Drawable createSkinSprite(Texture texture) => new Sprite
@@ -649,7 +660,7 @@ namespace osu.Game.Screens.Select
                 mainSprite.ScaleTo(beat_scale).Then().ScaleTo(base_scale, beatLen, Easing.OutQuad);
 
                 rippleSprite.ClearTransforms();
-                rippleSprite.ScaleTo(beat_scale).FadeTo(0.65f)
+                rippleSprite.ScaleTo(beat_scale).FadeTo(ripplePeak)
                             .Then()
                             .ScaleTo(ripple_scale, beatLen, Easing.OutQuad)
                             .FadeOut(beatLen, Easing.OutQuad);
@@ -658,7 +669,7 @@ namespace osu.Game.Screens.Select
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                hoverOverlay.FadeTo(0.4f, 350, Easing.OutQuint);
+                hoverOverlay.FadeTo(hoverPeak, 350, Easing.OutQuint);
                 hoverOverlay.ScaleTo(hover_scale, 350, Easing.OutElastic);
                 return base.OnHover(e);
             }

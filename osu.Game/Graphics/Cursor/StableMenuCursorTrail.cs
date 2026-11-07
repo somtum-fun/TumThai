@@ -25,7 +25,7 @@ namespace osu.Game.Graphics.Cursor
         private Vector2? currentPosition;
 
         /// <summary>
-        /// The gameplay cursor size setting (the smooth trail's part spacing follows it, as in gameplay).
+        /// The cursor size setting ("Menu cursor size" here; the smooth trail's part spacing follows it, as in gameplay).
         /// </summary>
         public float CursorSizeSetting { get; set; } = 1;
 
