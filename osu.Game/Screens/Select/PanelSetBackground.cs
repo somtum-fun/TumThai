@@ -32,6 +32,11 @@ namespace osu.Game.Screens.Select
 
         private double timeSinceUnpool;
 
+        /// <summary>
+        /// TumThai!Next: show osu!stable's thumbnail (the whole background in a 4:3 box) instead of lazer's wide panel strip.
+        /// </summary>
+        public bool StableThumbnail { get; init; }
+
         public WorkingBeatmap? Beatmap
         {
             get => working;
@@ -100,6 +105,8 @@ namespace osu.Game.Screens.Select
                 new FillFlowContainer
                 {
                     Depth = -1,
+                    // TumThai!Next: osu!stable's thumbnails are shown as they are, without lazer's darkening gradient
+                    Alpha = StableThumbnail ? 0 : 1,
                     RelativeSizeAxes = Axes.Both,
                     Direction = FillDirection.Horizontal,
                     // This makes the gradient not be perfectly horizontal, but diagonal at a ~40° angle
@@ -160,7 +167,7 @@ namespace osu.Game.Screens.Select
 
             loadCancellation = new CancellationTokenSource();
 
-            LoadComponentAsync(new PanelBeatmapBackground(working)
+            LoadComponentAsync(new PanelBeatmapBackground(working, StableThumbnail)
             {
                 RelativeSizeAxes = Axes.Both,
                 Anchor = Anchor.Centre,
@@ -177,18 +184,20 @@ namespace osu.Game.Screens.Select
         public partial class PanelBeatmapBackground : Sprite
         {
             private readonly IWorkingBeatmap working;
+            private readonly bool stableThumbnail;
 
-            public PanelBeatmapBackground(IWorkingBeatmap working)
+            public PanelBeatmapBackground(IWorkingBeatmap working, bool stableThumbnail = false)
             {
                 ArgumentNullException.ThrowIfNull(working);
 
                 this.working = working;
+                this.stableThumbnail = stableThumbnail;
             }
 
             [BackgroundDependencyLoader]
             private void load()
             {
-                Texture = working.GetPanelBackground();
+                Texture = stableThumbnail && working is WorkingBeatmap w ? w.GetStableThumbnail() : working.GetPanelBackground();
             }
         }
     }

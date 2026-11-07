@@ -291,7 +291,7 @@ namespace osu.Game.Screens.Select
             {
                 var working = beatmaps.GetWorkingBeatmap(b);
                 beatmapBackground.Beatmap = working;
-                stableThumbSprite.Texture = working.GetPanelBackground();
+                stableThumbSprite.Texture = working.GetStableThumbnail();
             }, beatmap, 50);
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);

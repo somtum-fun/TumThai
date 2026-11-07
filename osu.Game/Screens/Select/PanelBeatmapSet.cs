@@ -152,7 +152,7 @@ namespace osu.Game.Screens.Select
                     Masking = true,
                     CornerRadius = 3f,
                     Alpha = CurrentInterfaceTheme.IsThemed() ? 1 : 0,
-                    Child = stableThumbBackground = new PanelSetBackground(),
+                    Child = stableThumbBackground = new PanelSetBackground { StableThumbnail = true },
                 },
                 mainTextFlow = new FillFlowContainer
                 {

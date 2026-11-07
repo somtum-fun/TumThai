@@ -141,7 +141,8 @@ namespace osu.Game.Screens.Select
                         Origin = Anchor.Centre,
                         Position = new Vector2(0f, -10f),
                         Scale = new Vector2(0.45f),
-                        Alpha = 0.16f,
+                        // osu!stable has no mode watermark behind the player panel
+                        Alpha = 0f,
                         Blending = BlendingParameters.Additive,
                     },
                 },

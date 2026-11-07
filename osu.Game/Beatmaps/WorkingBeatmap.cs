@@ -73,6 +73,11 @@ namespace osu.Game.Beatmaps
         protected abstract IBeatmap GetBeatmap();
         public abstract Texture GetBackground();
         public virtual Texture GetPanelBackground() => GetBackground();
+
+        /// <summary>
+        /// TumThai!Next: the background as osu!stable's song select thumbnail (the whole image in a small 4:3 box).
+        /// </summary>
+        public virtual Texture GetStableThumbnail() => GetBackground();
         protected abstract Track GetBeatmapTrack();
 
         /// <summary>

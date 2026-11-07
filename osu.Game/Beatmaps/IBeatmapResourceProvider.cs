@@ -20,6 +20,11 @@ namespace osu.Game.Beatmaps
         TextureStore BeatmapPanelTextureStore { get; }
 
         /// <summary>
+        /// TumThai!Next: small 4:3 thumbnails of beatmap backgrounds, for the osu!stable theme's song select.
+        /// </summary>
+        TextureStore? StableThumbnailTextureStore => null;
+
+        /// <summary>
         /// Access a global track store for retrieving beatmap tracks from.
         /// </summary>
         ITrackStore Tracks { get; }

@@ -261,7 +261,11 @@ namespace osu.Game.Graphics.Cursor
             private Sprite stableCursorSprite = null!;
             private Sprite stableCursorMiddleSprite = null!;
             private Bindable<InterfaceTheme> interfaceTheme = null!;
+            private Bindable<float> gameplayCursorScale = null!;
             private IBindable<Skin>? currentSkin;
+
+            // the gameplay cursor's spin (LegacyCursor.REVOLUTION_DURATION)
+            private const double stable_revolution_duration = 10000;
 
             [Resolved]
             private SkinManager? skinManager { get; set; }
@@ -307,11 +311,10 @@ namespace osu.Game.Graphics.Cursor
                 };
 
                 cursorScale = config.GetBindable<float>(OsuSetting.MenuCursorSize);
-                cursorScale.BindValueChanged(scale =>
-                {
-                    cursorContainer.Scale = new Vector2(scale.NewValue * base_scale);
-                    stableCursor.Scale = new Vector2(scale.NewValue);
-                }, true);
+                cursorScale.BindValueChanged(scale => cursorContainer.Scale = new Vector2(scale.NewValue * base_scale), true);
+
+                // the stable theme's cursor is the gameplay one, at the gameplay cursor size
+                gameplayCursorScale = config.GetBindable<float>(OsuSetting.GameplayCursorSize);
 
                 interfaceTheme = config.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
             }
@@ -352,8 +355,38 @@ namespace osu.Game.Graphics.Cursor
                 stableCursorSprite.Origin = stableCursorMiddleSprite.Origin = origin;
                 stableCursor.Origin = Anchor.TopLeft;
 
+                // skin.ini CursorRotate (default 1): the cursor spins slowly, as in gameplay.
+                bool rotate = !(skinManager?.CurrentSkin.Value is LegacySkin rotateSkin
+                                && rotateSkin.Configuration.ConfigDictionary.TryGetValue(@"CursorRotate", out string? rotateValue)
+                                && rotateValue.Trim() == "0");
+
+                stableCursorSprite.ClearTransforms();
+                stableCursorSprite.Rotation = 0;
+                if (rotate)
+                    stableCursorSprite.Spin(stable_revolution_duration, RotationDirection.Clockwise);
+
                 stableCursor.Alpha = 1;
                 cursorContainer.Alpha = 0;
+            }
+
+            protected override void Update()
+            {
+                base.Update();
+
+                if (stableCursor.Alpha == 0 || Parent == null)
+                    return;
+
+                // Sized as osu!stable (and the gameplay cursor) draws it: skin pixels in a 480-line-high screen. The menu
+                // cursor lives outside the UI's scaling, so work it out from the window's height in this cursor's units.
+                Drawable root = this;
+                while (root.Parent != null)
+                    root = root.Parent;
+
+                float pixelsPerUnit = Parent.ScreenSpaceDrawQuad.Height / Math.Max(1, Parent.DrawHeight);
+                float windowHeight = root.ScreenSpaceDrawQuad.Height;
+
+                if (pixelsPerUnit > 0 && windowHeight > 0)
+                    stableCursor.Scale = new Vector2(windowHeight / 480f / pixelsPerUnit * gameplayCursorScale.Value);
             }
         }
 

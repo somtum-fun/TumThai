@@ -46,6 +46,7 @@ namespace osu.Game.Beatmaps
         private readonly IResourceStore<byte[]> resources;
         private readonly LargeTextureStore largeTextureStore;
         private readonly LargeTextureStore beatmapPanelTextureStore;
+        private readonly LargeTextureStore stableThumbnailTextureStore;
         private readonly ITrackStore trackStore;
         private readonly IResourceStore<byte[]> files;
         private readonly RealmAccess realm;
@@ -64,6 +65,7 @@ namespace osu.Game.Beatmaps
             this.files = files;
             largeTextureStore = new LargeTextureStore(host?.Renderer ?? new DummyRenderer(), host?.CreateTextureLoaderStore(files));
             beatmapPanelTextureStore = new LargeTextureStore(host?.Renderer ?? new DummyRenderer(), new BeatmapPanelBackgroundTextureLoaderStore(host?.CreateTextureLoaderStore(files)));
+            stableThumbnailTextureStore = new LargeTextureStore(host?.Renderer ?? new DummyRenderer(), new StableThumbnailTextureLoaderStore(host?.CreateTextureLoaderStore(files)));
             this.trackStore = trackStore;
             this.realm = realm;
         }
@@ -128,6 +130,7 @@ namespace osu.Game.Beatmaps
 
         TextureStore IBeatmapResourceProvider.LargeTextureStore => largeTextureStore;
         TextureStore IBeatmapResourceProvider.BeatmapPanelTextureStore => beatmapPanelTextureStore;
+        TextureStore IBeatmapResourceProvider.StableThumbnailTextureStore => stableThumbnailTextureStore;
         ITrackStore IBeatmapResourceProvider.Tracks => trackStore;
         IRenderer IStorageResourceProvider.Renderer => host?.Renderer ?? new DummyRenderer();
         AudioManager IStorageResourceProvider.AudioManager => audioManager;
@@ -194,6 +197,8 @@ namespace osu.Game.Beatmaps
             }
 
             public override Texture GetPanelBackground() => getBackgroundFromStore(resources.BeatmapPanelTextureStore);
+
+            public override Texture GetStableThumbnail() => resources.StableThumbnailTextureStore is TextureStore store ? getBackgroundFromStore(store) : GetBackground();
 
             public override Texture GetBackground() => getBackgroundFromStore(resources.LargeTextureStore);
 
