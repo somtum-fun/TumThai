@@ -920,27 +920,15 @@ namespace osu.Game.Screens.Select
                 {
                     selected = new Box { RelativeSizeAxes = Axes.Both, Colour = colours.Blue3.Opacity(0.5f), Alpha = 0 },
                     hover = new Box { RelativeSizeAxes = Axes.Both, Colour = Color4.White.Opacity(0.1f), Alpha = 0 },
-                    new Container
-                    {
-                        Anchor = Anchor.CentreLeft,
-                        Origin = Anchor.CentreLeft,
-                        X = 12,
-                        Size = new Vector2(28),
-                        Child = rulesetInfo.CreateInstance().CreateIcon().With(d =>
-                        {
-                            d.RelativeSizeAxes = Axes.Both;
-                            d.Anchor = Anchor.Centre;
-                            d.Origin = Anchor.Centre;
-                        }),
-                    },
+                    // name only: custom rulesets' icons come in any size and some fill the whole list
                     new TruncatingSpriteText
                     {
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
-                        X = 52,
+                        X = 16,
                         Text = rulesetInfo.Name,
                         Font = OsuFont.GetFont(size: 20, weight: FontWeight.SemiBold),
-                        Width = 240,
+                        Width = 272,
                     },
                 };
             }
