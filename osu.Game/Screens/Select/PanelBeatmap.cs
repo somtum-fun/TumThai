@@ -449,7 +449,11 @@ namespace osu.Game.Screens.Select
                     leftRowFill.Margin = new MarginPadding { Left = textLeft };
                 if (Math.Abs(stableThumbContainer.Margin.Left - thumbLeft) > 0.5f)
                     stableThumbContainer.Margin = new MarginPadding { Left = thumbLeft };
+
+                FitStableTextBlock(leftRowFill);
             }
+            else if (leftRowFill.Scale.X != 1)
+                leftRowFill.Scale = Vector2.One;
 
             var diffColour = starRatingDisplay.DisplayedDifficultyColour;
 

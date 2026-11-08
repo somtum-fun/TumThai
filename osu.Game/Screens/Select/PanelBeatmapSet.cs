@@ -259,7 +259,13 @@ namespace osu.Game.Screens.Select
             base.Update();
 
             if (!CurrentInterfaceTheme.IsThemed())
+            {
+                if (mainTextFlow.Scale.X != 1)
+                    mainTextFlow.Scale = Vector2.One;
                 return;
+            }
+
+            FitStableTextBlock(mainTextFlow, 0.9f);
 
             // osu!stable's offsets on menu-button-background, following the image's drawn width (see StableRowOffset)
             float textLeft = StableRowOffset(themeTintBox, 75f, 88f);

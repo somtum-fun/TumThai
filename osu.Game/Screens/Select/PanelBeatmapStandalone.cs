@@ -433,6 +433,8 @@ namespace osu.Game.Screens.Select
 
             if (CurrentInterfaceTheme.IsThemed())
             {
+                FitStableTextBlock(mainFill);
+
                 var borderColour = Selected.Value ? Color4.White : CurrentInterfaceTheme.SetCardTint();
                 AccentColour = borderColour;
                 backgroundBorder.Colour = borderColour;

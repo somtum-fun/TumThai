@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
@@ -451,6 +452,22 @@ namespace osu.Game.Screens.Select
             if (CurrentInterfaceTheme.IsThemed())
                 updateXOffset();
             base.OnHoverLost(e);
+        }
+
+        /// <summary>
+        /// osu!stable theme: shrinks a row's text block (anchored at its vertical centre) so it stays inside the row, as
+        /// stable's text does: a skin's row image can draw a thinner visible bar than the row, and the text would spill out.
+        /// </summary>
+        /// <param name="block">The text block, anchored and originated at its left centre.</param>
+        /// <param name="fraction">How much of the row's height it may take.</param>
+        protected void FitStableTextBlock(Drawable block, float fraction = 0.8f)
+        {
+            float available = DrawHeight * fraction;
+            float height = block.DrawHeight;
+            float scale = height > available && height > 0 ? available / height : 1;
+
+            if (Math.Abs(block.Scale.X - scale) > 0.005f)
+                block.Scale = new Vector2(scale);
         }
 
         /// <summary>

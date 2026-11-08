@@ -1136,7 +1136,10 @@ namespace osu.Game.Screens.Select
             // For simplicity, disable this functionality on mobile.
             bool isTouchInput = e.CurrentState.Mouse.LastSource is ISourcedFromTouch;
 
-            if (!carousel.AbsoluteScrolling && !isTouchInput && mouseDownPriority && revealBackgroundDelegate == null)
+            // TumThai!Next: osu!stable has no hold-to-reveal-background, and its layout (header, footer, mode menu) doesn't take part in it
+            bool stableTheme = interfaceTheme.Value.IsThemed();
+
+            if (!stableTheme && !carousel.AbsoluteScrolling && !isTouchInput && mouseDownPriority && revealBackgroundDelegate == null)
             {
                 revealBackgroundDelegate = Scheduler.AddDelayed(() =>
                 {
