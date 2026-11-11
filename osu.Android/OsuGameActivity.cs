@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -18,7 +18,6 @@ using osu.Android.Performance;
 using osu.Framework.Android;
 using osu.Framework.Logging;
 using osu.Game.Database;
-using osu.Game.Performance;
 using Debug = System.Diagnostics.Debug;
 using Uri = Android.Net.Uri;
 
@@ -63,7 +62,6 @@ namespace osu.Android
         private const float max_edge_exclusion_dp = 200f;
         private const float edge_exclusion_width_dp = 48f;
         private const float bottom_exclusion_height_dp = 40f;
-        private const int ultra_potato_max_short_side_px = 720;
 
         /// <summary>
         /// The default screen orientation.
@@ -87,8 +85,6 @@ namespace osu.Android
         private int lastRequestedRefreshHz;
         private float activeTargetRefreshRate;
         private bool gameplayTouchProtectionActive;
-        private int lastFixedSurfaceViewWidth;
-        private int lastFixedSurfaceViewHeight;
 
         protected override Framework.Game CreateGame()
         {
@@ -176,7 +172,6 @@ namespace osu.Android
 
             configureImmersiveWindow();
             ensureSurfaceConfigured();
-            applyUltraPotatoSurfaceResolutionCapOnUiThread();
             applySurfaceFrameRateHint();
             updateGestureExclusionRects();
             textInputSource?.RestoreFocusIfActive();
@@ -257,58 +252,6 @@ namespace osu.Android
         {
             gameplayTouchProtectionActive = active;
             RunOnUiThread(updateGestureExclusionRects);
-        }
-
-        /// <summary>
-        /// When <see cref="PotatoMode.UltraActive"/> is enabled, caps the Android <see cref="SurfaceView"/> hardware
-        /// scaler buffer to 720p on the shorter axis so SurfaceFlinger/HWC upscales in hardware at zero GPU shader cost.
-        /// </summary>
-        internal void ApplyUltraPotatoSurfaceResolutionCap()
-        {
-            if (!PotatoMode.UltraActive)
-                return;
-
-            RunOnUiThread(applyUltraPotatoSurfaceResolutionCapOnUiThread);
-        }
-
-        private void applyUltraPotatoSurfaceResolutionCapOnUiThread()
-        {
-            if (!PotatoMode.UltraActive)
-                return;
-
-            SurfaceView? surfaceView = ensureSurfaceConfigured();
-            ISurfaceHolder? holder = surfaceView?.Holder;
-            if (surfaceView == null || holder == null)
-                return;
-
-            int viewWidth = surfaceView.Width;
-            int viewHeight = surfaceView.Height;
-            if (viewWidth <= 0 || viewHeight <= 0)
-                return;
-
-            if (viewWidth == lastFixedSurfaceViewWidth && viewHeight == lastFixedSurfaceViewHeight)
-                return;
-
-            int shortSide = Math.Min(viewWidth, viewHeight);
-            if (shortSide <= ultra_potato_max_short_side_px)
-                return;
-
-            double scale = (double)ultra_potato_max_short_side_px / shortSide;
-            int targetWidth = Math.Max(1, (int)Math.Round(viewWidth * scale));
-            int targetHeight = Math.Max(1, (int)Math.Round(viewHeight * scale));
-
-            lastFixedSurfaceViewWidth = viewWidth;
-            lastFixedSurfaceViewHeight = viewHeight;
-
-            try
-            {
-                holder.SetFixedSize(targetWidth, targetHeight);
-                Logger.Log($"[AndroidDisplay] Ultra potato surface hardware scaler engaged: {viewWidth}x{viewHeight} -> {targetWidth}x{targetHeight}.",
-                    LoggingTarget.Performance);
-            }
-            catch
-            {
-            }
         }
 
         protected override void OnNewIntent(Intent? intent) => handleIntent(intent);
@@ -628,22 +571,12 @@ namespace osu.Android
                 this.activity = activity;
             }
 
-            public void SurfaceCreated(ISurfaceHolder holder)
-            {
-                activity.applyUltraPotatoSurfaceResolutionCapOnUiThread();
-                activity.applySurfaceFrameRateHint();
-            }
+            public void SurfaceCreated(ISurfaceHolder holder) => activity.applySurfaceFrameRateHint();
 
-            public void SurfaceChanged(ISurfaceHolder holder, Format format, int width, int height)
-            {
-                activity.applyUltraPotatoSurfaceResolutionCapOnUiThread();
-                activity.applySurfaceFrameRateHint();
-            }
+            public void SurfaceChanged(ISurfaceHolder holder, Format format, int width, int height) => activity.applySurfaceFrameRateHint();
 
             public void SurfaceDestroyed(ISurfaceHolder holder)
             {
-                activity.lastFixedSurfaceViewWidth = 0;
-                activity.lastFixedSurfaceViewHeight = 0;
             }
         }
     }
