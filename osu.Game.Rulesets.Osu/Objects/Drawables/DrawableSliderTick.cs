@@ -5,6 +5,7 @@
 
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects.Drawables;
 using osuTK;
 using osuTK.Graphics;
@@ -74,12 +75,21 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         protected override void UpdateInitialTransforms()
         {
             this.FadeOut().FadeIn(ANIM_DURATION);
+
+            if (PotatoMode.UltraActive)
+            {
+                Scale = Vector2.One;
+                return;
+            }
+
             this.ScaleTo(0.5f).ScaleTo(1f, ANIM_DURATION * 4, Easing.OutElasticHalf);
         }
 
         protected override void UpdateHitStateTransforms(ArmedState state)
         {
             base.UpdateHitStateTransforms(state);
+
+            double duration = PotatoMode.UltraActive ? 0 : ANIM_DURATION;
 
             switch (state)
             {
@@ -88,12 +98,13 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                     break;
 
                 case ArmedState.Miss:
-                    this.FadeOut(ANIM_DURATION, Easing.OutQuint);
+                    this.FadeOut(duration, Easing.OutQuint);
                     break;
 
                 case ArmedState.Hit:
-                    this.FadeOut(ANIM_DURATION, Easing.OutQuint);
-                    this.ScaleTo(Scale * 1.5f, ANIM_DURATION, Easing.Out);
+                    this.FadeOut(duration, Easing.OutQuint);
+                    if (!PotatoMode.UltraActive)
+                        this.ScaleTo(Scale * 1.5f, ANIM_DURATION, Easing.Out);
                     break;
             }
         }

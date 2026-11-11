@@ -13,6 +13,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Audio;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
@@ -189,7 +190,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         {
             base.UpdateHitStateTransforms(state);
 
-            this.FadeOut(fade_out_duration).OnComplete(_ =>
+            this.FadeOut(PotatoMode.UltraActive ? 0 : fade_out_duration).OnComplete(_ =>
             {
                 // looping sample should be stopped here as it is safer than running in the OnComplete
                 // of the volume transition above.

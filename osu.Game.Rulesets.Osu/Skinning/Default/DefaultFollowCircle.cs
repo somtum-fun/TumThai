@@ -5,6 +5,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Utils;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osuTK.Graphics;
 
@@ -34,7 +35,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
 
         protected override void OnSliderPress()
         {
-            const float duration = 300f;
+            float duration = PotatoMode.UltraActive ? 0f : 300f;
 
             if (Precision.AlmostEquals(0, Alpha))
                 this.ScaleTo(1);
@@ -45,7 +46,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
 
         protected override void OnSliderRelease()
         {
-            const float duration = 150;
+            float duration = PotatoMode.UltraActive ? 0f : 150f;
 
             this.ScaleTo(followArea * 1.2f, duration, Easing.OutQuint)
                 .FadeTo(0, duration, Easing.OutQuint);
@@ -53,7 +54,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
 
         protected override void OnSliderEnd()
         {
-            const float duration = 300;
+            float duration = PotatoMode.UltraActive ? 0f : 300f;
 
             this.ScaleTo(1, duration, Easing.OutQuint)
                 .FadeOut(duration / 2, Easing.OutQuint);
@@ -61,6 +62,9 @@ namespace osu.Game.Rulesets.Osu.Skinning.Default
 
         protected override void OnSliderTick()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             if (Scale.X >= followArea * 0.98f)
             {
                 this.ScaleTo(followArea * 1.08f, 40, Easing.OutQuint)

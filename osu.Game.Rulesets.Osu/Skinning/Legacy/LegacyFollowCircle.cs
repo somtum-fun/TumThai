@@ -4,6 +4,8 @@
 using System;
 using System.Diagnostics;
 using osu.Framework.Graphics;
+using osu.Game.Performance;
+using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Skinning.Legacy
 {
@@ -24,6 +26,14 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
         {
             Debug.Assert(DrawableObject != null);
 
+            if (PotatoMode.UltraActive)
+            {
+                ClearTransforms();
+                Scale = new Vector2(2f);
+                Alpha = 1f;
+                return;
+            }
+
             double remainingTime = Math.Max(0, DrawableObject.HitStateUpdateTime - Time.Current);
 
             // Note that the scale adjust here is 2 instead of DrawableSliderBall.FOLLOW_AREA to match legacy behaviour.
@@ -38,12 +48,22 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
 
         protected override void OnSliderEnd()
         {
+            if (PotatoMode.UltraActive)
+            {
+                ClearTransforms();
+                Alpha = 0f;
+                return;
+            }
+
             this.ScaleTo(1.6f, 200, Easing.Out)
                 .FadeOut(200, Easing.In);
         }
 
         protected override void OnSliderTick()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             if (Scale.X >= 2f)
             {
                 this.ScaleTo(2.2f)
@@ -53,6 +73,13 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
 
         protected override void OnSliderBreak()
         {
+            if (PotatoMode.UltraActive)
+            {
+                ClearTransforms();
+                Alpha = 0f;
+                return;
+            }
+
             this.ScaleTo(4f, 100)
                 .FadeTo(0f, 100);
         }

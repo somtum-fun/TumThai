@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Configuration;
 using osu.Game.Rulesets.Osu.Objects;
@@ -104,8 +105,10 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
                         Origin = Anchor.Centre,
                     },
                 },
-                CircleSprite.FlashingDrawable.CreateProxy(),
             };
+
+            if (!PotatoMode.UltraActive)
+                AddInternal(CircleSprite.FlashingDrawable.CreateProxy());
 
             if (hasNumber)
             {
@@ -170,6 +173,15 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
                 switch (state)
                 {
                     case ArmedState.Hit:
+                        if (PotatoMode.UltraActive)
+                        {
+                            CircleSprite.FadeOut();
+                            OverlaySprite.FadeOut();
+                            if (hasNumber)
+                                hitCircleText.FadeOut();
+                            break;
+                        }
+
                         CircleSprite.FadeOut(legacy_fade_duration);
                         CircleSprite.ScaleTo(1.4f, legacy_fade_duration, Easing.Out);
 

@@ -11,6 +11,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Primitives;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Judgements;
@@ -79,6 +80,9 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         protected override void UpdateInitialTransforms()
         {
             base.UpdateInitialTransforms();
+
+            if (PotatoMode.UltraActive)
+                return;
 
             foreach (var piece in DimmablePieces)
             {
