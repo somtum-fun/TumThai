@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -168,6 +168,7 @@ namespace osu.Game.Configuration
             // Graphics
             SetDefault(OsuSetting.ShowFpsDisplay, false);
             SetDefault(OsuSetting.PotatoMode, false);
+            SetDefault(OsuSetting.UltraUltimatePotatoMode, false);
 
             SetDefault(OsuSetting.ShowStoryboard, true);
             SetDefault(OsuSetting.BeatmapSkins, true);
@@ -569,6 +570,11 @@ namespace osu.Game.Configuration
         /// Extreme-performance preset for weak machines. Read once at startup (restart-gated).
         /// </summary>
         PotatoMode,
+
+        /// <summary>
+        /// Ultra-aggressive low-RAM and low-CPU gameplay preset for ultra-weak devices (e.g. 2 GB RAM / old mobile SoCs). Read once at startup (restart-gated).
+        /// </summary>
+        UltraUltimatePotatoMode,
 
         /// <summary>
         /// Target rate (in Hz) for the input, audio, and multi-threaded update threads.

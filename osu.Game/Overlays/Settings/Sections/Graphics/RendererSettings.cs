@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -165,12 +165,21 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
             }
 
             children.Add(new PotatoModeToggleAndRestart());
+            children.Add(new UltraUltimatePotatoModeToggleAndRestart());
 
             Children = children;
 
             inputAudioHz.BindValueChanged(v =>
             {
                 inputAudioHzCustomCanBeShown.Value = v.NewValue == InputAudioHzMode.Custom;
+
+                if (Performance.PotatoMode.UltraActive)
+                {
+                    inputAudioHzNote.Value = new SettingsNote.Data(
+                        "Ultra ultimate potato mode is active and caps the input/audio/update rate at 250 Hz for minimum CPU usage.",
+                        SettingsNote.Type.Informational);
+                    return;
+                }
 
                 if (Performance.PotatoMode.Active)
                 {
