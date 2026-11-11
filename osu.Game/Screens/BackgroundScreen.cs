@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -7,6 +7,7 @@ using System;
 using osu.Framework.Screens;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Events;
+using osu.Game.Performance;
 using osuTK;
 
 namespace osu.Game.Screens
@@ -16,6 +17,8 @@ namespace osu.Game.Screens
         public const float TRANSITION_LENGTH = 500;
 
         private const float x_movement_amount = 50;
+
+        private static float transitionLength => PotatoMode.UltraActive ? 0 : TRANSITION_LENGTH;
 
         public override bool IsPresent => base.IsPresent || Scheduler.HasPendingTasks;
 
@@ -47,17 +50,17 @@ namespace osu.Game.Screens
         protected override void Update()
         {
             base.Update();
-            Scale = new Vector2(1 + x_movement_amount / DrawSize.X * 2);
+            Scale = PotatoMode.UltraActive ? Vector2.One : new Vector2(1 + x_movement_amount / DrawSize.X * 2);
         }
 
         public override void OnEntering(ScreenTransitionEvent e)
         {
-            if (AnimateEntry)
+            if (AnimateEntry && !PotatoMode.UltraActive)
             {
                 this.FadeOut();
-                this.FadeIn(TRANSITION_LENGTH, Easing.InOutQuart);
+                this.FadeIn(transitionLength, Easing.InOutQuart);
                 this.MoveToX(x_movement_amount);
-                this.MoveToX(0, TRANSITION_LENGTH, Easing.InOutQuart);
+                this.MoveToX(0, transitionLength, Easing.InOutQuart);
             }
 
             base.OnEntering(e);
@@ -65,7 +68,8 @@ namespace osu.Game.Screens
 
         public override void OnSuspending(ScreenTransitionEvent e)
         {
-            this.MoveToX(-x_movement_amount, TRANSITION_LENGTH, Easing.InOutQuart);
+            if (!PotatoMode.UltraActive)
+                this.MoveToX(-x_movement_amount, transitionLength, Easing.InOutQuart);
             base.OnSuspending(e);
         }
 
@@ -73,8 +77,9 @@ namespace osu.Game.Screens
         {
             if (IsLoaded)
             {
-                this.FadeOut(TRANSITION_LENGTH, Easing.OutExpo);
-                this.MoveToX(x_movement_amount, TRANSITION_LENGTH, Easing.OutExpo);
+                this.FadeOut(transitionLength, Easing.OutExpo);
+                if (!PotatoMode.UltraActive)
+                    this.MoveToX(x_movement_amount, transitionLength, Easing.OutExpo);
             }
 
             return base.OnExiting(e);
@@ -83,7 +88,7 @@ namespace osu.Game.Screens
         public override void OnResuming(ScreenTransitionEvent e)
         {
             if (IsLoaded)
-                this.MoveToX(0, TRANSITION_LENGTH, Easing.OutExpo);
+                this.MoveToX(0, transitionLength, Easing.OutExpo);
             base.OnResuming(e);
         }
     }
