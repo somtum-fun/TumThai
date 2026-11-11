@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
+using osu.Game.Performance;
 using System.Linq;
 using JetBrains.Annotations;
 using osu.Framework.Allocation;
@@ -109,7 +110,7 @@ namespace osu.Game.Overlays
                     if (state.NewValue != Visibility.Hidden) return;
 
                     // Trigger the demise of the dialog as soon as it hides.
-                    dialog.Delay(PopupDialog.EXIT_DURATION).Expire();
+                    dialog.Delay(PotatoMode.UltraActive ? 0 : PopupDialog.EXIT_DURATION).Expire();
 
                     dismiss();
                 });
@@ -157,7 +158,7 @@ namespace osu.Game.Overlays
                 RestoreDuration = 100,
             });
 
-            dimLayer.FadeTo(0.5f, PopupDialog.ENTER_DURATION, Easing.OutQuint);
+            dimLayer.FadeTo(0.5f, PotatoMode.UltraActive ? 0 : PopupDialog.ENTER_DURATION, Easing.OutQuint);
         }
 
         protected override void PopOut()
@@ -169,7 +170,7 @@ namespace osu.Game.Overlays
             if (IsLoaded && CurrentDialog?.State.Value == Visibility.Visible)
                 CurrentDialog.Hide();
 
-            dimLayer.FadeOut(PopupDialog.EXIT_DURATION, Easing.OutQuint);
+            dimLayer.FadeOut(PotatoMode.UltraActive ? 0 : PopupDialog.EXIT_DURATION, Easing.OutQuint);
         }
 
         public override bool OnPressed(KeyBindingPressEvent<GlobalAction> e)

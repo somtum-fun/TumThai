@@ -6,6 +6,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Input;
 using osu.Framework.Threading;
+using osu.Game.Performance;
 
 namespace osu.Game.Graphics.Containers
 {
@@ -79,7 +80,7 @@ namespace osu.Game.Graphics.Containers
 
             Expanded.BindValueChanged(v =>
             {
-                this.ResizeWidthTo(v.NewValue ? expandedWidth : contractedWidth, TRANSITION_DURATION, Easing.OutQuint);
+                this.ResizeWidthTo(v.NewValue ? expandedWidth : contractedWidth, PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.OutQuint);
             }, true);
 
             inputManager = GetContainingInputManager()!;

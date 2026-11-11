@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Diagnostics.CodeAnalysis;
@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Graphics.Containers;
 using osu.Game.Online.API;
+using osu.Game.Performance;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays
@@ -115,13 +116,13 @@ namespace osu.Game.Overlays
         protected override void PopIn()
         {
             base.PopIn();
-            FadeEdgeEffectTo(WaveContainer.SHADOW_OPACITY, WaveContainer.APPEAR_DURATION, Easing.Out);
+            FadeEdgeEffectTo(PotatoMode.UltraActive ? 0 : WaveContainer.SHADOW_OPACITY, PotatoMode.UltraActive ? 0 : WaveContainer.APPEAR_DURATION, Easing.Out);
         }
 
         protected override void PopOut()
         {
             base.PopOut();
-            FadeEdgeEffectTo(0, WaveContainer.DISAPPEAR_DURATION, Easing.In).OnComplete(_ => PopOutComplete());
+            FadeEdgeEffectTo(0, PotatoMode.UltraActive ? 0 : WaveContainer.DISAPPEAR_DURATION, Easing.In).OnComplete(_ => PopOutComplete());
         }
 
         protected virtual void PopOutComplete()

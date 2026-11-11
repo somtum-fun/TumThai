@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -20,6 +20,7 @@ using osu.Framework.Threading;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osuTK;
 using osuTK.Graphics;
@@ -229,9 +230,10 @@ namespace osu.Game.Overlays
 
         protected override void PopIn()
         {
-            this.MoveToX(0, TRANSITION_LENGTH, Easing.OutQuint);
-            mainContent.FadeTo(1, TRANSITION_LENGTH / 2, Easing.OutQuint);
-            mainContent.FadeEdgeEffectTo(WaveContainer.SHADOW_OPACITY, WaveContainer.APPEAR_DURATION, Easing.Out);
+            double duration = PotatoMode.UltraActive ? 0 : TRANSITION_LENGTH;
+            this.MoveToX(0, duration, Easing.OutQuint);
+            mainContent.FadeTo(1, duration / 2, Easing.OutQuint);
+            mainContent.FadeEdgeEffectTo(PotatoMode.UltraActive ? 0 : WaveContainer.SHADOW_OPACITY, PotatoMode.UltraActive ? 0 : WaveContainer.APPEAR_DURATION, Easing.Out);
 
             toastTray.FlushAllToasts(true);
         }
@@ -242,9 +244,10 @@ namespace osu.Game.Overlays
 
             markAllRead();
 
-            this.MoveToX(WIDTH, TRANSITION_LENGTH, Easing.OutQuint);
-            mainContent.FadeTo(0, TRANSITION_LENGTH / 2, Easing.OutQuint);
-            mainContent.FadeEdgeEffectTo(0, WaveContainer.DISAPPEAR_DURATION, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : TRANSITION_LENGTH;
+            this.MoveToX(WIDTH, duration, Easing.OutQuint);
+            mainContent.FadeTo(0, duration / 2, Easing.OutQuint);
+            mainContent.FadeEdgeEffectTo(0, PotatoMode.UltraActive ? 0 : WaveContainer.DISAPPEAR_DURATION, Easing.In);
         }
 
         private void notificationClosed(Notification notification) => Schedule(() =>

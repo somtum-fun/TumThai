@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -16,6 +16,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
@@ -293,6 +294,12 @@ namespace osu.Game.Overlays.Dialog
 
         public void Flash()
         {
+            if (PotatoMode.UltraActive)
+            {
+                flashSample?.Play();
+                return;
+            }
+
             flashLayer.FadeInFromZero(80, Easing.OutQuint)
                       .Then()
                       .FadeOutFromOne(1500, Easing.OutQuint);
@@ -325,6 +332,15 @@ namespace osu.Game.Overlays.Dialog
         {
             actionInvoked = false;
 
+            if (PotatoMode.UltraActive)
+            {
+                content.Scale = Vector2.One;
+                content.Alpha = 1f;
+                ring.Size = ringSize;
+                icon.Scale = Vector2.One;
+                return;
+            }
+
             // Reset various animations but only if the dialog animation fully completed
             if (content.Alpha == 0)
             {
@@ -348,9 +364,11 @@ namespace osu.Game.Overlays.Dialog
                 // This is presumed to always be a sane default "cancel" action.
                 buttonsContainer.Last().TriggerClick();
 
+            double duration = PotatoMode.UltraActive ? 0 : EXIT_DURATION;
+
             content
-                .ScaleTo(0.7f, EXIT_DURATION, Easing.Out)
-                .FadeOut(EXIT_DURATION, Easing.OutQuint);
+                .ScaleTo(0.7f, duration, Easing.Out)
+                .FadeOut(duration, Easing.OutQuint);
         }
 
         private void pressButtonAtIndex(int index)

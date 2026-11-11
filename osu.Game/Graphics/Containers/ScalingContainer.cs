@@ -12,6 +12,7 @@ using osu.Framework.Layout;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
 using osu.Game.Configuration;
+using osu.Game.Performance;
 using osu.Game.Screens;
 using osu.Game.Screens.Backgrounds;
 using osuTK;
@@ -111,7 +112,7 @@ namespace osu.Game.Graphics.Containers
                 if (applyUIScale)
                 {
                     uiScale = osuConfig.GetBindable<float>(OsuSetting.UIScale);
-                    uiScale.BindValueChanged(args => this.TransformTo(nameof(CurrentScale), args.NewValue, TRANSITION_DURATION, Easing.OutQuart), true);
+                    uiScale.BindValueChanged(args => this.TransformTo(nameof(CurrentScale), args.NewValue, PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.OutQuart), true);
                 }
             }
 
@@ -187,11 +188,11 @@ namespace osu.Game.Graphics.Containers
                         backgroundStack.Push(new ScalingBackgroundScreen());
                     }
 
-                    backgroundStack.FadeIn(TRANSITION_DURATION);
-                    backgroundStack.FadeColour(OsuColour.Gray(1.0f - scalingMenuBackgroundDim.Value), TRANSITION_DURATION, Easing.OutQuint);
+                    backgroundStack.FadeIn(PotatoMode.UltraActive ? 0 : TRANSITION_DURATION);
+                    backgroundStack.FadeColour(OsuColour.Gray(1.0f - scalingMenuBackgroundDim.Value), PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.OutQuint);
                 }
                 else
-                    backgroundStack?.FadeOut(TRANSITION_DURATION);
+                    backgroundStack?.FadeOut(PotatoMode.UltraActive ? 0 : TRANSITION_DURATION);
             }
 
             RectangleF targetRect = new RectangleF(Vector2.Zero, Vector2.One);
@@ -220,13 +221,15 @@ namespace osu.Game.Graphics.Containers
             if (requiresMasking)
                 sizableContainer.Masking = true;
 
-            sizableContainer.MoveTo(targetRect.Location, TRANSITION_DURATION, Easing.OutQuart);
-            sizableContainer.ResizeTo(targetRect.Size, TRANSITION_DURATION, Easing.OutQuart);
+            double duration = PotatoMode.UltraActive ? 0 : TRANSITION_DURATION;
+
+            sizableContainer.MoveTo(targetRect.Location, duration, Easing.OutQuart);
+            sizableContainer.ResizeTo(targetRect.Size, duration, Easing.OutQuart);
 
             // Of note, this will not work great in the case of nested ScalingContainers where multiple are applying corner radius.
             // Masking and corner radius should likely only be applied at one point in the full game stack to fix this.
             // An example of how this can occur is when the skin editor is visible and the game screen scaling is set to "Everything".
-            sizableContainer.TransformTo(nameof(CornerRadius), requiresMasking ? corner_radius : 0, TRANSITION_DURATION, requiresMasking ? Easing.OutQuart : Easing.None)
+            sizableContainer.TransformTo(nameof(CornerRadius), requiresMasking ? corner_radius : 0, duration, requiresMasking ? Easing.OutQuart : Easing.None)
                             .OnComplete(_ => { sizableContainer.Masking = requiresMasking; });
 
             // when "everything" scaling mode is active, tablets are expected to constrain output area to the scaled size of the game
