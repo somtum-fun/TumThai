@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -13,6 +13,7 @@ using Android.Content.PM;
 using Android.Graphics;
 using Android.OS;
 using Android.Views;
+using osu.Android.Input;
 using osu.Android.Performance;
 using osu.Framework.Android;
 using osu.Framework.Logging;
@@ -70,7 +71,13 @@ namespace osu.Android
 
         public new bool IsTablet { get; private set; }
 
+        internal ViewGroup? InputRootLayout => MLayout;
+
+        internal View? GameSurface => MSurface;
+
         private readonly OsuGameAndroid game;
+
+        private AndroidTextInputSource? textInputSource;
 
         private bool gameCreated;
         private SurfaceView? gameSurfaceView;
@@ -86,6 +93,12 @@ namespace osu.Android
 
             gameCreated = true;
             return game;
+        }
+
+        protected override void Main()
+        {
+            using var host = new OsuAndroidGameHost(this);
+            host.Run(CreateGame());
         }
 
         public OsuGameActivity()
@@ -161,7 +174,10 @@ namespace osu.Android
             ensureSurfaceConfigured();
             applySurfaceFrameRateHint();
             updateGestureExclusionRects();
+            textInputSource?.RestoreFocusIfActive();
         }
+
+        internal void AttachTextInputSource(AndroidTextInputSource? source) => textInputSource = source;
 
         public override bool DispatchTouchEvent(MotionEvent? ev)
         {
