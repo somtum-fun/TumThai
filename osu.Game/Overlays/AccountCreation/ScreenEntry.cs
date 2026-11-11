@@ -9,6 +9,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions.LocalisationExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Input;
 using osu.Framework.Utils;
 using osu.Framework.Platform;
 using osu.Framework.Screens;
@@ -78,6 +79,7 @@ namespace osu.Game.Overlays.AccountCreation
                         },
                         usernameTextBox = new OsuTextBox
                         {
+                            InputProperties = new TextInputProperties(TextInputType.Username, false),
                             PlaceholderText = UsersStrings.LoginUsername.ToLower(),
                             RelativeSizeAxes = Axes.X,
                             TabbableContentContainer = this
@@ -89,6 +91,7 @@ namespace osu.Game.Overlays.AccountCreation
                         },
                         emailTextBox = new OsuTextBox
                         {
+                            InputProperties = new TextInputProperties(TextInputType.EmailAddress, false),
                             PlaceholderText = ModelValidationStrings.UserAttributesUserEmail.ToLower(),
                             RelativeSizeAxes = Axes.X,
                             TabbableContentContainer = this
