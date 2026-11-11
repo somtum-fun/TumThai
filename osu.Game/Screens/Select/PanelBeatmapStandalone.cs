@@ -57,6 +57,7 @@ namespace osu.Game.Screens.Select
 
         private IBindable<StarDifficulty>? starDifficultyBindable;
         private CancellationTokenSource? starDifficultyCancellationSource;
+        private string? lastIconRulesetShortName;
 
         private PanelSetBackground beatmapBackground = null!;
         private ScheduledDelegate? scheduledBackgroundRetrieval;
@@ -242,7 +243,7 @@ namespace osu.Game.Screens.Select
                                     AutoSizeAxes = Axes.Both,
                                     Children = new Drawable[]
                                     {
-                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: true)
+                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: !PotatoMode.UltraActive)
                                         {
                                             Origin = Anchor.CentreLeft,
                                             Anchor = Anchor.CentreLeft,
@@ -301,8 +302,16 @@ namespace osu.Game.Screens.Select
             updateButton.BeatmapSet = beatmapSet;
             statusPill.Status = beatmap.Status;
 
-            difficultyIcon.Icon = beatmap.Ruleset.CreateInstance().CreateIcon();
-            difficultyIcon.Show();
+            if (!PotatoMode.UltraActive)
+            {
+                if (lastIconRulesetShortName != beatmap.Ruleset.ShortName)
+                {
+                    lastIconRulesetShortName = beatmap.Ruleset.ShortName;
+                    difficultyIcon.Icon = beatmap.Ruleset.CreateInstance().CreateIcon();
+                }
+
+                difficultyIcon.Show();
+            }
 
             localRank.Beatmap = beatmap;
             difficultyText.Text = beatmap.DifficultyName;
@@ -438,19 +447,30 @@ namespace osu.Game.Screens.Select
                 FitStableTextBlock(mainFill);
 
                 var borderColour = Selected.Value ? Color4.White : CurrentInterfaceTheme.SetCardTint();
-                AccentColour = borderColour;
-                backgroundBorder.Colour = borderColour;
-                difficultyIcon.Colour = Selected.Value ? Color4.Black : Color4.White;
+
+                if (AccentColour != borderColour)
+                {
+                    AccentColour = borderColour;
+                    backgroundBorder.Colour = borderColour;
+                }
+
+                var iconColour = Selected.Value ? Color4.Black : Color4.White;
+                if (difficultyIcon.Colour != iconColour)
+                    difficultyIcon.Colour = iconColour;
             }
             else
             {
                 var diffColour = starRatingDisplay.DisplayedDifficultyColour;
 
-                AccentColour = diffColour;
-                spreadDisplay.Current.Colour = diffColour;
+                if (AccentColour != diffColour)
+                {
+                    AccentColour = diffColour;
+                    spreadDisplay.Current.Colour = diffColour;
+                    backgroundBorder.Colour = diffColour;
+                }
 
-                backgroundBorder.Colour = diffColour;
-                difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
+                if (difficultyIcon.Colour != starRatingDisplay.DisplayedDifficultyTextColour)
+                    difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
             }
         }
 
@@ -458,6 +478,12 @@ namespace osu.Game.Screens.Select
         {
             if (Item == null)
                 return;
+
+            if (ruleset.Value.ShortName is @"osu" or @"taiko" or @"fruits")
+            {
+                keyCountText.Alpha = 0;
+                return;
+            }
 
             var rulesetInstance = ruleset.Value.CreateInstance();
 

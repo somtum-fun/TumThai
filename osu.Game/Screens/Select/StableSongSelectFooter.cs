@@ -30,6 +30,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
 using osu.Game.Extensions;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
 using osu.Game.Users;
@@ -327,7 +328,7 @@ namespace osu.Game.Screens.Select
                     new ClickableContainer
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Action = () => modeMenuOverlay.FadeOut(150, Easing.OutQuint),
+                        Action = () => modeMenuOverlay.FadeOut(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint),
                         Child = new Box
                         {
                             RelativeSizeAxes = Axes.Both,
@@ -342,10 +343,11 @@ namespace osu.Game.Screens.Select
 
         private void toggleCustomRulesetList()
         {
+            double duration = PotatoMode.UltraActive ? 0 : 150;
             if (customRulesetList.Alpha > 0f)
-                customRulesetList.FadeOut(150, Easing.OutQuint);
+                customRulesetList.FadeOut(duration, Easing.OutQuint);
             else
-                customRulesetList.FadeIn(150, Easing.OutQuint);
+                customRulesetList.FadeIn(duration, Easing.OutQuint);
         }
 
         protected override void LoadComplete()
@@ -383,7 +385,10 @@ namespace osu.Game.Screens.Select
             };
             // osu!stable's song select loads mode-*-small from the skin (only the player panel's icon is always the default one)
             modeSmallSprite.Texture = skinManager.GetClassicTexture(smallTex);
-            modeSmallSprite.ScaleTo(0f).ScaleTo(1f, 1000, Easing.OutElastic);
+            if (PotatoMode.UltraActive)
+                modeSmallSprite.Scale = Vector2.One;
+            else
+                modeSmallSprite.ScaleTo(0f).ScaleTo(1f, 1000, Easing.OutElastic);
             modeWatermarkSprite.Texture = skinManager.GetClassicTexture(bigTex);
         }
 
@@ -391,15 +396,16 @@ namespace osu.Game.Screens.Select
         {
             customRulesetList.FadeOut();
 
+            double duration = PotatoMode.UltraActive ? 0 : 150;
             if (modeMenuOverlay.Alpha > 0f)
-                modeMenuOverlay.FadeOut(150, Easing.OutQuint);
+                modeMenuOverlay.FadeOut(duration, Easing.OutQuint);
             else
-                modeMenuOverlay.FadeIn(150, Easing.OutQuint);
+                modeMenuOverlay.FadeIn(duration, Easing.OutQuint);
         }
 
         private void selectRuleset(RulesetInfo target)
         {
-            modeMenuOverlay.FadeOut(150, Easing.OutQuint);
+            modeMenuOverlay.FadeOut(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint);
 
             if (ruleset is not Bindable<RulesetInfo> mutableRuleset || mutableRuleset.Disabled)
                 return;
@@ -407,8 +413,8 @@ namespace osu.Game.Screens.Select
             mutableRuleset.Value = target;
         }
 
-        protected override void PopIn() => this.FadeIn(200, Easing.OutQuint);
-        protected override void PopOut() => this.FadeOut(200, Easing.OutQuint);
+        protected override void PopIn() => this.FadeIn(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
+        protected override void PopOut() => this.FadeOut(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
 
         private partial class StableSelectionSpriteButton : OsuClickableContainer
         {
@@ -521,13 +527,13 @@ namespace osu.Game.Screens.Select
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                hoverContainer.FadeIn(120, Easing.OutQuint);
+                hoverContainer.FadeIn(PotatoMode.UltraActive ? 0 : 120, Easing.OutQuint);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                hoverContainer.FadeOut(200, Easing.OutQuint);
+                hoverContainer.FadeOut(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
 
@@ -739,6 +745,9 @@ namespace osu.Game.Screens.Select
 
             private void pulseOnBeat(TimingControlPoint timingPoint)
             {
+                if (PotatoMode.UltraActive)
+                    return;
+
                 double beatLen = Math.Clamp(timingPoint.BeatLength, 150.0, 2000.0);
 
                 // SongSelection.cs lines 3525-3527:
@@ -757,15 +766,30 @@ namespace osu.Game.Screens.Select
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                hoverOverlay.FadeTo(hoverPeak, 350, Easing.OutQuint);
-                hoverOverlay.ScaleTo(hover_scale, 350, Easing.OutElastic);
+                if (PotatoMode.UltraActive)
+                {
+                    hoverOverlay.Alpha = hoverPeak;
+                }
+                else
+                {
+                    hoverOverlay.FadeTo(hoverPeak, 350, Easing.OutQuint);
+                    hoverOverlay.ScaleTo(hover_scale, 350, Easing.OutElastic);
+                }
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                hoverOverlay.FadeTo(0.01f, 350, Easing.OutQuint);
-                hoverOverlay.ScaleTo(base_scale, 350, Easing.OutQuint);
+                if (PotatoMode.UltraActive)
+                {
+                    hoverOverlay.Alpha = 0.01f;
+                    hoverOverlay.Scale = new Vector2(base_scale);
+                }
+                else
+                {
+                    hoverOverlay.FadeTo(0.01f, 350, Easing.OutQuint);
+                    hoverOverlay.ScaleTo(base_scale, 350, Easing.OutQuint);
+                }
                 base.OnHoverLost(e);
             }
 
@@ -872,17 +896,23 @@ namespace osu.Game.Screens.Select
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                if (iconFromDefaultSkin)
-                    icon.ScaleTo(1.1f, 1000, Easing.OutElastic);
-                label.MoveToX(row_size + 32f, 300, Easing.Out);
+                if (!PotatoMode.UltraActive)
+                {
+                    if (iconFromDefaultSkin)
+                        icon.ScaleTo(1.1f, 1000, Easing.OutElastic);
+                    label.MoveToX(row_size + 32f, 300, Easing.Out);
+                }
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                if (iconFromDefaultSkin)
-                    icon.ScaleTo(1f, 1000, Easing.OutElastic);
-                label.MoveToX(row_size + 16f, 300, Easing.Out);
+                if (!PotatoMode.UltraActive)
+                {
+                    if (iconFromDefaultSkin)
+                        icon.ScaleTo(1f, 1000, Easing.OutElastic);
+                    label.MoveToX(row_size + 16f, 300, Easing.Out);
+                }
                 base.OnHoverLost(e);
             }
 
@@ -936,18 +966,18 @@ namespace osu.Game.Screens.Select
             protected override void LoadComplete()
             {
                 base.LoadComplete();
-                current.BindValueChanged(c => selected.FadeTo(c.NewValue.Equals(rulesetInfo) ? 1 : 0, 150), true);
+                current.BindValueChanged(c => selected.FadeTo(c.NewValue.Equals(rulesetInfo) ? 1 : 0, PotatoMode.UltraActive ? 0 : 150), true);
             }
 
             protected override bool OnHover(HoverEvent e)
             {
-                hover.FadeIn(100);
+                hover.FadeIn(PotatoMode.UltraActive ? 0 : 100);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                hover.FadeOut(300);
+                hover.FadeOut(PotatoMode.UltraActive ? 0 : 300);
                 base.OnHoverLost(e);
             }
         }

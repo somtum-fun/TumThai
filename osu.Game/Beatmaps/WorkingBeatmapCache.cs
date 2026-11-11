@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -171,7 +171,7 @@ namespace osu.Game.Beatmaps
                     }
 
                     string streamMD5 = stream.ComputeMD5Hash();
-                    string streamSHA2 = stream.ComputeSHA2Hash();
+                    string streamSHA2 = PotatoMode.UltraActive ? (BeatmapInfo.Hash ?? string.Empty) : stream.ComputeSHA2Hash();
 
                     if (streamMD5 != BeatmapInfo.MD5Hash)
                     {
@@ -185,7 +185,9 @@ namespace osu.Game.Beatmaps
 
                         beatmap.BeatmapInfo.MD5Hash = streamMD5;
                         beatmap.BeatmapInfo.Hash = streamSHA2;
-                        beatmap.BeatmapInfo.UpdateStatisticsFromBeatmap(beatmap);
+
+                        if (!PotatoMode.UltraActive)
+                            beatmap.BeatmapInfo.UpdateStatisticsFromBeatmap(beatmap);
 
                         return beatmap;
                     }
@@ -199,11 +201,11 @@ namespace osu.Game.Beatmaps
 
             public override Texture GetPanelBackground() => PotatoMode.UltraActive ? null : getBackgroundFromStore(resources.BeatmapPanelTextureStore);
 
-            public override Texture GetStableThumbnail() => resources.StableThumbnailTextureStore is TextureStore store ? getBackgroundFromStore(store) : GetBackground();
+            public override Texture GetStableThumbnail() => PotatoMode.UltraActive
+                ? null
+                : (resources.StableThumbnailTextureStore is TextureStore store ? getBackgroundFromStore(store) : GetBackground());
 
-            public override Texture GetBackground() => PotatoMode.UltraActive && resources.StableThumbnailTextureStore is TextureStore thumbStore
-                ? getBackgroundFromStore(thumbStore)
-                : getBackgroundFromStore(resources.LargeTextureStore);
+            public override Texture GetBackground() => PotatoMode.UltraActive ? null : getBackgroundFromStore(resources.LargeTextureStore);
 
             private Texture getBackgroundFromStore(TextureStore store)
             {

@@ -284,7 +284,7 @@ namespace osu.Game
         IBindable<OverlayActivation> IOverlayManager.OverlayActivationMode => OverlayActivationMode;
 
         private void updateBlockingOverlayFade() =>
-            ScreenContainer.FadeColour(visibleBlockingOverlays.Any() ? OsuColour.Gray(0.5f) : Color4.White, 500, Easing.OutQuint);
+            ScreenContainer.FadeColour(visibleBlockingOverlays.Any() ? OsuColour.Gray(0.5f) : Color4.White, Performance.PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
 
         IDisposable IOverlayManager.RegisterBlockingOverlay(OverlayContainer overlayContainer)
         {
@@ -958,7 +958,10 @@ namespace osu.Game
         private void beatmapChanged(ValueChangedEvent<WorkingBeatmap> beatmap)
         {
             beatmap.OldValue?.CancelAsyncLoad();
-            beatmap.NewValue?.BeginAsyncLoad();
+
+            if (!Performance.PotatoMode.UltraActive)
+                beatmap.NewValue?.BeginAsyncLoad();
+
             updateWindowTitle();
         }
 
@@ -1749,9 +1752,9 @@ namespace osu.Game
         {
             // TumThai: the player can keep the volume as it is while the window is inactive.
             if (isActive || !LocalConfig.Get<bool>(OsuSetting.VolumeInactiveEnabled))
-                this.TransformBindableTo(inactiveVolumeFade, 1, 400, Easing.OutQuint);
+                this.TransformBindableTo(inactiveVolumeFade, 1, Performance.PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
             else
-                this.TransformBindableTo(inactiveVolumeFade, LocalConfig.Get<double>(OsuSetting.VolumeInactive), 4000, Easing.OutQuint);
+                this.TransformBindableTo(inactiveVolumeFade, LocalConfig.Get<double>(OsuSetting.VolumeInactive), Performance.PotatoMode.UltraActive ? 0 : 4000, Easing.OutQuint);
         }
 
         #endregion
@@ -1800,10 +1803,17 @@ namespace osu.Game
             if (Notifications.IsLoaded && Notifications.State.Value == Visibility.Visible)
                 adjust -= NotificationOverlay.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
 
-            horizontalOffsetAdjust = (float)Interpolation.DampContinuously(horizontalOffsetAdjust, adjust, 100, Time.Elapsed);
-            // Avoid having everything on the screen moving by miniscule amounts (can create overhead on busy screens).
-            if (adjust == 0 && Math.Abs(horizontalOffsetAdjust) < 0.2f)
-                horizontalOffsetAdjust = 0;
+            if (Performance.PotatoMode.UltraActive)
+            {
+                horizontalOffsetAdjust = adjust;
+            }
+            else
+            {
+                horizontalOffsetAdjust = (float)Interpolation.DampContinuously(horizontalOffsetAdjust, adjust, 100, Time.Elapsed);
+                // Avoid having everything on the screen moving by miniscule amounts (can create overhead on busy screens).
+                if (adjust == 0 && Math.Abs(horizontalOffsetAdjust) < 0.2f)
+                    horizontalOffsetAdjust = 0;
+            }
 
             ScreenOffsetContainer.X = horizontalOffsetAdjust;
             overlayContent.X = horizontalOffsetAdjust * 1.2f;

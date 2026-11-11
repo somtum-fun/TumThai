@@ -59,6 +59,7 @@ namespace osu.Game.Screens.Select
 
         private IBindable<StarDifficulty>? starDifficultyBindable;
         private CancellationTokenSource? starDifficultyCancellationSource;
+        private string? lastIconRulesetShortName;
 
         private Box backgroundBorder = null!;
         private Box backgroundDifficultyTint = null!;
@@ -253,7 +254,7 @@ namespace osu.Game.Screens.Select
                                     AutoSizeAxes = Axes.Both,
                                     Children = new Drawable[]
                                     {
-                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: true)
+                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: !PotatoMode.UltraActive)
                                         {
                                             Origin = Anchor.CentreLeft,
                                             Anchor = Anchor.CentreLeft,
@@ -340,7 +341,11 @@ namespace osu.Game.Screens.Select
         {
             base.PrepareForUse();
 
-            difficultyIcon.Icon = getRulesetIcon(beatmap.Ruleset);
+            if (!PotatoMode.UltraActive && lastIconRulesetShortName != beatmap.Ruleset.ShortName)
+            {
+                lastIconRulesetShortName = beatmap.Ruleset.ShortName;
+                difficultyIcon.Icon = getRulesetIcon(beatmap.Ruleset);
+            }
 
             if (SkinManager != null)
             {
@@ -481,6 +486,12 @@ namespace osu.Game.Screens.Select
         {
             if (Item == null)
                 return;
+
+            if (ruleset.Value.ShortName is @"osu" or @"taiko" or @"fruits")
+            {
+                variantText.Alpha = 0;
+                return;
+            }
 
             var rulesetInstance = ruleset.Value.CreateInstance();
 
