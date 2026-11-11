@@ -24,6 +24,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 using osu.Game.Users;
 using osuTK;
@@ -361,7 +362,7 @@ namespace osu.Game.Screens.Menu
         private void updateMenuState(ButtonSystemState state)
         {
             bool isExpanded = state == ButtonSystemState.TopLevel || state == ButtonSystemState.Play || state == ButtonSystemState.Multi || state == ButtonSystemState.Edit;
-            statsTextFlow.FadeTo(isExpanded ? 1f : 0f, 300, Easing.OutQuint);
+            statsTextFlow.FadeTo(isExpanded ? 1f : 0f, PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
             showStack(topLevelStack, state == ButtonSystemState.TopLevel);
             showStack(playLevelStack, state == ButtonSystemState.Play || state == ButtonSystemState.Multi);
@@ -370,6 +371,14 @@ namespace osu.Game.Screens.Menu
 
         private static void showStack(FillFlowContainer stack, bool visible)
         {
+            if (PotatoMode.UltraActive)
+            {
+                stack.ClearTransforms();
+                stack.X = 0;
+                stack.Alpha = visible ? 1f : 0f;
+                return;
+            }
+
             if (visible)
             {
                 stack.MoveToX(-40).FadeIn(220, Easing.OutQuint).MoveToX(0, 320, Easing.OutBack);
@@ -492,13 +501,13 @@ namespace osu.Game.Screens.Menu
 
             protected override bool OnHover(HoverEvent e)
             {
-                bg.FadeColour(Color4Extensions.FromHex(@"2A4895"), 120, Easing.OutQuint);
+                bg.FadeColour(Color4Extensions.FromHex(@"2A4895"), PotatoMode.UltraActive ? 0 : 120, Easing.OutQuint);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                bg.FadeColour(Color4Extensions.FromHex(@"1A2855").Opacity(0.85f), 150, Easing.OutQuint);
+                bg.FadeColour(Color4Extensions.FromHex(@"1A2855").Opacity(0.85f), PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
         }
@@ -614,17 +623,37 @@ namespace osu.Game.Screens.Menu
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                body.MoveToX(35.2f, 350, Easing.OutElastic);
-                overSprite?.FadeIn(80, Easing.OutQuint);
-                flashBox?.FadeTo(0.18f, 120, Easing.OutQuint);
+
+                if (PotatoMode.UltraActive)
+                {
+                    overSprite?.FadeIn();
+                    flashBox?.FadeTo(0.18f);
+                }
+                else
+                {
+                    body.MoveToX(35.2f, 350, Easing.OutElastic);
+                    overSprite?.FadeIn(80, Easing.OutQuint);
+                    flashBox?.FadeTo(0.18f, 120, Easing.OutQuint);
+                }
+
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                body.MoveToX(0, 300, Easing.OutElastic);
-                overSprite?.FadeOut(300, Easing.OutQuint);
-                flashBox?.FadeOut(200, Easing.OutQuint);
+                if (PotatoMode.UltraActive)
+                {
+                    body.X = 0;
+                    overSprite?.FadeOut();
+                    flashBox?.FadeOut();
+                }
+                else
+                {
+                    body.MoveToX(0, 300, Easing.OutElastic);
+                    overSprite?.FadeOut(300, Easing.OutQuint);
+                    flashBox?.FadeOut(200, Easing.OutQuint);
+                }
+
                 base.OnHoverLost(e);
             }
 
@@ -666,13 +695,15 @@ namespace osu.Game.Screens.Menu
 
             protected override bool OnHover(HoverEvent e)
             {
-                spriteIcon.ScaleTo(1.2f, 150, Easing.OutElastic);
+                if (!PotatoMode.UltraActive)
+                    spriteIcon.ScaleTo(1.2f, 150, Easing.OutElastic);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                spriteIcon.ScaleTo(1f, 150, Easing.OutQuint);
+                if (!PotatoMode.UltraActive)
+                    spriteIcon.ScaleTo(1f, 150, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
 
@@ -766,15 +797,32 @@ namespace osu.Game.Screens.Menu
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                tabBody.MoveToX(0, 200, Easing.OutElastic);
-                overSprite?.FadeIn(120, Easing.OutQuint);
+
+                if (PotatoMode.UltraActive)
+                {
+                    overSprite?.FadeIn();
+                }
+                else
+                {
+                    tabBody.MoveToX(0, 200, Easing.OutElastic);
+                    overSprite?.FadeIn(120, Easing.OutQuint);
+                }
+
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                tabBody.MoveToX(8, 200, Easing.OutQuint);
-                overSprite?.FadeOut(150, Easing.OutQuint);
+                if (PotatoMode.UltraActive)
+                {
+                    overSprite?.FadeOut();
+                }
+                else
+                {
+                    tabBody.MoveToX(8, 200, Easing.OutQuint);
+                    overSprite?.FadeOut(150, Easing.OutQuint);
+                }
+
                 base.OnHoverLost(e);
             }
 

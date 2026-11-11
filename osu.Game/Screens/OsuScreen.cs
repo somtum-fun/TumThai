@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -14,6 +14,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Screens;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Footer;
@@ -263,15 +264,15 @@ namespace osu.Game.Screens
         protected virtual void LogoArriving(OsuLogo logo, bool resuming)
         {
             logo.Action = null;
-            logo.FadeOut(300, Easing.OutQuint);
+            logo.FadeOut(PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
             logo.Origin = Anchor.Centre;
 
             logo.ChangeAnchor(Anchor.TopLeft);
             logo.RelativePositionAxes = Axes.Both;
 
-            logo.Triangles = true;
-            logo.Ripple = true;
+            logo.Triangles = !PotatoMode.UltraActive;
+            logo.Ripple = !PotatoMode.UltraActive;
         }
 
         private void applyArrivingDefaults(bool isResuming)

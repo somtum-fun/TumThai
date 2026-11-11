@@ -18,6 +18,7 @@ using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
 using osu.Game.Users.Drawables;
@@ -284,7 +285,7 @@ namespace osu.Game.Users
                 levelText.Text = $"Lv{stats.Level.Current}";
 
                 float progress = Math.Clamp(stats.Level.Progress / 100f, 0f, 1f);
-                levelBarFill.ResizeWidthTo(level_bar_max_width * progress, 300, Easing.OutQuint);
+                levelBarFill.ResizeWidthTo(level_bar_max_width * progress, PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
                 if (stats.GlobalRank is int rank && rank > 0)
                 {
@@ -318,15 +319,15 @@ namespace osu.Game.Users
 
         protected override bool OnHover(HoverEvent e)
         {
-            hoverLayer.FadeTo(0.8f, 150, Easing.OutQuad);
-            borderSprite?.FadeColour(Color4.White, 300, Easing.OutQuad);
+            hoverLayer.FadeTo(0.8f, PotatoMode.UltraActive ? 0 : 150, Easing.OutQuad);
+            borderSprite?.FadeColour(Color4.White, PotatoMode.UltraActive ? 0 : 300, Easing.OutQuad);
             return base.OnHover(e);
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            hoverLayer.FadeOut(200, Easing.OutQuad);
-            borderSprite?.FadeColour(Color4.Black, 300, Easing.OutQuad);
+            hoverLayer.FadeOut(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuad);
+            borderSprite?.FadeColour(Color4.Black, PotatoMode.UltraActive ? 0 : 300, Easing.OutQuad);
             base.OnHoverLost(e);
         }
 
