@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -16,6 +16,7 @@ using osu.Framework.Utils;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
@@ -326,17 +327,18 @@ namespace osu.Game.Graphics.Carousel
 
                 private void updateVisuals(MouseEvent e)
                 {
+                    double fadeDuration = PotatoMode.UltraActive ? 0 : 100;
                     if (capturingMouseDown)
-                        box.FadeColour(highlightColour, 100);
+                        box.FadeColour(highlightColour, fadeDuration);
                     else if (IsHovered)
-                        box.FadeColour(hoverColour, 100);
+                        box.FadeColour(hoverColour, fadeDuration);
                     else
-                        box.FadeColour(defaultColour, 100);
+                        box.FadeColour(defaultColour, fadeDuration);
 
                     if (IsHovered || IsDragged)
-                        box.ResizeWidthTo(1, 300, Easing.OutElasticHalf);
+                        box.ResizeWidthTo(1, PotatoMode.UltraActive ? 0 : 300, Easing.OutElasticHalf);
                     else
-                        box.ResizeWidthTo(1 / expanded_size_ratio, 200, Easing.OutQuint);
+                        box.ResizeWidthTo(1 / expanded_size_ratio, PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
                 }
             }
 

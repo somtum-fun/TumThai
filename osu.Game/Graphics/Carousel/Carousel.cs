@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -991,16 +991,20 @@ namespace osu.Game.Graphics.Carousel
                     continue;
 
                 float normalisedDepth = (float)(Math.Abs(selectedYPos - c.Item.CarouselYPosition) / DrawHeight);
-                Scroll.Panels.ChangeChildDepth(panel, c.Item.DepthLayer + normalisedDepth);
+                float targetDepth = c.Item.DepthLayer + normalisedDepth;
+                if (panel.Depth != targetDepth)
+                    Scroll.Panels.ChangeChildDepth(panel, targetDepth);
 
                 if (c.DrawYPosition != c.Item.CarouselYPosition)
                 {
-                    c.DrawYPosition = PotatoMode.UltraActive
+                    c.DrawYPosition = !DebugUtils.IsNUnitRunning || PotatoMode.Active
                         ? c.Item.CarouselYPosition
                         : Interpolation.DampContinuously(c.DrawYPosition, c.Item.CarouselYPosition, 50, Time.Elapsed);
                 }
 
-                panel.X = GetPanelXOffset(panel);
+                float targetX = GetPanelXOffset(panel);
+                if (Math.Abs(panel.X - targetX) > 0.05f)
+                    panel.X = targetX;
 
                 c.Selected.Value = currentSelection?.CarouselItem != null && CheckModelEquality(c.Item, currentSelection.CarouselItem);
                 c.KeyboardSelected.Value = c.Item == currentKeyboardSelection?.CarouselItem;
@@ -1018,7 +1022,7 @@ namespace osu.Game.Graphics.Carousel
             if (scrollToSelection != PendingScrollOperation.None)
             {
                 if (GetScrollTarget() is double scrollTarget)
-                    Scroll.ScrollTo(scrollTarget - visibleHalfHeight + BleedTop, animated: !PotatoMode.UltraActive && scrollToSelection == PendingScrollOperation.Standard);
+                    Scroll.ScrollTo(scrollTarget - visibleHalfHeight + BleedTop, animated: DebugUtils.IsNUnitRunning && !PotatoMode.Active && scrollToSelection == PendingScrollOperation.Standard);
 
                 scrollToSelection = PendingScrollOperation.None;
             }
@@ -1031,8 +1035,10 @@ namespace osu.Game.Graphics.Carousel
 
         protected virtual float GetPanelXOffset(Drawable panel)
         {
-            Vector2 posInScroll = Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre);
-            float dist = Math.Abs(1f - (posInScroll.Y + BleedTop) / visibleHalfHeight);
+            float posY = PotatoMode.Active && panel is ICarouselPanel c
+                ? (float)(c.DrawYPosition - Scroll.Current) + panel.DrawHeight * 0.5f
+                : Scroll.ToLocalSpace(panel.ScreenSpaceDrawQuad.Centre).Y;
+            float dist = Math.Abs(1f - (posY + BleedTop) / visibleHalfHeight);
 
             return offsetX(dist, visibleHalfHeight);
         }
@@ -1123,7 +1129,7 @@ namespace osu.Game.Graphics.Carousel
                 Scroll.Add(drawable);
             }
 
-            if (toDisplay.Any() && !PotatoMode.UltraActive)
+            if (toDisplay.Any() && DebugUtils.IsNUnitRunning && !PotatoMode.Active)
             {
                 // To make transitions of items appearing in the flow look good, do a pass and make sure newly added items spawn from
                 // just beneath the *current interpolated position* of the previous panel.
