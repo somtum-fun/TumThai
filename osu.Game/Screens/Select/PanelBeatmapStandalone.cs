@@ -9,7 +9,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
@@ -287,12 +286,15 @@ namespace osu.Game.Screens.Select
 
             var beatmapSet = beatmap.BeatmapSet!;
 
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+            if (!PotatoMode.UltraActive)
             {
-                var working = beatmaps.GetWorkingBeatmap(b);
-                beatmapBackground.Beatmap = working;
-                stableThumbSprite.Texture = working.GetStableThumbnail();
-            }, beatmap, 50);
+                scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+                {
+                    var working = beatmaps.GetWorkingBeatmap(b);
+                    beatmapBackground.Beatmap = working;
+                    stableThumbSprite.Texture = working.GetStableThumbnail();
+                }, beatmap, 50);
+            }
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);

@@ -31,6 +31,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Online.Placeholders;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
@@ -273,12 +274,12 @@ namespace osu.Game.Screens.Select
 
         protected override void PopIn()
         {
-            this.FadeIn(300, Easing.OutQuint);
+            this.FadeIn(PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
         }
 
         protected override void PopOut()
         {
-            this.FadeOut(300, Easing.OutQuint);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
         }
 
         private void onModsChanged()
@@ -452,27 +453,35 @@ namespace osu.Game.Screens.Select
 
                     scoresContainer.Add(d);
 
-                    d.FadeOut()
-                     .MoveToX(-20f)
-                     .Delay(delay)
-                     .FadeIn(300, Easing.OutQuint)
-                     .MoveToX(0f, 300, Easing.OutQuint);
-
-                    bool visible = d.ScreenSpaceDrawQuad.TopLeft.Y < d.Parent!.ChildMaskingBounds.BottomLeft.Y;
-
-                    if (visible)
+                    if (PotatoMode.UltraActive)
                     {
-                        var del = Scheduler.AddDelayed(() =>
+                        d.Alpha = 1;
+                        d.X = 0;
+                    }
+                    else
+                    {
+                        d.FadeOut()
+                         .MoveToX(-20f)
+                         .Delay(delay)
+                         .FadeIn(300, Easing.OutQuint)
+                         .MoveToX(0f, 300, Easing.OutQuint);
+
+                        bool visible = d.ScreenSpaceDrawQuad.TopLeft.Y < d.Parent!.ChildMaskingBounds.BottomLeft.Y;
+
+                        if (visible)
                         {
-                            var chan = swishSample?.GetChannel();
-                            if (chan == null) return;
+                            var del = Scheduler.AddDelayed(() =>
+                            {
+                                var chan = swishSample?.GetChannel();
+                                if (chan == null) return;
 
-                            chan.Balance.Value = -OsuGameBase.SFX_STEREO_STRENGTH / 2;
-                            chan.Frequency.Value = 0.98f + RNG.NextDouble(0.04f);
-                            chan.Play();
-                        }, delay);
+                                chan.Balance.Value = -OsuGameBase.SFX_STEREO_STRENGTH / 2;
+                                chan.Frequency.Value = 0.98f + RNG.NextDouble(0.04f);
+                                chan.Play();
+                            }, delay);
 
-                        scoreSfxDelegates.Add(del);
+                            scoreSfxDelegates.Add(del);
+                        }
                     }
 
                     delay += 30;
@@ -482,8 +491,9 @@ namespace osu.Game.Screens.Select
 
             if (userScore != null)
             {
-                personalBestDisplay.MoveToX(0, 600, Easing.OutQuint);
-                personalBestDisplay.FadeIn(600, Easing.OutQuint);
+                double pbDuration = PotatoMode.UltraActive ? 0 : 600;
+                personalBestDisplay.MoveToX(0, pbDuration, Easing.OutQuint);
+                personalBestDisplay.FadeIn(pbDuration, Easing.OutQuint);
                 personalBestScoreContainer.Child = new BeatmapLeaderboardScore(userScore)
                 {
                     Highlight = BeatmapLeaderboardScore.HighlightType.Own,
@@ -494,7 +504,7 @@ namespace osu.Game.Screens.Select
                     Action = () => onLeaderboardScoreClicked(userScore),
                 };
 
-                scoresScroll.TransformTo(nameof(scoresScroll.Padding), new MarginPadding { Bottom = personal_best_height }, 300, Easing.OutQuint);
+                scoresScroll.TransformTo(nameof(scoresScroll.Padding), new MarginPadding { Bottom = personal_best_height }, PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
                 if (totalCount != null && userScore.Position != null)
                     personalBestText.Text = BeatmapLeaderboardWedgeStrings.PersonalBestWithPosition(userScore.Position.Value, totalCount.Value);
@@ -513,6 +523,14 @@ namespace osu.Game.Screens.Select
                 if (d.LifetimeEnd != double.MaxValue)
                     continue;
 
+                if (PotatoMode.UltraActive)
+                {
+                    d.ClearTransforms();
+                    d.Alpha = 0;
+                    d.Expire();
+                    continue;
+                }
+
                 d.Delay(delay)
                  .MoveToX(-10f, 120, Easing.Out)
                  .FadeOut(120, Easing.Out)
@@ -524,9 +542,10 @@ namespace osu.Game.Screens.Select
                     delay += 20;
             }
 
-            personalBestDisplay.MoveToX(-100, 300, Easing.OutQuint);
-            personalBestDisplay.FadeOut(300, Easing.OutQuint);
-            scoresScroll.TransformTo(nameof(scoresScroll.Padding), new MarginPadding(), 300, Easing.OutQuint);
+            double clearDuration = PotatoMode.UltraActive ? 0 : 300;
+            personalBestDisplay.MoveToX(-100, clearDuration, Easing.OutQuint);
+            personalBestDisplay.FadeOut(clearDuration, Easing.OutQuint);
+            scoresScroll.TransformTo(nameof(scoresScroll.Padding), new MarginPadding(), clearDuration, Easing.OutQuint);
 
             scoreSfxDelegates.ForEach(d => d.Cancel());
             scoreSfxDelegates.Clear();

@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -29,6 +29,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
 using Realms;
@@ -780,7 +781,9 @@ namespace osu.Game.Screens.Select
         {
             base.Update();
 
-            selectionFocusOffset = (float)Interpolation.DampContinuously(selectionFocusOffset, VisuallyFocusSelected ? 300 : 0, 100, Time.Elapsed);
+            selectionFocusOffset = PotatoMode.UltraActive
+                ? (VisuallyFocusSelected ? 300 : 0)
+                : (float)Interpolation.DampContinuously(selectionFocusOffset, VisuallyFocusSelected ? 300 : 0, 100, Time.Elapsed);
         }
 
         protected override float GetPanelXOffset(Drawable panel)
@@ -807,7 +810,7 @@ namespace osu.Game.Screens.Select
                 if (loading.State.Value == Visibility.Visible)
                     return;
 
-                Scroll.FadeColour(OsuColour.Gray(0.5f), 1000, Easing.OutQuint);
+                Scroll.FadeColour(OsuColour.Gray(0.5f), PotatoMode.UltraActive ? 0 : 1000, Easing.OutQuint);
                 loading.Show();
             }, showLoadingImmediately ? 0 : 250);
 
@@ -816,7 +819,7 @@ namespace osu.Game.Screens.Select
                 loadingDebounce?.Cancel();
                 loadingDebounce = null;
 
-                Scroll.FadeColour(OsuColour.Gray(1f), 500, Easing.OutQuint);
+                Scroll.FadeColour(OsuColour.Gray(1f), PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
                 loading.Hide();
             }));
         }
@@ -974,6 +977,9 @@ namespace osu.Game.Screens.Select
 
         private void updateVisibleBeatmaps(GroupedBeatmapSet groupedBeatmapSet, PanelBeatmapSet setPanel)
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             HashSet<BeatmapInfo> visibleBeatmaps = [];
             if (grouping.SetItems.TryGetValue(groupedBeatmapSet, out var visibleItems))
                 visibleBeatmaps = visibleItems.Where(i => i.Model is GroupedBeatmap).Select(i => ((GroupedBeatmap)i.Model).Beatmap).ToHashSet();

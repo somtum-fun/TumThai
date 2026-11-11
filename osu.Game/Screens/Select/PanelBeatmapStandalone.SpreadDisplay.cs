@@ -15,6 +15,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osuTK;
 
@@ -149,6 +150,14 @@ namespace osu.Game.Screens.Select
 
             private void updateBeatmap()
             {
+                if (PotatoMode.UltraActive)
+                {
+                    preceding.Clear();
+                    succeeding.Clear();
+                    Alpha = 0;
+                    return;
+                }
+
                 if (Beatmap.Value == null || scopedBeatmapSet.Value != null)
                 {
                     this.FadeOut(transition_duration, Easing.OutQuint);

@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
+using osu.Game.Performance;
 using osuTK;
 
 namespace osu.Game.Screens.Select
@@ -72,14 +73,16 @@ namespace osu.Game.Screens.Select
 
         protected override void PopIn()
         {
-            this.MoveToX(0, SongSelect.ENTER_DURATION, Easing.OutQuint)
-                .FadeIn(SongSelect.ENTER_DURATION / 3, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : SongSelect.ENTER_DURATION;
+            this.MoveToX(0, duration, Easing.OutQuint)
+                .FadeIn(duration / 3, Easing.In);
         }
 
         protected override void PopOut()
         {
-            this.MoveToX(-150, SongSelect.ENTER_DURATION, Easing.OutQuint)
-                .FadeOut(SongSelect.ENTER_DURATION / 3, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : SongSelect.ENTER_DURATION;
+            this.MoveToX(-150, duration, Easing.OutQuint)
+                .FadeOut(duration / 3, Easing.In);
         }
 
         private Drawable? currentContent;

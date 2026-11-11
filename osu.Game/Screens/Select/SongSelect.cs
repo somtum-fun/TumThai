@@ -43,6 +43,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
+using osu.Game.Performance;
 using osu.Game.Overlays.Volume;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -815,7 +816,7 @@ namespace osu.Game.Screens.Select
         {
             base.OnResuming(e);
 
-            this.FadeIn(fade_duration, Easing.OutQuint);
+            this.FadeIn(PotatoMode.UltraActive ? 0 : fade_duration, Easing.OutQuint);
             onArrivingAtScreen();
 
             ensureGlobalBeatmapValid();
@@ -835,7 +836,7 @@ namespace osu.Game.Screens.Select
         {
             carousel.VisuallyFocusSelected = true;
 
-            this.FadeOut(fade_duration, Easing.OutQuint);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : fade_duration, Easing.OutQuint);
             onLeavingScreen();
 
             base.OnSuspending(e);
@@ -843,7 +844,7 @@ namespace osu.Game.Screens.Select
 
         public override bool OnExiting(ScreenExitEvent e)
         {
-            this.FadeOut(fade_duration, Easing.OutQuint);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : fade_duration, Easing.OutQuint);
             onLeavingScreen();
 
             return base.OnExiting(e);
@@ -926,7 +927,7 @@ namespace osu.Game.Screens.Select
             }
 
             if (logo.Alpha > 0.8f && resuming)
-                Footer?.StartTrackingLogo(logo, 400, Easing.OutQuint);
+                Footer?.StartTrackingLogo(logo, PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
             else
             {
                 logo.Hide();
@@ -934,8 +935,9 @@ namespace osu.Game.Screens.Select
                 Footer?.StartTrackingLogo(logo);
             }
 
-            logo.FadeIn(240, Easing.OutQuint);
-            logo.ScaleTo(logo_scale, 240, Easing.OutQuint);
+            double logoFadeDuration = PotatoMode.UltraActive ? 0 : 240;
+            logo.FadeIn(logoFadeDuration, Easing.OutQuint);
+            logo.ScaleTo(logo_scale, logoFadeDuration, Easing.OutQuint);
 
             logo.Action = () =>
             {
@@ -964,8 +966,9 @@ namespace osu.Game.Screens.Select
 
             Footer?.StopTrackingLogo();
 
-            logo.ScaleTo(0.2f, 120, Easing.Out);
-            logo.FadeOut(120, Easing.Out);
+            double exitDuration = PotatoMode.UltraActive ? 0 : 120;
+            logo.ScaleTo(0.2f, exitDuration, Easing.Out);
+            logo.FadeOut(exitDuration, Easing.Out);
         }
 
         private void updateWedgeVisibility()
@@ -1018,7 +1021,7 @@ namespace osu.Game.Screens.Select
 
             // Required to undo results screen dimming the background.
             // Probably needs more thought because this needs to be in every `ApplyToBackground` currently to restore sane defaults.
-            backgroundModeBeatmap.FadeColour(Color4.White, 250);
+            backgroundModeBeatmap.FadeColour(Color4.White, PotatoMode.UltraActive ? 0 : 250);
 
             bool backgroundRevealActive = revealBackgroundDelegate?.State == ScheduledDelegate.RunState.Running || revealBackgroundDelegate?.State == ScheduledDelegate.RunState.Complete;
             backgroundModeBeatmap.BlurAmount.Value = configBackgroundBlur.Value && !backgroundRevealActive ? 20 : 0f;

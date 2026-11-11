@@ -11,7 +11,6 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
@@ -20,7 +19,6 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
-using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
@@ -30,6 +28,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online;
 using osu.Game.Online.Chat;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Select.Filter;
@@ -431,6 +430,22 @@ namespace osu.Game.Screens.Select
             line3LengthBpm.Colour = Precision.AlmostEquals(rate, 1.0)
                 ? Color4.White
                 : (rate > 1.0 ? colour_harder : colour_easier);
+
+            if (PotatoMode.UltraActive)
+            {
+                double hitLength = Math.Round(beatmapInfo.Length / rate);
+                int bpm = FormatUtils.RoundBPM(beatmapInfo.BPM, rate);
+                int totalObjects = Math.Max(0, beatmapInfo.TotalObjectCount);
+                int sliderOrHoldCount = Math.Max(0, beatmapInfo.EndTimeObjectCount);
+                int circleCount = Math.Max(0, totalObjects - sliderOrHoldCount);
+
+                line3LengthBpm.Text = $"Length: {hitLength.ToFormattedDuration()} BPM: {bpm} Objects: {totalObjects:N0}";
+                line4Objects.Text = totalObjects > 0
+                    ? $"Circles: {circleCount:N0}  Sliders: {sliderOrHoldCount:N0}"
+                    : string.Empty;
+                updateLine5Attributes();
+                return;
+            }
 
             Task.Run(() =>
             {

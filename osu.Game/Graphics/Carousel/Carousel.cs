@@ -26,6 +26,7 @@ using osu.Framework.Logging;
 using osu.Framework.Utils;
 using osu.Game.Input.Bindings;
 using osu.Game.Online.Multiplayer;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Input;
 
@@ -993,7 +994,11 @@ namespace osu.Game.Graphics.Carousel
                 Scroll.Panels.ChangeChildDepth(panel, c.Item.DepthLayer + normalisedDepth);
 
                 if (c.DrawYPosition != c.Item.CarouselYPosition)
-                    c.DrawYPosition = Interpolation.DampContinuously(c.DrawYPosition, c.Item.CarouselYPosition, 50, Time.Elapsed);
+                {
+                    c.DrawYPosition = PotatoMode.UltraActive
+                        ? c.Item.CarouselYPosition
+                        : Interpolation.DampContinuously(c.DrawYPosition, c.Item.CarouselYPosition, 50, Time.Elapsed);
+                }
 
                 panel.X = GetPanelXOffset(panel);
 
@@ -1013,7 +1018,7 @@ namespace osu.Game.Graphics.Carousel
             if (scrollToSelection != PendingScrollOperation.None)
             {
                 if (GetScrollTarget() is double scrollTarget)
-                    Scroll.ScrollTo(scrollTarget - visibleHalfHeight + BleedTop, animated: scrollToSelection == PendingScrollOperation.Standard);
+                    Scroll.ScrollTo(scrollTarget - visibleHalfHeight + BleedTop, animated: !PotatoMode.UltraActive && scrollToSelection == PendingScrollOperation.Standard);
 
                 scrollToSelection = PendingScrollOperation.None;
             }
@@ -1118,7 +1123,7 @@ namespace osu.Game.Graphics.Carousel
                 Scroll.Add(drawable);
             }
 
-            if (toDisplay.Any())
+            if (toDisplay.Any() && !PotatoMode.UltraActive)
             {
                 // To make transitions of items appearing in the flow look good, do a pass and make sure newly added items spawn from
                 // just beneath the *current interpolated position* of the previous panel.
@@ -1151,8 +1156,16 @@ namespace osu.Game.Graphics.Carousel
             // expired panels should have a depth behind all other panels to make the transition not look weird.
             Scroll.Panels.ChangeChildDepth(panel, panel.Depth + 1024);
 
-            panel.FadeOut(150, Easing.OutQuint);
-            panel.MoveToX(panel.X + 100, 200, Easing.Out);
+            if (PotatoMode.UltraActive)
+            {
+                panel.ClearTransforms();
+                panel.Alpha = 0;
+            }
+            else
+            {
+                panel.FadeOut(150, Easing.OutQuint);
+                panel.MoveToX(panel.X + 100, 200, Easing.Out);
+            }
 
             panel.Expire();
 

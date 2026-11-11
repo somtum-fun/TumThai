@@ -15,6 +15,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Difficulty;
 using osuTK;
 using osuTK.Graphics;
@@ -151,18 +152,20 @@ namespace osu.Game.Screens.Select
 
             private void updateDisplay()
             {
-                bar.ResizeWidthTo(value.Maximum == 0 ? 0 : Math.Clamp(value.Value / value.Maximum, 0, 1), 300, Easing.OutQuint);
-                adjustedBar.ResizeWidthTo(value.Maximum == 0 ? 0 : Math.Clamp(value.AdjustedValue / value.Maximum, 0, 1), 300, Easing.OutQuint);
+                double duration = PotatoMode.UltraActive ? 0 : 300;
+
+                bar.ResizeWidthTo(value.Maximum == 0 ? 0 : Math.Clamp(value.Value / value.Maximum, 0, 1), duration, Easing.OutQuint);
+                adjustedBar.ResizeWidthTo(value.Maximum == 0 ? 0 : Math.Clamp(value.AdjustedValue / value.Maximum, 0, 1), duration, Easing.OutQuint);
 
                 labelText.Text = value.Label;
                 valueText.Text = value.Content ?? value.AdjustedValue.ToLocalisableString("0.##");
 
                 if (value.Value == value.AdjustedValue)
                 {
-                    adjustedBar.FadeColour(Color4.Transparent, 300, Easing.OutQuint);
-                    bar.FadeIn(300, Easing.OutQuint);
+                    adjustedBar.FadeColour(Color4.Transparent, duration, Easing.OutQuint);
+                    bar.FadeIn(duration, Easing.OutQuint);
 
-                    valueText.FadeColour(Color4.White, 300, Easing.OutQuint);
+                    valueText.FadeColour(Color4.White, duration, Easing.OutQuint);
                     valueIcon.Hide();
                 }
                 else
@@ -172,21 +175,21 @@ namespace osu.Game.Screens.Select
                     if (difficultyIncrease)
                     {
                         bars.ChangeChildDepth(adjustedBar, 1);
-                        bar.FadeIn(300, Easing.OutQuint);
-                        adjustedBar.FadeColour(ColourInfo.GradientHorizontal(Color4.Black, colours.Red1), 300, Easing.OutQuint);
+                        bar.FadeIn(duration, Easing.OutQuint);
+                        adjustedBar.FadeColour(ColourInfo.GradientHorizontal(Color4.Black, colours.Red1), duration, Easing.OutQuint);
 
-                        valueText.FadeColour(colours.Red1, 300, Easing.OutQuint);
+                        valueText.FadeColour(colours.Red1, duration, Easing.OutQuint);
                         valueIcon.Show();
                         valueIcon.Colour = colours.Red1;
                         valueIcon.Icon = FontAwesome.Solid.SortUp;
                     }
                     else
                     {
-                        bar.FadeTo(0.5f, 300, Easing.OutQuint);
+                        bar.FadeTo(0.5f, duration, Easing.OutQuint);
                         bars.ChangeChildDepth(adjustedBar, -1);
-                        adjustedBar.FadeColour(colours.Lime1, 300, Easing.OutQuint);
+                        adjustedBar.FadeColour(colours.Lime1, duration, Easing.OutQuint);
 
-                        valueText.FadeColour(colours.Lime1, 300, Easing.OutQuint);
+                        valueText.FadeColour(colours.Lime1, duration, Easing.OutQuint);
                         valueIcon.Show();
                         valueIcon.Colour = colours.Lime1;
                         valueIcon.Icon = FontAwesome.Solid.SortDown;

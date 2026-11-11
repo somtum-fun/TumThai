@@ -22,6 +22,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -200,20 +201,22 @@ namespace osu.Game.Screens.Select
 
             updateDisplay();
 
-            statisticsFlow.AutoSizeDuration = 100;
+            statisticsFlow.AutoSizeDuration = PotatoMode.UltraActive ? 0 : 100;
             statisticsFlow.AutoSizeEasing = Easing.OutQuint;
         }
 
         protected override void PopIn()
         {
-            this.MoveToX(0, SongSelect.ENTER_DURATION, Easing.OutQuint)
-                .FadeIn(SongSelect.ENTER_DURATION / 3, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : SongSelect.ENTER_DURATION;
+            this.MoveToX(0, duration, Easing.OutQuint)
+                .FadeIn(duration / 3, Easing.In);
         }
 
         protected override void PopOut()
         {
-            this.MoveToX(-150, SongSelect.ENTER_DURATION, Easing.OutQuint)
-                .FadeOut(SongSelect.ENTER_DURATION / 3, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : SongSelect.ENTER_DURATION;
+            this.MoveToX(-150, duration, Easing.OutQuint)
+                .FadeOut(duration / 3, Easing.In);
         }
 
         private void updateDisplay()
@@ -252,6 +255,20 @@ namespace osu.Game.Screens.Select
         private void updateLengthAndBpmStatistics()
         {
             lengthBpmCancellationSource?.Cancel();
+
+            if (PotatoMode.UltraActive)
+            {
+                var beatmapInfo = working.Value.BeatmapInfo;
+                double rate = ModUtils.CalculateRateWithMods(mods.Value);
+                double hitLength = Math.Round(beatmapInfo.Length / rate);
+                int bpm = FormatUtils.RoundBPM(beatmapInfo.BPM, rate);
+
+                lengthStatistic.Text = hitLength.ToFormattedDuration();
+                lengthStatistic.TooltipText = BeatmapsetsStrings.ShowStatsTotalLength(hitLength.ToFormattedDuration());
+                bpmStatistic.Text = $"{bpm}";
+                return;
+            }
+
             lengthBpmCancellationSource = new CancellationTokenSource();
 
             var token = lengthBpmCancellationSource.Token;

@@ -22,6 +22,7 @@ using osu.Game.Localisation;
 using osu.Game.Online;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osuTK.Graphics;
@@ -238,14 +239,16 @@ namespace osu.Game.Screens.Select
                 cancellationSource?.Cancel();
                 cancellationSource = new CancellationTokenSource();
 
+                double fadeDuration = PotatoMode.UltraActive ? 0 : 300;
+
                 if (beatmap.IsDefault)
                 {
-                    ratingAndNameContainer.FadeOut(300, Easing.OutQuint);
-                    countStatisticsDisplay.FadeOut(300, Easing.OutQuint);
+                    ratingAndNameContainer.FadeOut(fadeDuration, Easing.OutQuint);
+                    countStatisticsDisplay.FadeOut(fadeDuration, Easing.OutQuint);
                 }
                 else
                 {
-                    ratingAndNameContainer.FadeIn(300, Easing.OutQuint);
+                    ratingAndNameContainer.FadeIn(fadeDuration, Easing.OutQuint);
                     difficultyText.Text = beatmap.Value.BeatmapInfo.DifficultyName;
                     mapperLink.Action = () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, beatmap.Value.Metadata.Author));
                     mapperText.Text = beatmap.Value.Metadata.Author.Username;
@@ -259,6 +262,13 @@ namespace osu.Game.Screens.Select
 
             private void updateCountStatistics(CancellationToken cancellationToken)
             {
+                if (PotatoMode.UltraActive)
+                {
+                    countStatisticsDisplay.ClearTransforms();
+                    countStatisticsDisplay.Alpha = 0;
+                    return;
+                }
+
                 if (beatmap.IsDefault)
                 {
                     countStatisticsDisplay.FadeOut(300, Easing.OutQuint);

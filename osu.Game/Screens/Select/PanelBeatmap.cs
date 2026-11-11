@@ -355,10 +355,13 @@ namespace osu.Game.Screens.Select
                 stableModeIcon.Texture = SkinManager.DefaultClassicSkin.GetTexture(modeTex);
             }
 
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+            if (!PotatoMode.UltraActive)
             {
-                stableThumbBackground.Beatmap = beatmaps.GetWorkingBeatmap(b);
-            }, beatmap, 50);
+                scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+                {
+                    stableThumbBackground.Beatmap = beatmaps.GetWorkingBeatmap(b);
+                }, beatmap, 50);
+            }
 
             localRank.Beatmap = beatmap;
             stableTitleText.Text = new RomanisableString(beatmap.Metadata.TitleUnicode, beatmap.Metadata.Title);

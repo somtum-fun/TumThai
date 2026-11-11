@@ -18,6 +18,7 @@ using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Mods;
@@ -179,6 +180,13 @@ namespace osu.Game.Beatmaps
                 return Task.FromResult<StarDifficulty?>(new StarDifficulty(beatmapInfo.StarRating, (beatmapInfo as IBeatmapOnlineInfo)?.MaxCombo ?? 0));
             }
 
+            // Ultra Potato mode: when no mods are active and the ruleset matches the beatmap's native ruleset,
+            // return the stored Realm StarRating immediately without reading/parsing the .osu file from disk.
+            if (PotatoMode.UltraActive && (mods == null || !mods.Any()) && localRulesetInfo.Equals(localBeatmapInfo.Ruleset) && localBeatmapInfo.StarRating >= 0)
+            {
+                return Task.FromResult<StarDifficulty?>(new StarDifficulty(localBeatmapInfo.StarRating, (beatmapInfo as IBeatmapOnlineInfo)?.MaxCombo ?? 0));
+            }
+
             return GetAsync(new DifficultyCacheLookup(localBeatmapInfo, localRulesetInfo, mods), cancellationToken, computationDelay);
         }
 
@@ -311,6 +319,9 @@ namespace osu.Game.Beatmaps
 
                 var difficulty = ruleset.CreateDifficultyCalculator(workingBeatmap).Calculate(key.OrderedMods, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
+
+                if (PotatoMode.UltraActive)
+                    return new StarDifficulty(difficulty, new PerformanceAttributes());
 
                 var performanceCalculator = ruleset.CreatePerformanceCalculator();
                 if (performanceCalculator == null)

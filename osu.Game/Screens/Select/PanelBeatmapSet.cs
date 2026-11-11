@@ -28,6 +28,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
 using osuTK;
@@ -291,17 +292,19 @@ namespace osu.Game.Screens.Select
 
         private void onExpanded()
         {
+            float duration = PotatoMode.UltraActive ? 0 : DURATION;
+
             if (Expanded.Value)
             {
-                chevronBackground.FadeIn(DURATION / 2, Easing.OutQuint);
-                chevronIcon.ResizeWidthTo(18, DURATION * 1.5f, Easing.OutElasticQuarter);
-                chevronIcon.FadeTo(1f, DURATION, Easing.OutQuint);
+                chevronBackground.FadeIn(duration / 2, Easing.OutQuint);
+                chevronIcon.ResizeWidthTo(18, duration * 1.5f, Easing.OutElasticQuarter);
+                chevronIcon.FadeTo(1f, duration, Easing.OutQuint);
             }
             else
             {
-                chevronBackground.FadeOut(DURATION, Easing.OutQuint);
-                chevronIcon.ResizeWidthTo(0f, DURATION, Easing.OutQuint);
-                chevronIcon.FadeTo(0f, DURATION, Easing.OutQuint);
+                chevronBackground.FadeOut(duration, Easing.OutQuint);
+                chevronIcon.ResizeWidthTo(0f, duration, Easing.OutQuint);
+                chevronIcon.FadeTo(0f, duration, Easing.OutQuint);
             }
 
             spreadDisplay.Expanded.Value = Expanded.Value;
@@ -314,12 +317,15 @@ namespace osu.Game.Screens.Select
             var beatmapSet = groupedBeatmapSet.BeatmapSet;
 
             // Choice of background image matches BSS implementation (always uses the lowest `beatmap_id` from the set).
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(s =>
+            if (!PotatoMode.UltraActive)
             {
-                var working = beatmaps.GetWorkingBeatmap(s.Beatmaps.MinBy(b => b.OnlineID));
-                setBackground.Beatmap = working;
-                stableThumbBackground.Beatmap = working;
-            }, beatmapSet, 50);
+                scheduledBackgroundRetrieval = Scheduler.AddDelayed(s =>
+                {
+                    var working = beatmaps.GetWorkingBeatmap(s.Beatmaps.MinBy(b => b.OnlineID));
+                    setBackground.Beatmap = working;
+                    stableThumbBackground.Beatmap = working;
+                }, beatmapSet, 50);
+            }
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             updateArtistText(beatmapSet);
