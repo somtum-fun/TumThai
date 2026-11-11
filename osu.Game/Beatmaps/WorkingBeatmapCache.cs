@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -23,6 +23,7 @@ using osu.Game.Beatmaps.Formats;
 using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.IO;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 using osu.Game.Storyboards;
 
@@ -196,11 +197,13 @@ namespace osu.Game.Beatmaps
                 }
             }
 
-            public override Texture GetPanelBackground() => getBackgroundFromStore(resources.BeatmapPanelTextureStore);
+            public override Texture GetPanelBackground() => PotatoMode.UltraActive ? null : getBackgroundFromStore(resources.BeatmapPanelTextureStore);
 
             public override Texture GetStableThumbnail() => resources.StableThumbnailTextureStore is TextureStore store ? getBackgroundFromStore(store) : GetBackground();
 
-            public override Texture GetBackground() => getBackgroundFromStore(resources.LargeTextureStore);
+            public override Texture GetBackground() => PotatoMode.UltraActive && resources.StableThumbnailTextureStore is TextureStore thumbStore
+                ? getBackgroundFromStore(thumbStore)
+                : getBackgroundFromStore(resources.LargeTextureStore);
 
             private Texture getBackgroundFromStore(TextureStore store)
             {
@@ -257,6 +260,9 @@ namespace osu.Game.Beatmaps
 
             protected override Waveform GetWaveform()
             {
+                if (PotatoMode.UltraActive)
+                    return null;
+
                 if (string.IsNullOrEmpty(Metadata?.AudioFile))
                     return null;
 
@@ -286,6 +292,9 @@ namespace osu.Game.Beatmaps
 
             protected override Storyboard GetStoryboard()
             {
+                if (PotatoMode.UltraActive)
+                    return new Storyboard { BeatmapInfo = BeatmapInfo };
+
                 Storyboard storyboard;
 
                 if (BeatmapInfo.Path == null)

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -280,8 +280,12 @@ namespace osu.Game
         {
             int chosen = inputAudioHz.Value == InputAudioHzMode.Custom ? inputAudioHzCustom.Value : (int)inputAudioHz.Value;
 
-            // Potato mode caps the rate at 500 Hz; a lower rate the player picked (Custom, down to 250 Hz) still applies.
-            Host.InputAudioHz.Value = Performance.PotatoMode.Active ? Math.Min(chosen, (int)InputAudioHzMode.Hz500) : chosen;
+            if (Performance.PotatoMode.UltraActive)
+                Host.InputAudioHz.Value = Math.Min(chosen, 250);
+            else if (Performance.PotatoMode.Active)
+                Host.InputAudioHz.Value = Math.Min(chosen, (int)InputAudioHzMode.Hz500);
+            else
+                Host.InputAudioHz.Value = chosen;
         }
 
         private Bindable<DisplayRefreshRateMode> displayRefreshRate = null!;
@@ -347,11 +351,18 @@ namespace osu.Game
             dependencies.CacheAs(LocalConfig);
             dependencies.CacheAs<IGameplaySettings>(LocalConfig);
 
+            // Potato Mode read-once flags (heavy visuals, audio concurrency, and beatmap stores check them at construction). Restart-gated.
+            Performance.PotatoMode.SetFromConfig(LocalConfig.Get<bool>(OsuSetting.PotatoMode), LocalConfig.Get<bool>(OsuSetting.UltraUltimatePotatoMode));
+            // Potato forces the legacy (BASS) audio path; its larger buffer rides over GC hitches
+            // that starve the tiny WASAPI buffer on weak machines.
+            if (Performance.PotatoMode.Active)
+                frameworkConfig.SetValue(FrameworkSetting.AudioUseExperimentalWasapi, false);
+
             InitialiseFonts();
 
             addFilesWarning();
 
-            Audio.Samples.PlaybackConcurrency = SAMPLE_CONCURRENCY;
+            Audio.Samples.PlaybackConcurrency = Performance.PotatoMode.UltraActive ? 2 : SAMPLE_CONCURRENCY;
 
             dependencies.Cache(SkinManager = new SkinManager(Storage, realm, Host, Resources, Audio, Scheduler));
             dependencies.CacheAs<ISkinSource>(SkinManager);
@@ -411,13 +422,6 @@ namespace osu.Game
 
             dependencies.Cache(SessionStatics = new SessionStatics());
             dependencies.Cache(hitErrorTracker = new SessionAverageHitErrorTracker());
-
-            // Potato Mode read-once flag (heavy visuals check it at construction). Restart-gated.
-            Performance.PotatoMode.SetFromConfig(LocalConfig.Get<bool>(OsuSetting.PotatoMode));
-            // Potato forces the legacy (BASS) audio path; its larger buffer rides over GC hitches
-            // that starve the tiny WASAPI buffer on weak machines.
-            if (Performance.PotatoMode.Active)
-                frameworkConfig.SetValue(FrameworkSetting.AudioUseExperimentalWasapi, false);
 
             if (!LocalConfig.Get<bool>(OsuSetting.InputAudioHzAutoTuned))
             {
