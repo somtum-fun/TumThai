@@ -11,6 +11,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.UserInterface;
+using osu.Framework.Input;
 using osu.Framework.Testing;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
@@ -85,6 +86,14 @@ namespace osu.Game.Tests.Visual.Online
 
             AddStep("proceed", () => accountCreation.ChildrenOfType<DangerousSettingsButton>().Single().TriggerClick());
             AddUntilStep("entry screen is present", () => accountCreation.ChildrenOfType<ScreenEntry>().SingleOrDefault()?.IsPresent == true);
+
+            AddAssert("entry textboxes have expected input types", () =>
+            {
+                var textBoxes = accountCreation.ChildrenOfType<ScreenEntry>().Single().ChildrenOfType<OsuTextBox>().ToArray();
+                return textBoxes[0].InputProperties == new TextInputProperties(TextInputType.Username, false)
+                       && textBoxes[1].InputProperties == new TextInputProperties(TextInputType.EmailAddress, false)
+                       && textBoxes[2].InputProperties == new TextInputProperties(TextInputType.Password, false);
+            });
 
             AddStep("input details", () =>
             {
