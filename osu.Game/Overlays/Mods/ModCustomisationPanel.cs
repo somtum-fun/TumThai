@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -18,6 +18,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Mods;
 using osuTK;
 using osuTK.Graphics;
@@ -120,7 +121,7 @@ namespace osu.Game.Overlays.Mods
 
             Enabled.BindValueChanged(e =>
             {
-                this.FadeColour(OsuColour.Gray(e.NewValue ? 1f : 0.6f), 300, Easing.OutQuint);
+                this.FadeColour(OsuColour.Gray(e.NewValue ? 1f : 0.6f), PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
             }, true);
 
             ExpandedState.BindValueChanged(_ => updateDisplay(), true);
@@ -129,9 +130,9 @@ namespace osu.Game.Overlays.Mods
             FinishTransforms(true);
         }
 
-        protected override void PopIn() => this.FadeIn(300, Easing.OutQuint);
+        protected override void PopIn() => this.FadeIn(PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
-        protected override void PopOut() => this.FadeOut(300, Easing.OutQuint);
+        protected override void PopOut() => this.FadeOut(PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
         protected override bool OnClick(ClickEvent e)
         {
@@ -165,16 +166,16 @@ namespace osu.Game.Overlays.Mods
 
             if (ExpandedState.Value != ModCustomisationPanelState.Collapsed)
             {
-                content.AutoSizeDuration = 400;
+                content.AutoSizeDuration = PotatoMode.UltraActive ? 0 : 400;
                 content.AutoSizeEasing = Easing.OutQuint;
                 content.AutoSizeAxes = Axes.Y;
-                content.FadeIn(120, Easing.OutQuint);
+                content.FadeIn(PotatoMode.UltraActive ? 0 : 120, Easing.OutQuint);
             }
             else
             {
                 content.AutoSizeAxes = Axes.None;
-                content.ResizeHeightTo(header_height, 400, Easing.OutQuint);
-                content.FadeOut(400, Easing.OutSine);
+                content.ResizeHeightTo(header_height, PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
+                content.FadeOut(PotatoMode.UltraActive ? 0 : 400, Easing.OutSine);
             }
         }
 

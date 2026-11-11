@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -444,7 +444,7 @@ namespace osu.Game.Overlays.Mods
 
             private Container iconHolder = null!;
             private Sprite stableModSprite = null!;
-            private ModIcon fallbackModIcon = null!;
+            private ModIcon? fallbackModIcon;
             private Sprite lightingGlow = null!;
 
             public StableModSlotButton(IReadOnlyList<ModState> states, Key? shortcutKey, string? keyLabel, Action<bool> onCycled)
@@ -478,20 +478,10 @@ namespace osu.Game.Overlays.Mods
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         AutoSizeAxes = Axes.Both,
-                        Children = new Drawable[]
+                        Child = stableModSprite = new Sprite
                         {
-                            stableModSprite = new Sprite
-                            {
-                                Anchor = Anchor.Centre,
-                                Origin = Anchor.Centre,
-                            },
-                            fallbackModIcon = new ModIcon(states[0].Mod)
-                            {
-                                Anchor = Anchor.Centre,
-                                Origin = Anchor.Centre,
-                                Scale = new Vector2(0.75f),
-                                Alpha = 0,
-                            },
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
                         },
                     },
                 };
@@ -555,11 +545,25 @@ namespace osu.Game.Overlays.Mods
                 {
                     stableModSprite.Texture = tex;
                     stableModSprite.Alpha = 1f;
-                    fallbackModIcon.Alpha = 0f;
+                    if (fallbackModIcon != null)
+                        fallbackModIcon.Alpha = 0f;
                 }
                 else
                 {
-                    fallbackModIcon.Mod = displayedMod;
+                    if (fallbackModIcon == null)
+                    {
+                        iconHolder.Add(fallbackModIcon = new ModIcon(displayedMod)
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Scale = new Vector2(0.75f),
+                        });
+                    }
+                    else
+                    {
+                        fallbackModIcon.Mod = displayedMod;
+                    }
+
                     fallbackModIcon.Alpha = 1f;
                     stableModSprite.Alpha = 0f;
                 }

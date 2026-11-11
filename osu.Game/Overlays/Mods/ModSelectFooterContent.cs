@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Scoring;
@@ -123,6 +124,9 @@ namespace osu.Game.Overlays.Mods
 
         private void updateInformation()
         {
+            if (overlay.UsingStableGrid || PotatoMode.UltraActive)
+                return;
+
             WorkingBeatmap? workingBeatmap = Beatmap.Value;
 
             if (rankingInformationDisplay != null && workingBeatmap != null)
@@ -168,14 +172,22 @@ namespace osu.Game.Overlays.Mods
 
         protected override void PopIn()
         {
-            this.MoveToY(0, 400, Easing.OutQuint)
-                .FadeIn(400, Easing.OutQuint);
+            if (overlay.UsingStableGrid)
+            {
+                Alpha = 0;
+                return;
+            }
+
+            double duration = PotatoMode.UltraActive ? 0 : 400;
+            this.MoveToY(0, duration, Easing.OutQuint)
+                .FadeIn(duration, Easing.OutQuint);
         }
 
         protected override void PopOut()
         {
-            this.MoveToY(-20f, 200, Easing.OutQuint)
-                .FadeOut(200, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : 200;
+            this.MoveToY(PotatoMode.UltraActive ? 0 : -20f, duration, Easing.OutQuint)
+                .FadeOut(duration, Easing.OutQuint);
         }
     }
 }

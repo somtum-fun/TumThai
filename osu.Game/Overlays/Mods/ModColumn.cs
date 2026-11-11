@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -19,6 +19,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Mods.Input;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Mods;
 using osuTK;
 using osuTK.Graphics;
@@ -229,7 +230,12 @@ namespace osu.Game.Overlays.Mods
             pendingSelectionOperations.Clear();
 
             foreach (var button in availableMods.Where(b => !b.Active.Value && b.Visible))
-                pendingSelectionOperations.Enqueue(() => button.Active.Value = true);
+            {
+                if (PotatoMode.UltraActive)
+                    button.Active.Value = true;
+                else
+                    pendingSelectionOperations.Enqueue(() => button.Active.Value = true);
+            }
         }
 
         /// <summary>
@@ -241,7 +247,7 @@ namespace osu.Game.Overlays.Mods
 
             foreach (var button in availableMods.Where(b => b.Active.Value))
             {
-                if (!button.Visible)
+                if (!button.Visible || PotatoMode.UltraActive)
                     button.Active.Value = false;
                 else
                     pendingSelectionOperations.Enqueue(() => button.Active.Value = false);

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -20,6 +20,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Performance;
 using osuTK.Graphics;
 using osuTK.Input;
 
@@ -249,7 +250,7 @@ namespace osu.Game.Overlays.Mods
         protected virtual void UpdateState()
         {
             float targetWidth = Active.Value ? ExpandedSwitchWidth : IdleSwitchWidth;
-            double transitionDuration = TRANSITION_DURATION;
+            double transitionDuration = PotatoMode.UltraActive ? 0 : TRANSITION_DURATION;
 
             Colour4 backgroundColour = BackgroundColour;
             Colour4 foregroundColour = ForegroundColour;
