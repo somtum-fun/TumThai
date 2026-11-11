@@ -13,6 +13,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
+using osu.Game.Performance;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -155,6 +156,12 @@ namespace osu.Game.Graphics.UserInterface
         /// <param name="newValue">Expected count value after modification.</param>
         protected virtual void TransformCount(T currentValue, T newValue)
         {
+            if (PotatoMode.UltraActive)
+            {
+                DisplayedCount = newValue;
+                return;
+            }
+
             double rollingTotalDuration =
                 IsRollingProportional
                     ? GetProportionalDuration(currentValue, newValue)

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -14,6 +14,7 @@ using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Beatmaps;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Judgements;
@@ -69,6 +70,9 @@ namespace osu.Game.Screens.Play.HUD
         /// </summary>
         public void Start()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             if (Interlocked.Exchange(ref started, 1) == 1)
                 return;
 

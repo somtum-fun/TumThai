@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
 using osu.Game.Localisation.HUD;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
@@ -90,7 +91,7 @@ namespace osu.Game.Screens.Play.HUD.HitErrorMeters
             {
                 Width = drawable_judgement_size;
                 Direction = FillDirection.Vertical;
-                LayoutDuration = animation_duration;
+                LayoutDuration = PotatoMode.UltraActive ? 0 : animation_duration;
                 LayoutEasing = Easing.OutQuint;
             }
 
@@ -178,6 +179,14 @@ namespace osu.Game.Screens.Play.HUD.HitErrorMeters
             {
                 base.PrepareForUse();
 
+                if (PotatoMode.UltraActive)
+                {
+                    Alpha = 1;
+                    Position = Vector2.Zero;
+                    content.Y = 0;
+                    return;
+                }
+
                 this.FadeInFromZero(animation_duration, Easing.OutQuint)
                     // On pool re-use, start flow animation from (0,0).
                     .MoveTo(Vector2.Zero);
@@ -195,6 +204,12 @@ namespace osu.Game.Screens.Play.HUD.HitErrorMeters
             public void Remove()
             {
                 IsRemoved = true;
+
+                if (PotatoMode.UltraActive)
+                {
+                    Expire();
+                    return;
+                }
 
                 this.FadeOut(animation_duration, Easing.OutQuint)
                     .Expire();
