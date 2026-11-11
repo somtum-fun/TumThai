@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -208,6 +208,9 @@ namespace osu.Game.Screens.Select
             protected override void OnNewBeat(int beatIndex, TimingControlPoint timingPoint, EffectControlPoint effectPoint, ChannelAmplitudes amplitudes)
             {
                 base.OnNewBeat(beatIndex, timingPoint, effectPoint, amplitudes);
+
+                if (PotatoMode.UltraActive || Alpha == 0)
+                    return;
 
                 if (beatIndex % getFlashInterval(timingPoint.TimeSignature.Numerator) != 0)
                     return;
@@ -509,7 +512,10 @@ namespace osu.Game.Screens.Select
         protected override void Update()
         {
             base.Update();
-            contentPaddingContainer.Padding = contentPaddingContainer.Padding with { Left = CurrentInterfaceTheme.IsThemed() ? 0 : iconContainer.DrawWidth };
+
+            float targetLeft = CurrentInterfaceTheme.IsThemed() ? 0 : iconContainer.DrawWidth;
+            if (Math.Abs(contentPaddingContainer.Padding.Left - targetLeft) > 0.05f)
+                contentPaddingContainer.Padding = contentPaddingContainer.Padding with { Left = targetLeft };
         }
 
         public abstract MenuItem[]? ContextMenuItems { get; }

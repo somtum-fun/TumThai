@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Development;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -76,6 +77,8 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
 
+        private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+
         private FillFlowContainer statisticsFlow = null!;
 
         public BeatmapTitleWedge()
@@ -85,8 +88,9 @@ namespace osu.Game.Screens.Select
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
             Masking = true;
             CornerRadius = corner_radius;
 
@@ -188,6 +192,7 @@ namespace osu.Game.Screens.Select
             working.BindValueChanged(_ => updateDisplay());
             ruleset.BindValueChanged(_ => updateDisplay());
             onlineLookupResult.BindValueChanged(_ => updateDisplay());
+            interfaceTheme.BindValueChanged(_ => updateDisplay());
 
             mods.BindValueChanged(m =>
             {
@@ -221,6 +226,9 @@ namespace osu.Game.Screens.Select
 
         private void updateDisplay()
         {
+            if (!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed())
+                return;
+
             var metadata = working.Value.Metadata;
             var beatmapInfo = working.Value.BeatmapInfo;
 
@@ -255,6 +263,9 @@ namespace osu.Game.Screens.Select
         private void updateLengthAndBpmStatistics()
         {
             lengthBpmCancellationSource?.Cancel();
+
+            if (!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed())
+                return;
 
             if (PotatoMode.UltraActive)
             {

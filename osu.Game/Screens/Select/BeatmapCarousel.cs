@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -97,7 +97,7 @@ namespace osu.Game.Screens.Select
         public BeatmapCarousel()
         {
             DebounceDelay = 100;
-            DistanceOffscreenToPreload = 100;
+            DistanceOffscreenToPreload = PotatoMode.UltraActive ? 0 : 100;
 
             // Account for the osu! logo being in the way.
             Scroll.ScrollbarPaddingBottom = 70;
@@ -885,10 +885,10 @@ namespace osu.Game.Screens.Select
 
         #region Drawable pooling
 
-        private readonly DrawablePool<PanelBeatmap> beatmapPanelPool = new DrawablePool<PanelBeatmap>(100);
-        private readonly DrawablePool<PanelBeatmapStandalone> standalonePanelPool = new DrawablePool<PanelBeatmapStandalone>(100);
-        private readonly DrawablePool<PanelBeatmapSet> setPanelPool = new DrawablePool<PanelBeatmapSet>(100);
-        private readonly DrawablePool<PanelGroup> groupPanelPool = new DrawablePool<PanelGroup>(100);
+        private readonly DrawablePool<PanelBeatmap> beatmapPanelPool = new DrawablePool<PanelBeatmap>(PotatoMode.Active ? 25 : 100, PotatoMode.Active ? 40 : null);
+        private readonly DrawablePool<PanelBeatmapStandalone> standalonePanelPool = new DrawablePool<PanelBeatmapStandalone>(PotatoMode.Active ? 25 : 100, PotatoMode.Active ? 40 : null);
+        private readonly DrawablePool<PanelBeatmapSet> setPanelPool = new DrawablePool<PanelBeatmapSet>(PotatoMode.Active ? 25 : 100, PotatoMode.Active ? 40 : null);
+        private readonly DrawablePool<PanelGroup> groupPanelPool = new DrawablePool<PanelGroup>(PotatoMode.Active ? 25 : 100, PotatoMode.Active ? 40 : null);
         private readonly DrawablePool<PanelGroupStarDifficulty> starsGroupPanelPool = new DrawablePool<PanelGroupStarDifficulty>(11);
         private readonly DrawablePool<PanelGroupRankDisplay> ranksGroupPanelPool = new DrawablePool<PanelGroupRankDisplay>(9);
         private readonly DrawablePool<PanelGroupRankedStatus> statusGroupPanelPool = new DrawablePool<PanelGroupRankedStatus>(8);
@@ -977,7 +977,7 @@ namespace osu.Game.Screens.Select
 
         private void updateVisibleBeatmaps(GroupedBeatmapSet groupedBeatmapSet, PanelBeatmapSet setPanel)
         {
-            if (PotatoMode.UltraActive)
+            if (PotatoMode.UltraActive || interfaceTheme.Value.IsThemed())
                 return;
 
             HashSet<BeatmapInfo> visibleBeatmaps = [];

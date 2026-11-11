@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -380,7 +380,7 @@ namespace osu.Game.Screens.Select
         // Not sure about this, but we'll iterate based on feedback.
         protected virtual ModSelectOverlay CreateModSelectOverlay() => new UserModSelectOverlay
         {
-            ShowPresets = true,
+            ShowPresets = !PotatoMode.Active,
         };
 
         private void requestRecommendedSelection(IEnumerable<GroupedBeatmap> groupedBeatmaps)
@@ -510,6 +510,9 @@ namespace osu.Game.Screens.Select
             updateWedgeVisibility();
         }
 
+        private Vector2 lastColumnDrawSize;
+        private bool? lastColumnIsStable;
+
         protected override void Update()
         {
             base.Update();
@@ -524,7 +527,8 @@ namespace osu.Game.Screens.Select
             {
                 // TumThai!Next: lazer's title wedge takes no space in the stable theme (hidden, it still did while present,
                 // so the leaderboard's controls jumped up over the beatmap info). They sit just below stable's info block.
-                titleWedgeWrapper.Alpha = 0;
+                if (titleWedgeWrapper.Alpha != 0)
+                    titleWedgeWrapper.Alpha = 0;
 
                 float naturalTop = wedgesContainer.ToLocalSpace(detailsArea.ScreenSpaceDrawQuad.TopLeft).Y - detailsArea.Margin.Top;
                 float infoBottom = wedgesContainer.ToLocalSpace(stableHeader.InfoBlockBottom.ScreenSpaceDrawQuad.BottomLeft).Y;
@@ -533,27 +537,38 @@ namespace osu.Game.Screens.Select
                 if (Math.Abs(detailsArea.Margin.Top - top) > 0.5f)
                     detailsArea.Margin = new MarginPadding { Top = top };
 
-                detailsArea.Height = wedgesContainer.ChildSize.Y - 4 - detailsArea.Margin.Top;
+                float targetHeight = wedgesContainer.ChildSize.Y - 4 - detailsArea.Margin.Top;
+                if (Math.Abs(detailsArea.Height - targetHeight) > 0.5f)
+                    detailsArea.Height = targetHeight;
             }
             else
             {
-                titleWedgeWrapper.Alpha = 1;
+                if (titleWedgeWrapper.Alpha != 1)
+                    titleWedgeWrapper.Alpha = 1;
                 if (detailsArea.Margin.Top != 0)
                     detailsArea.Margin = new MarginPadding();
 
-                detailsArea.Height = wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+                float targetHeight = wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+                if (Math.Abs(detailsArea.Height - targetHeight) > 0.5f)
+                    detailsArea.Height = targetHeight;
             }
 
-            float widescreenBonusWidth = Math.Max(0, DrawWidth / DrawHeight - 2f);
-
-            mainGridContainer.ColumnDimensions = new[]
+            if (lastColumnDrawSize != DrawSize || lastColumnIsStable != isStable)
             {
-                isStable
-                    ? new Dimension(GridSizeMode.Absolute, 400f)
-                    : new Dimension(GridSizeMode.Relative, 0.5f, maxSize: 700 + widescreenBonusWidth * 100),
-                new Dimension(),
-                new Dimension(GridSizeMode.Relative, 0.5f, minSize: 500, maxSize: 700 + widescreenBonusWidth * 300),
-            };
+                lastColumnDrawSize = DrawSize;
+                lastColumnIsStable = isStable;
+
+                float widescreenBonusWidth = Math.Max(0, DrawWidth / DrawHeight - 2f);
+
+                mainGridContainer.ColumnDimensions = new[]
+                {
+                    isStable
+                        ? new Dimension(GridSizeMode.Absolute, 400f)
+                        : new Dimension(GridSizeMode.Relative, 0.5f, maxSize: 700 + widescreenBonusWidth * 100),
+                    new Dimension(),
+                    new Dimension(GridSizeMode.Relative, 0.5f, minSize: 500, maxSize: 700 + widescreenBonusWidth * 300),
+                };
+            }
 
             if (this.IsCurrentScreen())
                 updateDebounce();
@@ -1304,7 +1319,7 @@ namespace osu.Game.Screens.Select
             onlineLookupCancellation?.Cancel();
             onlineLookupCancellation = null;
 
-            if (beatmapSetInfo.OnlineID < 0)
+            if (beatmapSetInfo.OnlineID < 0 || PotatoMode.UltraActive)
             {
                 lastLookupResult.Value = BeatmapSetLookupResult.Completed(null);
                 return;

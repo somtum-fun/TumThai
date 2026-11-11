@@ -292,18 +292,20 @@ namespace osu.Game.Screens.Select
                 scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
                 {
                     var working = beatmaps.GetWorkingBeatmap(b);
-                    beatmapBackground.Beatmap = working;
+                    if (!CurrentInterfaceTheme.IsThemed())
+                        beatmapBackground.Beatmap = working;
                     stableThumbSprite.Texture = working.GetStableThumbnail();
                 }, beatmap, 50);
             }
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);
-            updateButton.BeatmapSet = beatmapSet;
-            statusPill.Status = beatmap.Status;
 
-            if (!PotatoMode.UltraActive)
+            if (!CurrentInterfaceTheme.IsThemed() && !PotatoMode.UltraActive)
             {
+                updateButton.BeatmapSet = beatmapSet;
+                statusPill.Status = beatmap.Status;
+
                 if (lastIconRulesetShortName != beatmap.Ruleset.ShortName)
                 {
                     lastIconRulesetShortName = beatmap.Ruleset.ShortName;
@@ -311,6 +313,7 @@ namespace osu.Game.Screens.Select
                 }
 
                 difficultyIcon.Show();
+                spreadDisplay.Beatmap.Value = beatmap;
             }
 
             localRank.Beatmap = beatmap;
@@ -318,7 +321,6 @@ namespace osu.Game.Screens.Select
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
 
             computeStarRating();
-            spreadDisplay.Beatmap.Value = beatmap;
             updateKeyCount();
             ApplyInterfaceTheme();
         }
@@ -440,7 +442,9 @@ namespace osu.Game.Screens.Select
 
             // Dirty hack to make sure we don't take up spacing in parent fill flow when not displaying a rank.
             // I can't find a better way to do this.
-            mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3) };
+            float targetMarginLeft = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3);
+            if (Math.Abs(mainFill.Margin.Left - targetMarginLeft) > 0.05f)
+                mainFill.Margin = new MarginPadding { Left = targetMarginLeft };
 
             if (CurrentInterfaceTheme.IsThemed())
             {
@@ -453,10 +457,6 @@ namespace osu.Game.Screens.Select
                     AccentColour = borderColour;
                     backgroundBorder.Colour = borderColour;
                 }
-
-                var iconColour = Selected.Value ? Color4.Black : Color4.White;
-                if (difficultyIcon.Colour != iconColour)
-                    difficultyIcon.Colour = iconColour;
             }
             else
             {

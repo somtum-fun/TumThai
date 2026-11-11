@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -577,7 +577,7 @@ namespace osu.Game.Screens.Select
 
             displayedState = state;
 
-            placeholder?.FadeOut(150, Easing.OutQuint).Expire();
+            placeholder?.FadeOut(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint).Expire();
             placeholder = getPlaceholderFor(state);
 
             if (placeholder == null)
@@ -587,8 +587,11 @@ namespace osu.Game.Screens.Select
 
             placeholderContainer.Child = placeholder;
 
-            placeholder.ScaleTo(0.8f).Then().ScaleTo(1, 900, Easing.OutQuint);
-            placeholder.FadeInFromZero(300, Easing.OutQuint);
+            if (!PotatoMode.UltraActive)
+            {
+                placeholder.ScaleTo(0.8f).Then().ScaleTo(1, 900, Easing.OutQuint);
+                placeholder.FadeInFromZero(300, Easing.OutQuint);
+            }
         }
 
         #region Fade handling
@@ -596,6 +599,9 @@ namespace osu.Game.Screens.Select
         protected override void UpdateAfterChildren()
         {
             base.UpdateAfterChildren();
+
+            if (PotatoMode.UltraActive)
+                return;
 
             const int height = BeatmapLeaderboardScore.HEIGHT;
 
