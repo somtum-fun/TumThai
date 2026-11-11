@@ -6,6 +6,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
 
@@ -143,6 +144,18 @@ namespace osu.Game.Skinning
 
             if (!IsLoaded)
                 return;
+
+            if (PotatoMode.UltraActive)
+            {
+                FinishTransforms(false, nameof(DisplayedCount));
+                isRolling = false;
+                displayedCount = Current.Value;
+                ((IHasText)displayedCountSpriteText).Text = formatCount(Current.Value);
+                counterContainer.Size = displayedCountSpriteText.Size;
+                displayedCountSpriteText.Alpha = Current.Value == 0 ? 0 : 1;
+                popOutCount.Alpha = 0;
+                return;
+            }
 
             if (!rolling)
             {

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Animations;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Graphics;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
@@ -39,7 +40,7 @@ namespace osu.Game.Skinning
                 })
             };
 
-            if (particleTexture != null)
+            if (particleTexture != null && !PotatoMode.UltraActive)
             {
                 AddInternal(particles = new ParticleExplosion(particleTexture, 150, 1600)
                 {
@@ -50,7 +51,7 @@ namespace osu.Game.Skinning
                 });
             }
 
-            if (!result.IsMiss())
+            if (!result.IsMiss() && !PotatoMode.UltraActive)
             {
                 //new judgement shows old as a temporary effect
                 AddInternal(temporaryOldStyle = new LegacyJudgementPieceOld(result, createMainDrawable, 1.05f, true)
@@ -64,6 +65,15 @@ namespace osu.Game.Skinning
 
         public void PlayAnimation()
         {
+            if (PotatoMode.UltraActive)
+            {
+                if (result == HitResult.Great)
+                    this.FadeOut();
+                else
+                    this.FadeOutFromOne(200);
+                return;
+            }
+
             var animation = mainPiece as IFramedAnimation;
 
             animation?.GotoFrame(0);

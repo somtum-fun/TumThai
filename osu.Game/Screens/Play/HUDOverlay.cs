@@ -21,6 +21,7 @@ using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
 using osu.Game.Overlays.Notifications;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Scoring;
@@ -259,7 +260,7 @@ namespace osu.Game.Screens.Play
         {
             base.LoadComplete();
 
-            ShowHud.BindValueChanged(visible => hideTargets.ForEach(d => d.FadeTo(visible.NewValue ? 1 : 0, FADE_DURATION, FADE_EASING)));
+            ShowHud.BindValueChanged(visible => hideTargets.ForEach(d => d.FadeTo(visible.NewValue ? 1 : 0, PotatoMode.UltraActive ? 0 : FADE_DURATION, FADE_EASING)));
 
             holdingForHUD.BindValueChanged(_ => updateVisibility());
             IsPlaying.BindValueChanged(_ => updateVisibility());
@@ -268,6 +269,9 @@ namespace osu.Game.Screens.Play
             replayLoaded.BindValueChanged(e =>
             {
                 bool isThemed = interfaceTheme.Value.IsThemed();
+                double inDuration = PotatoMode.UltraActive ? 0 : 1000;
+                double outDelay = PotatoMode.UltraActive ? 0 : 2000;
+                double outDuration = PotatoMode.UltraActive ? 0 : 200;
 
                 if (e.NewValue)
                 {
@@ -275,11 +279,11 @@ namespace osu.Game.Screens.Play
                     {
                         ModDisplay.ClearTransforms();
                         ModDisplay.Alpha = 0;
-                        stableModsContainer.FadeIn(1000, FADE_EASING);
+                        stableModsContainer.FadeIn(inDuration, FADE_EASING);
                     }
                     else
                     {
-                        ModDisplay.FadeIn(1000, FADE_EASING);
+                        ModDisplay.FadeIn(inDuration, FADE_EASING);
                     }
 
                     InputCountController.Margin = new MarginPadding(10) { Bottom = 30 };
@@ -290,11 +294,11 @@ namespace osu.Game.Screens.Play
                     {
                         ModDisplay.ClearTransforms();
                         ModDisplay.Alpha = 0;
-                        stableModsContainer.Delay(2000).FadeOut(200);
+                        stableModsContainer.Delay(outDelay).FadeOut(outDuration);
                     }
                     else
                     {
-                        ModDisplay.Delay(2000).FadeOut(200);
+                        ModDisplay.Delay(outDelay).FadeOut(outDuration);
                     }
 
                     InputCountController.Margin = new MarginPadding(10);
@@ -320,6 +324,9 @@ namespace osu.Game.Screens.Play
                 PlayfieldSkinLayer.Height = (ToLocalSpace(playfieldScreenSpaceDrawQuad.BottomLeft) - ToLocalSpace(playfieldScreenSpaceDrawQuad.TopLeft)).Length;
                 PlayfieldSkinLayer.Rotation = drawableRuleset.PlayfieldAdjustmentContainer.Rotation;
             }
+
+            if (PotatoMode.UltraActive)
+                return;
 
             float? lowestTopScreenSpaceLeft = null;
             float? lowestTopScreenSpaceRight = null;

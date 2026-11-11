@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Textures;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Screens.Play.HUD;
 
 namespace osu.Game.Skinning
@@ -103,7 +104,8 @@ namespace osu.Game.Skinning
         {
             base.Activate(forwardPlayback);
 
-            keyContainer.ScaleTo(0.8f, transition_duration, Easing.Out);
+            float duration = PotatoMode.UltraActive ? 0 : transition_duration;
+            keyContainer.ScaleTo(0.8f, duration, Easing.Out);
             keySprite.Colour = ActiveColour;
 
             overlayKeyText.Text = CountPresses.Value.ToString();
@@ -111,22 +113,23 @@ namespace osu.Game.Skinning
             if (forwardPlayback && !activatedOnce)
             {
                 activatedOnce = true;
-                initialNameText.FadeOut(transition_duration, Easing.Out);
-                overlayKeyText.FadeIn(transition_duration, Easing.Out);
+                initialNameText.FadeOut(duration, Easing.Out);
+                overlayKeyText.FadeIn(duration, Easing.Out);
             }
         }
 
         protected override void Deactivate(bool forwardPlayback = true)
         {
             base.Deactivate(forwardPlayback);
-            keyContainer.ScaleTo(1f, transition_duration, Easing.Out);
+            float duration = PotatoMode.UltraActive ? 0 : transition_duration;
+            keyContainer.ScaleTo(1f, duration, Easing.Out);
             keySprite.Colour = Colour4.White;
 
             if (!forwardPlayback && activatedOnce && CountPresses.Value == 0)
             {
                 activatedOnce = false;
-                initialNameText.FadeIn(transition_duration, Easing.Out);
-                overlayKeyText.FadeOut(transition_duration, Easing.Out);
+                initialNameText.FadeIn(duration, Easing.Out);
+                overlayKeyText.FadeOut(duration, Easing.Out);
             }
         }
     }

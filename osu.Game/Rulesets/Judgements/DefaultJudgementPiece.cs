@@ -41,7 +41,10 @@ namespace osu.Game.Rulesets.Judgements
         {
             if (PotatoMode.UltraActive)
             {
-                this.FadeOutFromOne(300);
+                if (Result == HitResult.Great)
+                    this.FadeOut();
+                else
+                    this.FadeOutFromOne(200);
                 return;
             }
 
