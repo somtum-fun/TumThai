@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\osu.Android.props" />
   <PropertyGroup>
     <TargetFramework>net10.0-android</TargetFramework>
@@ -6,6 +6,7 @@
     <RootNamespace>osu.Android</RootNamespace>
     <AssemblyName>osu.Android</AssemblyName>
     <Version>0.0.0</Version>
+    <ApplicationVersion Condition=" '$(ApplicationVersion)' == '' and '$(Version)' != '0.0.0' ">$([System.String]::Copy('$(Version)').Replace('.', ''))</ApplicationVersion>
     <ApplicationVersion Condition=" '$(ApplicationVersion)' == '' ">1</ApplicationVersion>
     <ApplicationDisplayVersion Condition=" '$(ApplicationDisplayVersion)' == '' ">$(Version)</ApplicationDisplayVersion>
     <!-- TumThai!Next: custom rulesets load at runtime and may use any part of .NET, so none of it is trimmed away. -->
