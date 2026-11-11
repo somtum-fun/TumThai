@@ -21,6 +21,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online;
 using osu.Game.Overlays.Mods;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
 using osu.Game.Scoring;
@@ -370,14 +371,17 @@ namespace osu.Game.Screens.Ranking
 
             isShowingDialog = show;
 
+            double moveDuration = PotatoMode.UltraActive ? 0 : 450;
+            double fadeDuration = PotatoMode.UltraActive ? 0 : 300;
+
             if (show)
             {
-                page1Container.MoveToY(-672f, 450, Easing.OutQuint).FadeOut(300, Easing.OutQuint);
+                page1Container.MoveToY(-672f, moveDuration, Easing.OutQuint).FadeOut(fadeDuration, Easing.OutQuint);
                 rankingDialog.Show();
             }
             else
             {
-                page1Container.MoveToY(0f, 450, Easing.OutQuint).FadeIn(300, Easing.OutQuint);
+                page1Container.MoveToY(0f, moveDuration, Easing.OutQuint).FadeIn(fadeDuration, Easing.OutQuint);
                 rankingDialog.Hide();
             }
         }
@@ -433,7 +437,7 @@ namespace osu.Game.Screens.Ranking
             int missCount = score.GetCountMiss() ?? 0;
             bool isFullCombo = score.Passed && missCount == 0 && (score.Statistics.GetValueOrDefault(HitResult.LargeTickMiss) == 0);
             perfectBadgeContainer.Alpha = isFullCombo ? 1f : 0f;
-            if (isFullCombo)
+            if (isFullCombo && !PotatoMode.UltraActive)
                 perfectBadgeContainer.ScaleTo(1.1f).ScaleTo(1f, 300, Easing.Out);
 
             var classicSkin = skinManager.DefaultClassicSkin;
@@ -455,13 +459,23 @@ namespace osu.Game.Screens.Ranking
             gradePulseSprite.Texture = rankTex;
 
             gradeSprite.FinishTransforms();
-            // osu!stable (Ranking): the grade at its own size, coming in from 2x over a second
-            gradeSprite.ScaleTo(2f).FadeOut().Then().ScaleTo(1f, 1000, Easing.OutQuint).FadeIn(1000, Easing.OutQuint);
-
             gradePulseSprite.FinishTransforms();
-            if (score.Rank >= ScoreRank.B && rankTex != null)
+
+            if (PotatoMode.UltraActive)
             {
-                gradePulseSprite.ScaleTo(1f).FadeTo(1f).Delay(1000).ScaleTo(1.05f, 2400, Easing.Out).FadeOut(2400, Easing.Out);
+                gradeSprite.Scale = Vector2.One;
+                gradeSprite.Alpha = 1f;
+                gradePulseSprite.Alpha = 0f;
+            }
+            else
+            {
+                // osu!stable (Ranking): the grade at its own size, coming in from 2x over a second
+                gradeSprite.ScaleTo(2f).FadeOut().Then().ScaleTo(1f, 1000, Easing.OutQuint).FadeIn(1000, Easing.OutQuint);
+
+                if (score.Rank >= ScoreRank.B && rankTex != null)
+                {
+                    gradePulseSprite.ScaleTo(1f).FadeTo(1f).Delay(1000).ScaleTo(1.05f, 2400, Easing.Out).FadeOut(2400, Easing.Out);
+                }
             }
 
             modsFlow.Clear();
@@ -595,13 +609,13 @@ namespace osu.Game.Screens.Ranking
             protected override bool OnHover(HoverEvent e)
             {
                 hoverSample?.Play();
-                this.FadeTo(1f, 200, Easing.OutQuad);
+                this.FadeTo(1f, PotatoMode.UltraActive ? 0 : 200, Easing.OutQuad);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                this.FadeTo(0.7f, 200, Easing.OutQuad);
+                this.FadeTo(0.7f, PotatoMode.UltraActive ? 0 : 200, Easing.OutQuad);
                 base.OnHoverLost(e);
             }
 

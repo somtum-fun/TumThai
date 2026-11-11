@@ -20,6 +20,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Localisation.SkinComponents;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Scoring.Legacy;
@@ -362,7 +363,8 @@ namespace osu.Game.Screens.RankingV2.Legacy
         {
             base.Update();
 
-            updateTotalScoreText();
+            if (scoreRevealStartTime != null)
+                updateTotalScoreText();
         }
 
         private double? scoreRevealStartTime;
@@ -371,7 +373,7 @@ namespace osu.Game.Screens.RankingV2.Legacy
         {
             // https://github.com/peppy/osu-stable-reference/blob/6b3838c41c4b8005cadf7db0b503ae967776d9f9/osu!/GameModes/Ranking/Ranking.cs#L190-L202
             long totalScore = score.Value.GetDisplayScore(scoringMode.Value);
-            string template = new string(Enumerable.Repeat('0', scoringMode.Value == ScoringMode.Standardised ? 7 : 8).ToArray());
+            string template = scoringMode.Value == ScoringMode.Standardised ? "0000000" : "00000000";
             string totalScoreString = totalScore.ToString(template);
 
             double digitsVisible = (Time.Current - (scoreRevealStartTime ?? double.NegativeInfinity)) / 500;
@@ -420,6 +422,12 @@ namespace osu.Game.Screens.RankingV2.Legacy
         public double StartAnimating(double startTime)
         {
             FinishAnimating();
+
+            if (PotatoMode.UltraActive)
+            {
+                updateTotalScoreText();
+                return startTime;
+            }
 
             double latestTransformEndTime = startTime;
             scoreRevealStartTime = latestTransformEndTime;

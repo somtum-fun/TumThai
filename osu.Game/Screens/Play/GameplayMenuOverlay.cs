@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -26,6 +26,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
+using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Skinning;
 using osu.Game.Utils;
@@ -197,7 +198,7 @@ namespace osu.Game.Screens.Play
 
         protected override void PopIn()
         {
-            this.FadeIn(TRANSITION_DURATION, Easing.In);
+            this.FadeIn(PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.In);
             updateInfoText();
 
             startPauseLoop();
@@ -205,7 +206,7 @@ namespace osu.Game.Screens.Play
 
         protected override void PopOut()
         {
-            this.FadeOut(TRANSITION_DURATION, Easing.In);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.In);
             stopPauseLoop();
         }
 
@@ -411,9 +412,18 @@ namespace osu.Game.Screens.Play
                 bool isStable = themeBindable?.Value.IsThemed() ?? false;
                 bool selected = State == SelectionState.Selected;
                 bool showArrows = isStable && selected;
-                leftArrow?.FadeTo(showArrows ? 1 : 0, 120, Easing.OutQuint);
-                rightArrow?.FadeTo(showArrows ? 1 : 0, 120, Easing.OutQuint);
-                stableSprite?.ScaleTo(showArrows ? 1.06f : 1.0f, 150, Easing.OutElastic);
+                if (PotatoMode.UltraActive)
+                {
+                    if (leftArrow != null) leftArrow.Alpha = showArrows ? 1 : 0;
+                    if (rightArrow != null) rightArrow.Alpha = showArrows ? 1 : 0;
+                    if (stableSprite != null) stableSprite.Scale = new Vector2(showArrows ? 1.06f : 1.0f);
+                }
+                else
+                {
+                    leftArrow?.FadeTo(showArrows ? 1 : 0, 120, Easing.OutQuint);
+                    rightArrow?.FadeTo(showArrows ? 1 : 0, 120, Easing.OutQuint);
+                    stableSprite?.ScaleTo(showArrows ? 1.06f : 1.0f, 150, Easing.OutElastic);
+                }
                 if (showArrows)
                     hoverSample?.Play();
             }
@@ -477,13 +487,13 @@ namespace osu.Game.Screens.Play
 
         private void startPauseLoop()
         {
-            pauseLoop.VolumeTo(targetVolume, TRANSITION_DURATION, Easing.InQuint);
+            pauseLoop.VolumeTo(targetVolume, PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.InQuint);
             pauseLoop.Play();
         }
 
         private void stopPauseLoop()
         {
-            pauseLoop.VolumeTo(targetVolume, TRANSITION_DURATION, Easing.OutQuad).Finally(_ => pauseLoop.Stop());
+            pauseLoop.VolumeTo(targetVolume, PotatoMode.UltraActive ? 0 : TRANSITION_DURATION, Easing.OutQuad).Finally(_ => pauseLoop.Stop());
         }
 
         #endregion

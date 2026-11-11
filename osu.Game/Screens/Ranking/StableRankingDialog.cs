@@ -22,6 +22,7 @@ using osu.Game.Extensions;
 using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
+using osu.Game.Performance;
 using osu.Game.Scoring;
 using osu.Game.Screens.Select;
 using osu.Game.Screens.Play.Leaderboards;
@@ -698,12 +699,12 @@ namespace osu.Game.Screens.Ranking
         protected override void PopIn()
         {
             swooshSample?.Play();
-            this.MoveToY(0f, 450, Easing.OutQuint).FadeIn(250, Easing.OutQuint);
+            this.MoveToY(0f, PotatoMode.UltraActive ? 0 : 450, Easing.OutQuint).FadeIn(PotatoMode.UltraActive ? 0 : 250, Easing.OutQuint);
         }
 
         protected override void PopOut()
         {
-            this.MoveToY(672f, 450, Easing.OutQuint).FadeOut(300, Easing.OutQuint);
+            this.MoveToY(672f, PotatoMode.UltraActive ? 0 : 450, Easing.OutQuint).FadeOut(PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
         }
 
         private partial class ComparisonCell : CompositeDrawable

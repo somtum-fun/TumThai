@@ -6,6 +6,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Scoring;
 using osu.Game.Skinning;
 
@@ -42,7 +43,8 @@ namespace osu.Game.Screens.RankingV2.Legacy
         {
             base.LoadComplete();
 
-            sprite.RotateTo(0).Then().RotateTo(360, 20000).Loop();
+            if (!PotatoMode.UltraActive)
+                sprite.RotateTo(0).Then().RotateTo(360, 20000).Loop();
         }
 
         #region ISerialisableDrawable
