@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Utils;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Rulesets.Scoring;
@@ -34,7 +35,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Argon
         [BackgroundDependencyLoader]
         private void load()
         {
-            if (Result.IsHit())
+            if (Result.IsHit() && !PotatoMode.UltraActive)
             {
                 AddInternal(ringExplosion = new RingExplosion(Result)
                 {
@@ -85,6 +86,12 @@ namespace osu.Game.Rulesets.Osu.Skinning.Argon
             }
             else
             {
+                if (PotatoMode.UltraActive)
+                {
+                    this.FadeOutFromOne(300);
+                    return;
+                }
+
                 this.FadeOutFromOne(800);
 
                 JudgementText

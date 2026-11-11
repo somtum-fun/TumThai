@@ -1,13 +1,18 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Graphics;
 using osu.Framework.Graphics.Lines;
+using osu.Game.Performance;
+using osuTK;
 using osuTK.Graphics;
 
 namespace osu.Game.Rulesets.Osu.Skinning.Default
 {
-    public abstract partial class DrawableSliderPath : SmoothPath
+    public abstract partial class DrawableSliderPath : SmoothPath, IBufferedDrawable
     {
+        Vector2 IBufferedDrawable.FrameBufferScale => PotatoMode.UltraActive ? new Vector2(0.5f) : Vector2.One;
+
         public const float BORDER_PORTION = 0.128f;
         public const float GRADIENT_PORTION = 1 - BORDER_PORTION;
 

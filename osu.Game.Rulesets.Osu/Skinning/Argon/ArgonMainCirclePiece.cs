@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
@@ -163,6 +163,12 @@ namespace osu.Game.Rulesets.Osu.Skinning.Argon
                 switch (state)
                 {
                     case ArmedState.Hit:
+                        if (PotatoMode.UltraActive)
+                        {
+                            this.FadeOut(160, Easing.OutQuad);
+                            break;
+                        }
+
                         // Fade out time is at a maximum of 800. Must match `DrawableHitCircle`'s arbitrary lifetime spec.
                         const double fade_out_time = 800;
                         const double flash_in_duration = 150;
