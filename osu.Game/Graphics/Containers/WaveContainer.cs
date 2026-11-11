@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -10,6 +10,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Shapes;
+using osu.Game.Performance;
 using osuTK.Graphics;
 
 namespace osu.Game.Graphics.Containers
@@ -125,7 +126,7 @@ namespace osu.Game.Graphics.Containers
             foreach (var w in wavesContainer)
                 w.Show();
 
-            contentContainer.MoveToY(0, APPEAR_DURATION, Easing.OutQuint);
+            contentContainer.MoveToY(0, PotatoMode.UltraActive ? 0 : APPEAR_DURATION, Easing.OutQuint);
             samplePopIn?.Play();
             wasShown = true;
         }
@@ -135,7 +136,7 @@ namespace osu.Game.Graphics.Containers
             foreach (var w in wavesContainer)
                 w.Hide();
 
-            contentContainer.MoveToY(2, DISAPPEAR_DURATION, Easing.In);
+            contentContainer.MoveToY(2, PotatoMode.UltraActive ? 0 : DISAPPEAR_DURATION, Easing.In);
 
             if (wasShown)
                 samplePopOut?.Play();
@@ -162,12 +163,14 @@ namespace osu.Game.Graphics.Containers
                 RelativeSizeAxes = Axes.X;
                 Width = 1.5f;
                 Masking = true;
-                EdgeEffect = new EdgeEffectParameters
-                {
-                    Type = EdgeEffectType.Shadow,
-                    Colour = Color4.Black.Opacity(50),
-                    Radius = 20f,
-                };
+                EdgeEffect = PotatoMode.UltraActive
+                    ? default
+                    : new EdgeEffectParameters
+                    {
+                        Type = EdgeEffectType.Shadow,
+                        Colour = Color4.Black.Opacity(50),
+                        Radius = 20f,
+                    };
 
                 Child = new Box { RelativeSizeAxes = Axes.Both };
             }
@@ -181,11 +184,11 @@ namespace osu.Game.Graphics.Containers
                 Height = Parent!.Parent!.DrawSize.Y * 1.5f;
             }
 
-            protected override void PopIn() => Schedule(() => this.MoveToY(FinalPosition, APPEAR_DURATION, easing_show));
+            protected override void PopIn() => Schedule(() => this.MoveToY(FinalPosition, PotatoMode.UltraActive ? 0 : APPEAR_DURATION, easing_show));
 
             protected override void PopOut()
             {
-                double duration = IsLoaded ? DISAPPEAR_DURATION : 0;
+                double duration = IsLoaded && !PotatoMode.UltraActive ? DISAPPEAR_DURATION : 0;
 
                 // scheduling is required as parent may not be present at the time this is called.
                 Schedule(() => this.MoveToY(Parent!.Parent!.DrawSize.Y, duration, easing_hide));

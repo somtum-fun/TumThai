@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -10,6 +10,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Graphics;
+using osu.Game.Performance;
 using osuTK;
 
 namespace osu.Game.Screens.Menu
@@ -80,7 +81,7 @@ namespace osu.Game.Screens.Menu
                 if (value == state) return;
 
                 state = value;
-                InternalChild.FadeTo(state == Visibility.Hidden ? 0 : 1, 300);
+                InternalChild.FadeTo(state == Visibility.Hidden ? 0 : 1, PotatoMode.UltraActive ? 0 : 300);
                 StateChanged?.Invoke(state);
             }
         }
@@ -117,11 +118,11 @@ namespace osu.Game.Screens.Menu
                     switch (state)
                     {
                         case ButtonAreaBackgroundState.Flat:
-                            this.ScaleTo(new Vector2(2, 0), 300, Easing.InSine);
+                            this.ScaleTo(new Vector2(2, 0), PotatoMode.UltraActive ? 0 : 300, Easing.InSine);
                             break;
 
                         case ButtonAreaBackgroundState.Normal:
-                            this.ScaleTo(Vector2.One, 400, Easing.OutQuint);
+                            this.ScaleTo(Vector2.One, PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
                             break;
                     }
 

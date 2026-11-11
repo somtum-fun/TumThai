@@ -18,6 +18,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
+using osu.Game.Performance;
 using osu.Game.Screens.Menu;
 using osuTK;
 
@@ -191,24 +192,27 @@ namespace osu.Game.Screens.Footer
             logoTracking?.Dispose();
             logoTracking = null;
 
-            changeLogoDepthDelegate = Scheduler.AddDelayed(() => RequestLogoInFront?.Invoke(false), transition_duration);
+            changeLogoDepthDelegate = Scheduler.AddDelayed(() => RequestLogoInFront?.Invoke(false), PotatoMode.UltraActive ? 0 : transition_duration);
         }
 
         protected override void PopIn()
         {
-            leftButtonsFlow.FadeIn(transition_duration / 4, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : transition_duration;
+            leftButtonsFlow.FadeIn(duration / 4, Easing.OutQuint);
 
-            this.MoveToY(0, transition_duration, Easing.OutQuint)
+            this.MoveToY(0, duration, Easing.OutQuint)
                 .FadeIn();
         }
 
         protected override void PopOut()
         {
+            double duration = PotatoMode.UltraActive ? 0 : transition_duration;
+
             // Really we shouldn't need to do this, but some buttons protrude vertically more than expected
             // (see FooterButtonMods).
-            leftButtonsFlow.FadeOut(transition_duration, Easing.OutQuint);
+            leftButtonsFlow.FadeOut(duration, Easing.OutQuint);
 
-            this.MoveToY(ScreenFooterButton.HEIGHT, transition_duration, Easing.OutQuint)
+            this.MoveToY(ScreenFooterButton.HEIGHT, duration, Easing.OutQuint)
                 .Then()
                 .FadeOut();
         }
@@ -405,7 +409,7 @@ namespace osu.Game.Screens.Footer
         {
             colourProvider.ChangeColourScheme(hue);
 
-            background.FadeColour(colourProvider.Background5, 150, Easing.OutQuint);
+            background.FadeColour(colourProvider.Background5, PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint);
 
             foreach (var button in leftButtonsFlow)
                 button.UpdateDisplay();

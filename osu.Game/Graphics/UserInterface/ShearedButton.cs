@@ -11,6 +11,7 @@ using osu.Framework.Localisation;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Screens.Footer;
 
 namespace osu.Game.Graphics.UserInterface
@@ -141,7 +142,7 @@ namespace osu.Game.Graphics.UserInterface
 
         protected override bool OnClick(ClickEvent e)
         {
-            if (Enabled.Value)
+            if (Enabled.Value && !PotatoMode.UltraActive)
                 flashLayer.FadeOutFromOne(800, Easing.OutQuint);
 
             return base.OnClick(e);
@@ -161,13 +162,17 @@ namespace osu.Game.Graphics.UserInterface
 
         protected override bool OnMouseDown(MouseDownEvent e)
         {
-            Content.ScaleTo(0.9f, 2000, Easing.OutQuint);
+            if (!PotatoMode.UltraActive)
+                Content.ScaleTo(0.9f, 2000, Easing.OutQuint);
+
             return true;
         }
 
         protected override void OnMouseUp(MouseUpEvent e)
         {
-            Content.ScaleTo(1, 1000, Easing.OutElastic);
+            if (!PotatoMode.UltraActive)
+                Content.ScaleTo(1, 1000, Easing.OutElastic);
+
             base.OnMouseUp(e);
         }
 
@@ -188,13 +193,15 @@ namespace osu.Game.Graphics.UserInterface
                 colourLight = colourLight.Lighten(0.2f);
             }
 
-            background.FadeColour(colourDark, 150, Easing.OutQuint);
-            backgroundLayer.TransformTo(nameof(BorderColour), ColourInfo.GradientVertical(colourDark, colourLight), 150, Easing.OutQuint);
+            double stateDuration = PotatoMode.UltraActive ? 0 : 150;
+
+            background.FadeColour(colourDark, stateDuration, Easing.OutQuint);
+            backgroundLayer.TransformTo(nameof(BorderColour), ColourInfo.GradientVertical(colourDark, colourLight), stateDuration, Easing.OutQuint);
 
             if (!Enabled.Value)
                 colourContent = colourContent.Opacity(0.6f);
 
-            ButtonContent.FadeColour(colourContent, 150, Easing.OutQuint);
+            ButtonContent.FadeColour(colourContent, stateDuration, Easing.OutQuint);
         }
 
         #region IScreenFooterButton
@@ -204,6 +211,14 @@ namespace osu.Game.Graphics.UserInterface
             Enabled.Value = Action != null;
 
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.X = 0f;
+                Content.Alpha = 1f;
+                return;
+            }
+
             Content.MoveToX(-300f)
                    .FadeOut()
                    .Delay(delay)
@@ -216,6 +231,14 @@ namespace osu.Game.Graphics.UserInterface
             Enabled.Value = Action != null;
 
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.Y = 0f;
+                Content.Alpha = 1f;
+                return;
+            }
+
             Content.MoveToY(100f)
                    .FadeOut()
                    .Delay(delay)
@@ -228,6 +251,15 @@ namespace osu.Game.Graphics.UserInterface
             Enabled.Value = false;
 
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.Alpha = 0f;
+                if (expire)
+                    Expire();
+                return;
+            }
+
             Content.Delay(delay)
                    .FadeOut(240, Easing.InOutCubic)
                    .MoveToX(300f, 360, Easing.InOutCubic);
@@ -241,6 +273,15 @@ namespace osu.Game.Graphics.UserInterface
             Enabled.Value = false;
 
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.Alpha = 0f;
+                if (expire)
+                    Expire();
+                return;
+            }
+
             Content.Delay(delay)
                    .FadeOut(240, Easing.InOutCubic)
                    .MoveToY(100f, 240, Easing.InOutCubic);

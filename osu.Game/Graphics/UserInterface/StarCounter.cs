@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osuTK;
@@ -8,6 +8,7 @@ using osu.Framework.Utils;
 using System;
 using System.Linq;
 using osu.Framework.Graphics.Sprites;
+using osu.Game.Performance;
 
 namespace osu.Game.Graphics.UserInterface
 {
@@ -115,6 +116,12 @@ namespace osu.Game.Graphics.UserInterface
 
                 star.ClearTransforms(true);
 
+                if (PotatoMode.UltraActive)
+                {
+                    star.DisplayAt(getStarScale(i, newValue));
+                    continue;
+                }
+
                 double delay = Math.Max(current <= newValue ? i - current : Math.Min(current, StarCount) - 1 - i, 0) * AnimationDelay;
 
                 using (star.BeginDelayedSequence(delay))
@@ -152,6 +159,13 @@ namespace osu.Game.Graphics.UserInterface
             public override void DisplayAt(float scale)
             {
                 scale = (float)Interpolation.Lerp(min_star_scale, 1, Math.Clamp(scale, 0, 1));
+
+                if (PotatoMode.UltraActive)
+                {
+                    Alpha = scale;
+                    Icon.Scale = new Vector2(scale);
+                    return;
+                }
 
                 this.FadeTo(scale, fading_duration);
                 Icon.ScaleTo(scale, scaling_duration, scaling_easing);
