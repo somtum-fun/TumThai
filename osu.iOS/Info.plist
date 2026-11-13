@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>sh.ppy.osulazer</string>
+	<string>fun.somtum.tumthai</string>
 	<key>CFBundleName</key>
-	<string>osu!</string>
+	<string>TumThai</string>
 	<key>CFBundleDisplayName</key>
-	<string>osu!</string>
+	<string>TumThai</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MinimumOSVersion</key>

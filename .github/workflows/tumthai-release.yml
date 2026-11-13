@@ -18,8 +18,9 @@
 #
 # Not signed for Apple (there is no Apple developer key): the macOS apps are only ad-hoc signed, so players open them
 # the first time with right-click -> Open (or System Settings -> Privacy & Security -> Open Anyway), or run
-# `xattr -dr com.apple.quarantine /Applications/TumThai.app`. iOS isn't built: it can't be installed without Apple
-# signing.
+# `xattr -dr com.apple.quarantine /Applications/TumThai.app`. iOS (iPhone/iPad, arm64 only) is built unsigned, for
+# testing on dev: players sideload the .ipa (AltStore/SideStore re-sign it with their own Apple ID). It isn't put on
+# the GitHub Release; TestFlight/App Store need an Apple Developer account.
 
 name: TumThai release
 
@@ -228,6 +229,53 @@ jobs:
           name: tumthai-macos-${{ matrix.rid }}-velopack
           path: ${{ runner.temp }}/velopack/*
 
+  ios:
+    name: iOS (arm64, unsigned)
+    needs: version
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      # The iOS workload is built against one Xcode and the runner's default Xcode can lag behind: use the newest one
+      # installed, then the workload for this SDK.
+      - name: Xcode and the iOS workload
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          dotnet workload install ios
+
+      # No Apple developer key, so no code signing: the .app is built for devices (AOT, Release) and left unsigned.
+      - name: Build
+        run: >
+          dotnet build osu.iOS/osu.iOS.csproj -c Release -r ios-arm64
+          -p:Version="$VERSION" -p:EnableCodeSigning=false -p:CodesignKey=
+
+      # An .ipa is the .app in a Payload folder, zipped.
+      - name: Make the .ipa
+        run: |
+          APP=$(find osu.iOS/bin/Release -type d -name '*.app' -prune | head -1)
+          [[ -n "$APP" ]] || { echo "::error::no .app was built"; exit 1; }
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' -c 'Print :CFBundleShortVersionString' "$APP/Info.plist"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload" out
+          cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/out/TumThai-$VERSION-ios-unsigned.ipa" Payload)
+          ls -la out
+
+      # Not named tumthai-*: the GitHub Release only takes tumthai-* artifacts, and this one is for dev testing.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dev-ios-unsigned
+          path: out/*
+          if-no-files-found: error
+
   android:
     name: Android (arm64)
     needs: version
@@ -318,6 +366,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
+          pattern: tumthai-*
           merge-multiple: true
 
       - name: Create the release
