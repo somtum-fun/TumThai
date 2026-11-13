@@ -246,7 +246,7 @@ jobs:
     # .NET 10's iOS workload needs Xcode 27.x; macos-latest (macOS 26) tops out at Xcode 26.6. xcode-27 is GitHub's
     # (public preview) image with it, the one ppy's CI uses.
     runs-on: xcode-27
-    timeout-minutes: 90
+    timeout-minutes: 300  # AOT of the whole game takes over 90 min on the hosted Mac
     env:
       VERSION: ${{ needs.version.outputs.version }}
       SOMTUM_SERVER: ${{ inputs.server == 'dev' && 'dev' || '' }}
