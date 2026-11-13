@@ -18,7 +18,9 @@
 #
 # Not signed for Apple (there is no Apple developer key): the macOS apps are only ad-hoc signed, so players open them
 # the first time with right-click -> Open (or System Settings -> Privacy & Security -> Open Anyway), or run
-# `xattr -dr com.apple.quarantine /Applications/TumThai.app`. iOS (iPhone/iPad, arm64 only) is built unsigned, for
+# `xattr -dr com.apple.quarantine /Applications/TumThai.app`. Run by hand with server=dev, the macOS and iOS builds
+# are TumThai Dev (-p:SomtumServer=dev, blueskychan.dev); Windows/Linux/Android dev builds come from
+# somtum-dev's scripts/lazer-release.sh. iOS (iPhone/iPad, arm64 only) is built unsigned, for
 # testing on dev: players sideload the .ipa (AltStore/SideStore re-sign it with their own Apple ID). It isn't put on
 # the GitHub Release; TestFlight/App Store need an Apple Developer account.
 
@@ -34,6 +36,12 @@ on:
         description: 'Version to build, e.g. 2026.1012.0 (no leading v)'
         required: true
         type: string
+      server:
+        description: 'Server the macOS and iOS builds connect to: prod (somtum.fun) or dev (blueskychan.dev, TumThai Dev)'
+        required: false
+        type: choice
+        options: [ prod, dev ]
+        default: prod
 
 permissions:
   contents: read
@@ -178,6 +186,8 @@ jobs:
         rid: [ osx-arm64, osx-x64 ]
     env:
       VERSION: ${{ needs.version.outputs.version }}
+      # Empty on a tag push (prod).
+      SOMTUM_SERVER: ${{ inputs.server == 'dev' && 'dev' || '' }}
     steps:
       - uses: actions/checkout@v6
 
@@ -191,7 +201,7 @@ jobs:
       - name: Publish
         run: >
           dotnet publish osu.Desktop/osu.Desktop.csproj -c Release -r ${{ matrix.rid }} --self-contained true -f net10.0
-          -p:PublishSingleFile=false -p:DebugType=none -p:DebugSymbols=false -o "$RUNNER_TEMP/publish"
+          -p:PublishSingleFile=false -p:DebugType=none -p:DebugSymbols=false -p:SomtumServer="$SOMTUM_SERVER" -o "$RUNNER_TEMP/publish"
 
       - name: Make TumThai.app
         run: |
@@ -201,7 +211,8 @@ jobs:
           codesign --verify --deep "$RUNNER_TEMP/app/TumThai.app"
           file "$RUNNER_TEMP/app/TumThai.app/Contents/MacOS/tumthai"
           mkdir -p out
-          ditto -c -k --keepParent "$RUNNER_TEMP/app/TumThai.app" "out/TumThai-$VERSION-${{ matrix.rid }}.zip"
+          NAME=TumThai; [[ "$SOMTUM_SERVER" == dev ]] && NAME=TumThaiDev
+          ditto -c -k --keepParent "$RUNNER_TEMP/app/TumThai.app" "out/$NAME-$VERSION-${{ matrix.rid }}.zip"
           ls -la out
 
       # Velopack's macOS package (a .pkg installer and the in-app update feed). Its own channel per architecture, so
@@ -236,6 +247,7 @@ jobs:
     timeout-minutes: 90
     env:
       VERSION: ${{ needs.version.outputs.version }}
+      SOMTUM_SERVER: ${{ inputs.server == 'dev' && 'dev' || '' }}
     steps:
       - uses: actions/checkout@v6
 
@@ -252,11 +264,18 @@ jobs:
           xcodebuild -version
           dotnet workload install ios
 
+      # TumThai Dev gets its own bundle id and name, so it installs next to TumThai.
+      - name: Dev identity
+        if: env.SOMTUM_SERVER == 'dev'
+        run: |
+          /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier fun.somtum.tumthai.dev' \
+            -c 'Set :CFBundleName TumThai Dev' -c 'Set :CFBundleDisplayName TumThai Dev' osu.iOS/Info.plist
+
       # No Apple developer key, so no code signing: the .app is built for devices (AOT, Release) and left unsigned.
       - name: Build
         run: >
           dotnet build osu.iOS/osu.iOS.csproj -c Release -r ios-arm64
-          -p:Version="$VERSION" -p:EnableCodeSigning=false -p:CodesignKey=
+          -p:Version="$VERSION" -p:SomtumServer="$SOMTUM_SERVER" -p:EnableCodeSigning=false -p:CodesignKey=
 
       # An .ipa is the .app in a Payload folder, zipped.
       - name: Make the .ipa
@@ -266,7 +285,8 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' -c 'Print :CFBundleShortVersionString' "$APP/Info.plist"
           mkdir -p "$RUNNER_TEMP/ipa/Payload" out
           cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
-          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/out/TumThai-$VERSION-ios-unsigned.ipa" Payload)
+          NAME=TumThai; [[ "$SOMTUM_SERVER" == dev ]] && NAME=TumThaiDev
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/out/$NAME-$VERSION-ios-unsigned.ipa" Payload)
           ls -la out
 
       # Not named tumthai-*: the GitHub Release only takes tumthai-* artifacts, and this one is for dev testing.
