@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Graphics;
 using osu.Framework.Input.Events;
 using osu.Framework.Graphics.UserInterface;
@@ -97,6 +98,22 @@ namespace osu.Game.Overlays
             selectSample = audio.Samples.Get(@"UI/tabselect-select");
 
             SelectedItem.BindValueChanged(_ => updateState(), true);
+        }
+
+        // TumThai: our stream names and versions ("Somtum Launcher (Windows)", "20261103somtum") are longer than
+        // ppy's, so a badge grows to fit its text instead of drawing over the next one (the flow wraps to a new row).
+        private float minWidth;
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            minWidth = Width;
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            Width = Math.Max(minWidth, text.DrawWidth);
         }
 
         private LocalisableString mainText;
