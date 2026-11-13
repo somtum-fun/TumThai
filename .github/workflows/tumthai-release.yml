@@ -243,7 +243,9 @@ jobs:
   ios:
     name: iOS (arm64, unsigned)
     needs: version
-    runs-on: macos-latest
+    # .NET 10's iOS workload needs Xcode 27.x; macos-latest (macOS 26) tops out at Xcode 26.6. xcode-27 is GitHub's
+    # (public preview) image with it, the one ppy's CI uses.
+    runs-on: xcode-27
     timeout-minutes: 90
     env:
       VERSION: ${{ needs.version.outputs.version }}
