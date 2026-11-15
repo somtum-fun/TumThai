@@ -43,6 +43,7 @@ namespace osu.Game.Online.Metadata
         private IBindable<APIUser> localUser = null!;
         private IBindable<UserStatus> userStatus = null!;
         private IBindable<UserActivity?> userActivity = null!;
+        private IBindable<bool> showStablePlayers = null!;
 
         private HubConnection? connection => connector?.CurrentConnection;
 
@@ -57,6 +58,7 @@ namespace osu.Game.Online.Metadata
             // Importantly, we are intentionally not using MessagePack here to correctly support derived class serialization.
             // More information on the limitations / reasoning can be found in osu-server-spectator's initialisation code.
             connector = api.GetHubConnector(nameof(OnlineMetadataClient), endpoint);
+            showStablePlayers = config.GetBindable<bool>(OsuSetting.ShowStablePlayers);
 
             if (connector != null)
             {
@@ -93,6 +95,8 @@ namespace osu.Game.Online.Metadata
                     UpdateStatus(status.NewValue).FireAndForget();
             }, true);
 
+            showStablePlayers.BindValueChanged(_ => updateStablePlayers().FireAndForget());
+
             userActivity.BindValueChanged(activity =>
             {
                 if (localUser.Value is not GuestUser)
@@ -125,6 +129,9 @@ namespace osu.Game.Online.Metadata
             {
                 UpdateActivity(userActivity.Value).FireAndForget();
                 UpdateStatus(userStatus.Value).FireAndForget();
+
+                if (showStablePlayers.Value)
+                    updateStablePlayers().FireAndForget();
             }
 
             if (lastQueueId.Value >= 0)
@@ -202,6 +209,27 @@ namespace osu.Game.Online.Metadata
 
             Debug.Assert(connection != null);
             return connection.InvokeAsync(nameof(IMetadataServer.UpdateStatus), status);
+        }
+
+        /// <summary>
+        /// TumThai: asks the server for osu!(stable) players (or to stop sending them): they then come as presences in
+        /// the online list and friends, and can be spectated. A server without them (not TomYum's) says no, quietly.
+        /// </summary>
+        private async Task updateStablePlayers()
+        {
+            if (connector?.IsConnected.Value != true || localUser.Value is GuestUser)
+                return;
+
+            Debug.Assert(connection != null);
+
+            try
+            {
+                await connection.InvokeAsync("TomYumWatchStablePlayers", showStablePlayers.Value).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logger.Log($@"{nameof(OnlineMetadataClient)}: this server has no osu!(stable) players ({e.Message})", LoggingTarget.Network);
+            }
         }
 
         protected override Task BeginWatchingUserPresenceInternal()
