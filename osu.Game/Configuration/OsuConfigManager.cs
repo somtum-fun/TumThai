@@ -137,6 +137,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.NotifyOnUsernameMentioned, true);
             SetDefault(OsuSetting.NotifyOnPrivateMessage, true);
             SetDefault(OsuSetting.NotifyOnFriendPresenceChange, true);
+            // TumThai: osu!(stable) players in the online list and friends, and spectating them (experimental).
+            SetDefault(OsuSetting.ShowStablePlayers, false);
 
             // Audio
             SetDefault(OsuSetting.VolumeInactive, 0.25, 0, 1, 0.01);
@@ -568,5 +570,11 @@ namespace osu.Game.Configuration
         /// TumThai: the built-in server's saved token, kept while a private server profile is active.
         /// </summary>
         DefaultServerToken,
+
+        /// <summary>
+        /// TumThai (experimental): osu!(stable) players in the online list and friends, and spectating them, on a
+        /// server that has them (TomYum's spectator server).
+        /// </summary>
+        ShowStablePlayers,
     }
 }
