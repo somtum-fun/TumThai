@@ -217,7 +217,7 @@ namespace osu.Game.Online.Metadata
         /// </summary>
         private async Task updateStablePlayers()
         {
-            if (connector?.IsConnected.Value != true || localUser.Value is GuestUser)
+            if (connector?.IsConnected.Value != true || localUser.Value is GuestUser || !TumThaiClient.IsTomYumServer)
                 return;
 
             Debug.Assert(connection != null);

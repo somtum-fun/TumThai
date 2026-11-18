@@ -56,6 +56,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
         private SettingsTextBox customAvatarUrlTextBox = null!;
         private SettingsTextBox customClientIdTextBox = null!;
         private SettingsTextBox customClientSecretTextBox = null!;
+        private readonly BindableBool notTomYumBindable = new BindableBool();
         private SettingsButtonV2 saveProfileButton = null!;
         private DangerousSettingsButtonV2 deleteProfileButton = null!;
 
@@ -141,6 +142,13 @@ namespace osu.Game.Overlays.Settings.Sections.Server
                             Current = new Bindable<string>(string.Empty),
                             ShowsDefaultIndicator = false,
                             Keywords = new[] { "client", "secret", "oauth", "token" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = "Not a TomYum server",
+                            TooltipText = "Turn on for a server that doesn't run TomYum. TumThai then works there as a plain osu!lazer: no custom ruleset downloads, no osu!(stable) players, no \"Uploaded here only\" filter in the beatmap listing, and no machine hashes are sent. Relax/Autopilot leaderboards stay.",
+                            Current = notTomYumBindable,
+                            Keywords = new[] { "tomyum", "server", "plain", "vanilla", "hwid", "private" },
                         },
                         saveProfileButton = new SettingsButtonV2
                         {
@@ -333,6 +341,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
             customAvatarUrlTextBox.Current.Value = profile?.AvatarUrl ?? string.Empty;
             customClientIdTextBox.Current.Value = profile?.ClientId ?? string.Empty;
             customClientSecretTextBox.Current.Value = profile?.ClientSecret ?? string.Empty;
+            notTomYumBindable.Value = profile != null && !profile.IsTomYum;
             deleteProfileButton.Enabled.Value = profile != null;
         }
 
@@ -386,6 +395,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
             profile.AvatarUrl = rawAvatar;
             profile.ClientId = (customClientIdTextBox.Current.Value ?? string.Empty).Trim();
             profile.ClientSecret = (customClientSecretTextBox.Current.Value ?? string.Empty).Trim();
+            profile.IsTomYum = !notTomYumBindable.Value;
 
             if (!profile.Validate(out string validationError))
             {
@@ -525,6 +535,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
             config.SetValue(OsuSetting.CustomAvatarUrl, profile.AvatarUrl);
             config.SetValue(OsuSetting.CustomClientId, profile.ClientId);
             config.SetValue(OsuSetting.CustomClientSecret, profile.ClientSecret);
+            config.SetValue(OsuSetting.ExternalServerIsTomYum, profile.IsTomYum);
             config.Save();
         }
 
@@ -537,6 +548,7 @@ namespace osu.Game.Overlays.Settings.Sections.Server
             config.SetValue(OsuSetting.CustomAvatarUrl, string.Empty);
             config.SetValue(OsuSetting.CustomClientId, string.Empty);
             config.SetValue(OsuSetting.CustomClientSecret, string.Empty);
+            config.SetValue(OsuSetting.ExternalServerIsTomYum, true);
             config.Save();
         }
 

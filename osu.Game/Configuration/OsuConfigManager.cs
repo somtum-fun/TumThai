@@ -129,6 +129,8 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.CustomClientId, string.Empty);
             SetDefault(OsuSetting.CustomClientSecret, string.Empty);
             SetDefault(OsuSetting.ExternalServerEnabled, false);
+            // TumThai: whether the active private server is a TomYum one (copied from its profile, like the URLs above).
+            SetDefault(OsuSetting.ExternalServerIsTomYum, true);
             SetDefault(OsuSetting.ExternalServerProfilesJson, string.Empty);
             SetDefault(OsuSetting.ActiveExternalServerProfileId, string.Empty);
             SetDefault(OsuSetting.DefaultServerUsername, string.Empty);
@@ -639,5 +641,11 @@ namespace osu.Game.Configuration
         /// server that has them (TomYum's spectator server).
         /// </summary>
         ShowStablePlayers,
+
+        /// <summary>
+        /// TumThai: whether the active private server is a TomYum server. Off, TumThai is a plain lazer client there:
+        /// no machine hashes, custom rulesets, osu!(stable) players or "Uploaded here" filter.
+        /// </summary>
+        ExternalServerIsTomYum,
     }
 }

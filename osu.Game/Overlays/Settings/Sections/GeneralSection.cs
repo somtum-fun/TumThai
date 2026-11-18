@@ -8,6 +8,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Localisation;
+using osu.Game.Online;
 using osu.Game.Overlays.Settings.Sections.General;
 using osu.Game.Updater;
 
@@ -31,8 +32,9 @@ namespace osu.Game.Overlays.Settings.Sections
                 Add(new UpdateSettings());
             if (RuntimeInfo.IsDesktop)
                 Add(new InstallationSettings());
-            // TumThai!Next: custom rulesets load from the game's rulesets folder, on desktop and Android alike.
-            if (RuntimeInfo.IsDesktop || RuntimeInfo.OS == RuntimeInfo.Platform.Android)
+            // TumThai!Next: custom rulesets load from the game's rulesets folder, on desktop and Android alike;
+            // a server that isn't TomYum has none.
+            if ((RuntimeInfo.IsDesktop || RuntimeInfo.OS == RuntimeInfo.Platform.Android) && TumThaiClient.IsTomYumServer)
                 Add(new CustomRulesetsSettings());
         }
     }

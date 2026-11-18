@@ -210,6 +210,9 @@ namespace osu.Game.Online.API
                 AddParameter("client_secret", ClientSecret);
                 AddParameter("scope", "*");
 
+                // TumThai: a TomYum server checks the machine at sign-in, as osu!(stable)'s login does.
+                TumThaiClient.AddTo(this);
+
                 base.PrePerform();
             }
         }
