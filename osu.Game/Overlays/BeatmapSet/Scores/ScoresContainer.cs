@@ -120,8 +120,8 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
                 var topScore = scores.First();
 
-                // TumThai: a custom ruleset has no pp.
-                bool showPerformance = customRuleset == null && apiBeatmap.Status.GrantsPerformancePoints();
+                // TumThai: a custom ruleset's plays have Pla-ra pp (its board stays sorted by score).
+                bool showPerformance = apiBeatmap.Status.GrantsPerformancePoints();
 
                 // osu!somtum: show pp in place of score when sorted by pp.
                 bool sortedByPerformance = showPerformance && requestedByPerformance;
@@ -284,7 +284,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
         private void onBeatmapChanged(ValueChangedEvent<APIBeatmap> beatmap)
         {
-            // TumThai: a custom ruleset's board has its mods and variants (and no pp to sort by).
+            // TumThai: a custom ruleset's board has its mods and variants, and is by score only (as osu!'s boards are).
             IRulesetInfo beatmapRuleset = (IRulesetInfo)customRuleset ?? beatmap.NewValue?.Ruleset;
 
             updateVariants(beatmapRuleset);

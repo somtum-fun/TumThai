@@ -158,7 +158,7 @@ namespace osu.Game.Screens.Ranking.Statistics
 
         private async Task<PerformanceBreakdown?> computePerformance(CancellationToken token)
         {
-            var performanceCalculator = score.Ruleset.CreateInstance().CreatePerformanceCalculator();
+            var performanceCalculator = Somtum.Plara.PlaraCalculators.CreatePerformanceCalculator(score.Ruleset.CreateInstance());
             if (performanceCalculator == null)
                 return null;
 

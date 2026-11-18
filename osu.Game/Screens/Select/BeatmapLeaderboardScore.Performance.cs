@@ -26,7 +26,7 @@ namespace osu.Game.Screens.Select
                 return score.PP.Value;
 
             var attributes = await difficultyCache.GetDifficultyAsync(score.BeatmapInfo!, score.Ruleset, score.Mods, cancellationToken).ConfigureAwait(false);
-            var performanceCalculator = score.Ruleset.CreateInstance().CreatePerformanceCalculator();
+            var performanceCalculator = Somtum.Plara.PlaraCalculators.CreatePerformanceCalculator(score.Ruleset.CreateInstance());
 
             // Performance calculation requires the beatmap and ruleset to be locally available.
             if (attributes?.DifficultyAttributes == null || performanceCalculator == null)
