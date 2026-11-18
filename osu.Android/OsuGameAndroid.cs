@@ -11,6 +11,7 @@ using osu.Framework.Development;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.Online;
 using osu.Game.Performance;
 using osu.Game.Screens;
 using osu.Game.Updater;
@@ -35,6 +36,7 @@ namespace osu.Android
             : base(null)
         {
             gameActivity = activity;
+            TumThaiClient.Machine = new TumThaiAndroidMachine();
             packageInfo = Application.Context.ApplicationContext!.PackageManager!.GetPackageInfo(Application.Context.ApplicationContext.PackageName!, 0).AsNonNull();
         }
 

@@ -111,6 +111,10 @@ namespace osu.Game.Online
         /// <summary>Reads the server's list again.</summary>
         public void Refresh()
         {
+            // a server that isn't TomYum has no custom rulesets to offer.
+            if (!TumThaiClient.IsTomYumServer)
+                return;
+
             var request = new GetSomtumCustomRulesetsRequest();
             request.Success += response => Schedule(() =>
             {

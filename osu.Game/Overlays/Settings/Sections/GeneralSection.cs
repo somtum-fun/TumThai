@@ -8,6 +8,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Localisation;
+using osu.Game.Online;
 using osu.Game.Overlays.Settings.Sections.General;
 using osu.Game.Updater;
 
@@ -32,8 +33,9 @@ namespace osu.Game.Overlays.Settings.Sections
             if (RuntimeInfo.IsDesktop)
             {
                 Add(new InstallationSettings());
-                // TumThai: custom rulesets load from disk, which lazer only does on desktop.
-                Add(new CustomRulesetsSettings());
+                // TumThai: custom rulesets load from disk, which lazer only does on desktop; a server that isn't TomYum has none.
+                if (TumThaiClient.IsTomYumServer)
+                    Add(new CustomRulesetsSettings());
             }
         }
     }

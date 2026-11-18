@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Localisation;
+using osu.Game.Online;
 using osu.Game.Overlays.Settings.Sections.Online;
 
 namespace osu.Game.Overlays.Settings.Sections
@@ -26,8 +27,11 @@ namespace osu.Game.Overlays.Settings.Sections
             {
                 new ContentDownloadSettings(),
                 new AlertsAndPrivacySettings(),
-                new StablePlayersSettings(),
             };
+
+            // TumThai: only TomYum's spectator server has osu!(stable) players.
+            if (TumThaiClient.IsTomYumServer)
+                Add(new StablePlayersSettings());
 
             if (RuntimeInfo.IsDesktop)
                 Add(new IntegrationSettings());

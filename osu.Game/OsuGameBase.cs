@@ -346,6 +346,10 @@ namespace osu.Game
 
             EndpointConfiguration endpoints = CreateEndpoints();
 
+            // TumThai: its machine hashes go to TomYum servers only (see TumThaiClient), and its install id lives in its storage.
+            TumThaiClient.IsTomYumServer = string.IsNullOrWhiteSpace(CustomApiServer) || LocalConfig.Get<bool>(OsuSetting.ExternalServerIsTomYum);
+            TumThaiClient.InstallIdPath = Storage.GetFullPath(@"tumthai-install-id");
+
             MessageFormatter.WebsiteRootUrl = endpoints.WebsiteUrl;
 
             // Initialise localisation

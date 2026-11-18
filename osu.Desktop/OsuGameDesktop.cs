@@ -20,6 +20,7 @@ using osu.Framework.Allocation;
 using osu.Game.Configuration;
 using osu.Game.IO;
 using osu.Game.IPC;
+using osu.Game.Online;
 using osu.Game.Performance;
 using osu.Game.Utils;
 
@@ -40,6 +41,7 @@ namespace osu.Desktop
         public OsuGameDesktop(string[]? args = null)
             : base(args)
         {
+            TumThaiClient.Machine = new TumThaiDesktopMachine();
         }
 
         public override StableStorage? GetStorageForStableInstall()

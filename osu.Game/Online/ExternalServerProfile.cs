@@ -28,6 +28,12 @@ namespace osu.Game.Online
         public string ClientSecret { get; set; } = string.Empty;
 
         /// <summary>
+        /// Whether this is a TomYum server. Off, TumThai is a plain lazer client there: it sends no machine hashes, and
+        /// custom rulesets, osu!(stable) players and the beatmap listing's "Uploaded here only" filter are off.
+        /// </summary>
+        public bool IsTomYum { get; set; } = true;
+
+        /// <summary>
         /// The username signed in on this server, kept while another server is active.
         /// </summary>
         public string Username { get; set; } = string.Empty;

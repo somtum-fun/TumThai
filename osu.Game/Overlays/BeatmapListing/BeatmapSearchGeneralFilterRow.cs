@@ -2,6 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions;
@@ -14,6 +16,7 @@ using osu.Game.Configuration;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
 using osu.Game.Localisation;
+using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Resources.Localisation.Web;
@@ -41,6 +44,9 @@ namespace osu.Game.Overlays.BeatmapListing
         private partial class GeneralFilter : MultipleSelectionFilter
         {
             public readonly IBindable<RulesetInfo> Ruleset = new Bindable<RulesetInfo>();
+
+            // TumThai: "Uploaded here only" is TomYum's filter.
+            protected override IEnumerable<SearchGeneral> GetValues() => base.GetValues().Where(v => v != SearchGeneral.Somtum || TumThaiClient.IsTomYumServer);
 
             protected override MultipleSelectionFilterTabItem CreateTabItem(SearchGeneral value)
             {

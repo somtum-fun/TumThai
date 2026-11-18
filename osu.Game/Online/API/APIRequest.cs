@@ -140,6 +140,9 @@ namespace osu.Game.Online.API
             if (!string.IsNullOrEmpty(API.AccessToken))
                 WebRequest.AddHeader(@"Authorization", $@"Bearer {API.AccessToken}");
 
+            // TumThai: its machine hashes, on a TomYum server (no scores there without them).
+            TumThaiClient.AddTo(WebRequest);
+
             if (isFailing) return;
 
             try
