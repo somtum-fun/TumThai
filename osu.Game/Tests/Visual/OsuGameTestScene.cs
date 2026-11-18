@@ -186,7 +186,7 @@ namespace osu.Game.Tests.Visual
                 // set applied version to latest so that the BackgroundBeatmapProcessor doesn't consider
                 // beatmap star ratings as outdated and reset them throughout the test.
                 foreach (var ruleset in RulesetStore.AvailableRulesets)
-                    ruleset.LastAppliedDifficultyVersion = ruleset.CreateInstance().CreateDifficultyCalculator(Beatmap.Default).Version;
+                    ruleset.LastAppliedDifficultyVersion = Somtum.Plara.PlaraCalculators.CreateDifficultyCalculator(ruleset.CreateInstance(), Beatmap.Default).Version;
             }
 
             protected override void Update()

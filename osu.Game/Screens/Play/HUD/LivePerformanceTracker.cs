@@ -75,7 +75,7 @@ namespace osu.Game.Screens.Play.HUD
             if (gameplayState == null)
                 return;
 
-            performanceCalculator = gameplayState.Ruleset.CreatePerformanceCalculator();
+            performanceCalculator = Somtum.Plara.PlaraCalculators.CreatePerformanceCalculator(gameplayState.Ruleset);
             var clonedMods = gameplayState.Mods.Select(m => m.DeepClone()).ToArray();
 
             scoreInfo = new ScoreInfo(gameplayState.Score.ScoreInfo.BeatmapInfo, gameplayState.Score.ScoreInfo.Ruleset) { Mods = clonedMods };

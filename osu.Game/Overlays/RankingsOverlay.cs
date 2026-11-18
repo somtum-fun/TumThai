@@ -131,8 +131,8 @@ namespace osu.Game.Overlays
 
         private APIRequest createScopedRequest()
         {
-            // TumThai: a custom ruleset has one ranking, by ranked score (no pp, no countries' table); none when the
-            // server doesn't rank it.
+            // TumThai: a custom ruleset's rankings are by pp (Pla-ra's) or ranked score (no countries' table); none when
+            // the server doesn't rank it.
             if (ruleset.Value != null && !ruleset.Value.IsLegacyRuleset() && !ruleset.Value.IsSpecialRuleset())
             {
                 string slug = customRulesets?.Find(ruleset.Value)?.Slug;
@@ -140,7 +140,8 @@ namespace osu.Game.Overlays
                 if (slug == null || Header.Current.Value is not (RankingsScope.Performance or RankingsScope.Score))
                     return null;
 
-                return new GetUserRankingsRequest(ruleset.Value, UserRankingsType.Score, countryCode: Country.Value) { SomtumMode = slug };
+                var type = Header.Current.Value == RankingsScope.Score ? UserRankingsType.Score : UserRankingsType.Performance;
+                return new GetUserRankingsRequest(ruleset.Value, type, countryCode: Country.Value) { SomtumMode = slug };
             }
 
             switch (Header.Current.Value)
