@@ -60,6 +60,9 @@ namespace osu.Game.Screens.Menu
         private BeatmapListingOverlay? beatmapListing { get; set; }
 
         [Resolved]
+        private INotificationOverlay? notifications { get; set; }
+
+        [Resolved]
         private SettingsOverlay? settingsOverlay { get; set; }
 
         [Resolved]
@@ -84,6 +87,7 @@ namespace osu.Game.Screens.Menu
         private Sprite? npSprite;
         private FillFlowContainer statsTextFlow = null!;
         private OsuDirectTab osuDirectTab = null!;
+        private StableBottomTabButton notificationsTab = null!;
 
         private readonly Container buttonsRootContainer;
         private FillFlowContainer topLevelStack = null!;
@@ -311,6 +315,9 @@ namespace osu.Game.Screens.Menu
                             Spacing = new Vector2(6, 0),
                             Children = new Drawable[]
                             {
+                                // TumThai!Next: the toolbar (and its notifications and osu!direct buttons) is hidden in this theme.
+                                new StableBottomTabButton("osu!direct", () => beatmapListing?.ToggleVisibility()),
+                                notificationsTab = new StableBottomTabButton("Notifications", () => (notifications as VisibilityContainer)?.ToggleVisibility()),
                                 new StableBottomTabButton("Online Users", () => dashboardOverlay?.ToggleVisibility()),
                                 new StableBottomTabButton("^ Show Chat", () => chatOverlay?.ToggleVisibility()),
                             },
@@ -395,6 +402,8 @@ namespace osu.Game.Screens.Menu
         {
             base.Update();
 
+            updateNotificationsTab();
+
             if (Time.Current - lastClockUpdate > 500)
             {
                 lastClockUpdate = Time.Current;
@@ -462,10 +471,43 @@ namespace osu.Game.Screens.Menu
             }
         }
 
+        private string? notificationsTabText;
+
+        // "Notifications", with how many are going on (downloads, imports) or else how many are unread.
+        private void updateNotificationsTab()
+        {
+            if (notifications == null)
+                return;
+
+            int ongoing = notifications.OngoingOperations.Count();
+            int unread = notifications.UnreadCount.Value;
+
+            string text = ongoing > 0 ? $"Notifications ({ongoing} in progress)"
+                : unread > 0 ? $"Notifications ({unread})"
+                : "Notifications";
+
+            if (text == notificationsTabText)
+                return;
+
+            notificationsTabText = text;
+            notificationsTab.Text = text;
+        }
+
         private partial class StableBottomTabButton : OsuClickableContainer
         {
-            private readonly string text;
+            private string text;
             private Box bg = null!;
+            private OsuSpriteText label = null!;
+
+            public string Text
+            {
+                set
+                {
+                    text = value;
+                    if (IsLoaded)
+                        label.Text = value;
+                }
+            }
 
             public StableBottomTabButton(string text, Action action)
             {
@@ -487,7 +529,7 @@ namespace osu.Game.Screens.Menu
                         RelativeSizeAxes = Axes.Both,
                         Colour = Color4Extensions.FromHex(@"1A2855").Opacity(0.85f),
                     },
-                    new OsuSpriteText
+                    label = new OsuSpriteText
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,

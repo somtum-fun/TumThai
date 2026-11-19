@@ -1246,6 +1246,10 @@ namespace osu.Game
                 d.Origin = Anchor.TopRight;
             }), rightFloatingOverlayContent.Add, true);
 
+            // TumThai!Next: the osu!stable theme hides the toolbar (and its notifications button); this shows when there's
+            // something to see in notifications. The stable main menu has its own Notifications and osu!direct tabs.
+            loadComponentSingleFile(new StableNotificationIndicator(Notifications, OverlayActivationMode, () => ScreenStack.CurrentScreen is MainMenu), rightFloatingOverlayContent.Add);
+
             loadComponentSingleFile(legacyImportManager, Add);
 
             loadComponentSingleFile(screenshotManager, Add);
@@ -1650,6 +1654,8 @@ namespace osu.Game
             return component;
         }
 
+        private bool isThemedInterface => LocalConfig.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).IsThemed();
+
         public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)
         {
             switch (e.Action)
@@ -1675,6 +1681,16 @@ namespace osu.Game
 
                 case GlobalAction.ToggleFPSDisplay:
                     fpsCounter.ToggleVisibility();
+                    return true;
+
+                // TumThai!Next: these are the toolbar buttons' hotkeys, and the osu!stable theme hides the toolbar (a hidden
+                // one gets no keys), so the game takes them there.
+                case GlobalAction.ToggleNotifications when isThemedInterface && OverlayActivationMode.Value != OverlayActivation.Disabled:
+                    Notifications.ToggleVisibility();
+                    return true;
+
+                case GlobalAction.ToggleBeatmapListing when isThemedInterface && OverlayActivationMode.Value != OverlayActivation.Disabled:
+                    beatmapListing.ToggleVisibility();
                     return true;
 
                 case GlobalAction.ToggleSkinEditor:
