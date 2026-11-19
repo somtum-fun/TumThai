@@ -39,6 +39,10 @@ namespace osu.Game.Graphics.Cursor
         /// <param name="rotate">skin.ini CursorTrailRotate.</param>
         public void Apply(Texture? texture, bool disjoint, bool centre, bool rotate)
         {
+            // a new skin's trail starts afresh: nothing left over from the last one
+            ClearTrail();
+            currentPosition = null;
+
             // never null: the trail's draw node binds it (a skin without cursortrail just gets no trail)
             hasTexture = texture != null;
             if (texture != null)

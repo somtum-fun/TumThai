@@ -318,6 +318,20 @@ namespace osu.Game.Skinning
         private Color4? cachedSongSelectActiveText;
         private Color4? cachedSongSelectInactiveText;
 
+        // The skin the caches above were filled from. Screens bound to CurrentSkin hear of a change before CurrentSkin's own
+        // handler clears them, so each lookup checks this too: otherwise they'd read (and keep) the old skin's textures.
+        private Skin classicCacheSkin;
+
+        private void ensureClassicCacheFresh()
+        {
+            var current = CurrentSkin.Value;
+            if (ReferenceEquals(classicCacheSkin, current))
+                return;
+
+            InvalidateStableSkinCache();
+            classicCacheSkin = current;
+        }
+
         /// <summary>
         /// Clears the cached classic/stable skin textures, samples, and custom colours when the active skin changes.
         /// </summary>
@@ -337,6 +351,7 @@ namespace osu.Game.Skinning
             if (string.IsNullOrEmpty(componentName))
                 return null;
 
+            ensureClassicCacheFresh();
             return classicTextureCache.GetOrAdd(componentName, name =>
                 CurrentSkin.Value?.GetTexture(name) ?? DefaultClassicSkin.GetTexture(name));
         }
@@ -352,19 +367,26 @@ namespace osu.Game.Skinning
         /// Returns <c>SongSelectActiveText</c> from the active skin's <c>skin.ini</c> (cached per active skin), or <see cref="Color4.Black"/> by default.
         /// </summary>
         public Color4 GetSongSelectActiveTextColour()
-            => cachedSongSelectActiveText ??= CurrentSkin.Value?.GetConfig<SkinCustomColourLookup, Color4>(new SkinCustomColourLookup(@"SongSelectActiveText"))?.Value ?? Color4.Black;
+        {
+            ensureClassicCacheFresh();
+            return cachedSongSelectActiveText ??= CurrentSkin.Value?.GetConfig<SkinCustomColourLookup, Color4>(new SkinCustomColourLookup(@"SongSelectActiveText"))?.Value ?? Color4.Black;
+        }
 
         /// <summary>
         /// Returns <c>SongSelectInactiveText</c> from the active skin's <c>skin.ini</c> (cached per active skin), or <see cref="Color4.White"/> by default.
         /// </summary>
         public Color4 GetSongSelectInactiveTextColour()
-            => cachedSongSelectInactiveText ??= CurrentSkin.Value?.GetConfig<SkinCustomColourLookup, Color4>(new SkinCustomColourLookup(@"SongSelectInactiveText"))?.Value ?? Color4.White;
+        {
+            ensureClassicCacheFresh();
+            return cachedSongSelectInactiveText ??= CurrentSkin.Value?.GetConfig<SkinCustomColourLookup, Color4>(new SkinCustomColourLookup(@"SongSelectInactiveText"))?.Value ?? Color4.White;
+        }
 
         /// <summary>
         /// Resolves a classic/stable skin sample (cached per active skin), consulting the active user skin (when it is a <see cref="LegacySkin"/>) before falling back to <see cref="DefaultClassicSkin"/>.
         /// </summary>
         public ISample GetClassicSample(params string[] sampleNames)
         {
+            ensureClassicCacheFresh();
             string cacheKey = string.Join('|', sampleNames);
             return classicSampleCache.GetOrAdd(cacheKey, _ =>
             {

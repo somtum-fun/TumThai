@@ -104,7 +104,7 @@ namespace osu.Game.Screens.Ranking
 
             FillFlowContainer rightActionButtons;
 
-            InternalChild = new SkinProvidingContainer(hudSkin)
+            var stableRoot = new SkinProvidingContainer(hudSkin)
             {
                 RelativeSizeAxes = Axes.Both,
                 Children = new Drawable[]
@@ -295,6 +295,8 @@ namespace osu.Game.Screens.Ranking
                     },
                 },
             };
+
+            InternalChild = new MinimumHeightContainer { Child = stableRoot };
 
             if (player != null && AllowRetry)
             {
@@ -625,6 +627,29 @@ namespace osu.Game.Screens.Ranking
                     clickSample?.Play();
 
                 return base.OnClick(e);
+            }
+        }
+
+        /// <summary>
+        /// TumThai: the page is laid out for a screen at least 1024x768 units (4:3), as osu!stable's is. A big UI scale (a
+        /// phone's) or a portrait screen leaves less than that, which put the bottom buttons and the back button over the hit
+        /// counts and ranking rows, and the grade over them in portrait: then it's all scaled down to fit instead. At 1024x768
+        /// or more it's left as it is.
+        /// </summary>
+        private partial class MinimumHeightContainer : Container
+        {
+            private const float min_width = 1024f;
+            private const float min_height = 768f;
+
+            protected override void Update()
+            {
+                base.Update();
+
+                Vector2 parentSize = Parent!.ChildSize;
+                float scale = parentSize.X > 0 && parentSize.Y > 0 ? Math.Min(1f, Math.Min(parentSize.X / min_width, parentSize.Y / min_height)) : 1f;
+
+                Scale = new Vector2(scale);
+                Size = parentSize / scale;
             }
         }
     }

@@ -30,6 +30,12 @@ namespace osu.Game.Skinning
 
         private bool isNewStyle;
 
+        private Sprite background;
+
+        // TumThai: some skins' scorebar-bg is a frame for the whole screen (made for a 16:9 landscape one). On a portrait
+        // screen it lands as a box over the playfield, so a background that tall is hidden while the screen is portrait.
+        private const float full_screen_background_height = 400;
+
         public bool UsesFixedAnchor { get; set; }
 
         [BackgroundDependencyLoader]
@@ -43,7 +49,7 @@ namespace osu.Game.Skinning
             isNewStyle = getTexture(skin, "marker") != null;
 
             // background implementation is the same for both versions.
-            AddInternal(new Sprite { Texture = getTexture(skin, "bg") });
+            AddInternal(background = new Sprite { Texture = getTexture(skin, "bg") });
 
             if (isNewStyle)
             {
@@ -72,6 +78,9 @@ namespace osu.Game.Skinning
         protected override void Update()
         {
             base.Update();
+
+            if (background.Texture?.DisplayHeight > full_screen_background_height && Parent != null)
+                background.Alpha = Parent.ChildSize.X < Parent.ChildSize.Y ? 0 : 1;
 
             if (PotatoMode.UltraActive)
                 fill.Width = (float)Current.Value * maxFillWidth;

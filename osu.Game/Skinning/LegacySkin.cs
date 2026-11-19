@@ -449,6 +449,16 @@ namespace osu.Game.Skinning
                                     accuracy.Y = container.ToLocalSpace(score.ScreenSpaceDrawQuad.BottomRight).Y;
                                 }
 
+                                // TumThai: a skin can make its accuracy very wide (a wide score-percent pushes the digits left, as
+                                // laid out for a landscape screen). On a narrow (portrait) one that runs off the left edge, so it's
+                                // moved right until it starts on screen.
+                                if (accuracy != null)
+                                {
+                                    float left = container.ToLocalSpace(accuracy.ScreenSpaceDrawQuad.TopLeft).X;
+                                    if (left < 0)
+                                        accuracy.X -= left;
+                                }
+
                                 var songProgress = container.OfType<LegacySongProgress>().FirstOrDefault();
 
                                 if (songProgress != null && accuracy != null)

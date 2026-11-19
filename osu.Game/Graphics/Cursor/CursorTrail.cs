@@ -172,7 +172,21 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
         protected virtual bool AvoidDrawingNearCursor => false;
 
         private Vector2? lastPosition;
-        private readonly InputResampler resampler = new InputResampler();
+        private InputResampler resampler = new InputResampler();
+
+        /// <summary>
+        /// TumThai: removes every part on screen and forgets the last position, so a trail set up for another skin starts
+        /// afresh (no old parts drawn with the new texture, no streak from where the cursor was before).
+        /// </summary>
+        protected void ClearTrail()
+        {
+            for (int i = 0; i < parts.Length; i++)
+                parts[i].InvalidationID = -1;
+
+            lastPosition = null;
+            resampler = new InputResampler();
+            Invalidate(Invalidation.DrawNode);
+        }
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => !PotatoMode.UltraActive;
 
@@ -185,12 +199,29 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
             return base.OnMouseMove(e);
         }
 
+        // TumThai: a touch puts the cursor where the finger lands, so the smooth trail starts afresh there instead of joining
+        // the last spot to the new one with a streak across the screen.
+        private bool freshStart;
+
+        protected override bool OnTouchDown(TouchDownEvent e)
+        {
+            freshStart = true;
+            return base.OnTouchDown(e);
+        }
+
         protected void AddTrail(Vector2 position)
         {
             if (PotatoMode.UltraActive)
                 return;
 
             position = ToLocalSpace(position);
+
+            if (freshStart)
+            {
+                freshStart = false;
+                lastPosition = null;
+                resampler = new InputResampler();
+            }
 
             if (InterpolateMovements)
             {
