@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Performance;
 using osu.Game.Screens.Footer;
 
 namespace osu.Game.Overlays.Mods
@@ -131,11 +132,11 @@ namespace osu.Game.Overlays.Mods
 
         protected override void PopIn()
         {
-            const double fade_in_duration = 400;
+            double fadeInDuration = PotatoMode.UltraActive ? 0 : 400;
 
-            this.FadeIn(fade_in_duration, Easing.OutQuint);
+            this.FadeIn(fadeInDuration, Easing.OutQuint);
 
-            Header.MoveToY(0, fade_in_duration, Easing.OutQuint);
+            Header.MoveToY(0, fadeInDuration, Easing.OutQuint);
 
             if (footer != null)
             {
@@ -152,12 +153,12 @@ namespace osu.Game.Overlays.Mods
 
         protected override void PopOut()
         {
-            const double fade_out_duration = 500;
+            double fadeOutDuration = PotatoMode.UltraActive ? 0 : 500;
 
             base.PopOut();
-            this.FadeOut(fade_out_duration, Easing.OutQuint);
+            this.FadeOut(fadeOutDuration, Easing.OutQuint);
 
-            Header.MoveToY(-Header.DrawHeight, fade_out_duration, Easing.OutQuint);
+            Header.MoveToY(-Header.DrawHeight, fadeOutDuration, Easing.OutQuint);
 
             if (footer != null)
             {

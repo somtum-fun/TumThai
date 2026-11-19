@@ -15,6 +15,7 @@ using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
@@ -173,15 +174,17 @@ namespace osu.Game.Graphics.UserInterface
         protected override bool OnHover(HoverEvent e)
         {
             hoverSample?.Play();
-            content.ScaleTo(HoverScale, 150, Easing.OutQuad);
-            hoverFlash.FadeTo(0.18f, 120, Easing.OutQuad);
+            if (!PotatoMode.UltraActive)
+                content.ScaleTo(HoverScale, 150, Easing.OutQuad);
+            hoverFlash.FadeTo(0.18f, PotatoMode.UltraActive ? 0 : 120, Easing.OutQuad);
             return base.OnHover(e);
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            content.ScaleTo(1f, 150, Easing.OutQuad);
-            hoverFlash.FadeOut(150, Easing.OutQuad);
+            if (!PotatoMode.UltraActive)
+                content.ScaleTo(1f, 150, Easing.OutQuad);
+            hoverFlash.FadeOut(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuad);
             base.OnHoverLost(e);
         }
 
@@ -190,7 +193,8 @@ namespace osu.Game.Graphics.UserInterface
             if (Enabled.Value)
             {
                 clickSample?.Play();
-                hoverFlash.FadeTo(0.6f).Then().FadeTo(IsHovered ? 0.18f : 0f, 350, Easing.OutQuad);
+                if (!PotatoMode.UltraActive)
+                    hoverFlash.FadeTo(0.6f).Then().FadeTo(IsHovered ? 0.18f : 0f, 350, Easing.OutQuad);
             }
 
             return base.OnClick(e);

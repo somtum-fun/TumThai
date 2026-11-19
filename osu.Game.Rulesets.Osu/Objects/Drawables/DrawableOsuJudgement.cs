@@ -103,7 +103,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
 
             public override void PlayAnimation()
             {
-                if (Result != HitResult.Miss)
+                if (Result != HitResult.Miss && !PotatoMode.UltraActive)
                 {
                     JudgementText
                         .ScaleTo(new Vector2(0.8f, 1))

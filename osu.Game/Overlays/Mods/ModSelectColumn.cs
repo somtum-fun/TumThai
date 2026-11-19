@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
@@ -14,6 +14,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 
@@ -97,7 +98,8 @@ namespace osu.Game.Overlays.Mods
                                     RelativeSizeAxes = Axes.X,
                                     Height = header_height,
                                     Shear = -OsuGame.SHEAR,
-                                    Velocity = 0.7f,
+                                    Velocity = PotatoMode.Active ? 0f : 0.7f,
+                                    Alpha = PotatoMode.Active ? 0f : 1f,
                                     ClampAxes = Axes.Y
                                 },
                                 headerText = new OsuTextFlowContainer(t =>

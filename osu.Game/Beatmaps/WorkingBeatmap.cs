@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -17,6 +17,7 @@ using osu.Framework.Extensions;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.UI;
@@ -255,7 +256,7 @@ namespace osu.Game.Beatmaps
                     b.BeatmapInfo.StarRating = BeatmapInfo.StarRating; // this could be recomputed in the decoding process but it's a bit annoying to do.
 
                     return b;
-                }, loadCancellationSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                }, loadCancellationSource.Token, PotatoMode.UltraActive ? TaskCreationOptions.None : TaskCreationOptions.LongRunning, TaskScheduler.Default);
             }
         }
 

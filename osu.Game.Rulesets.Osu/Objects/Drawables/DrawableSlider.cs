@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Layout;
 using osu.Game.Audio;
 using osu.Game.Graphics.Containers;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Drawables;
@@ -247,7 +248,8 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
                     // keep the sliding sample playing at the current tracking position
                     if (!slidingSample.RequestedPlaying)
                         slidingSample.Play();
-                    slidingSample.Balance.Value = CalculateSamplePlaybackBalance(CalculateDrawableRelativePosition(Ball));
+                    if (!PotatoMode.UltraActive)
+                        slidingSample.Balance.Value = CalculateSamplePlaybackBalance(CalculateDrawableRelativePosition(Ball));
                 }
                 else if (slidingSample.IsPlaying || slidingSample.RequestedPlaying)
                     slidingSample.Stop();
@@ -268,7 +270,10 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             SliderBody?.UpdateProgress(HeadCircle.IsHit ? completionProgress : 0);
 
             foreach (DrawableSliderRepeat repeat in repeatContainer)
-                repeat.UpdateSnakingPosition(HitObject.Path.PositionAt(SliderBody?.SnakedStart ?? 0), HitObject.Path.PositionAt(SliderBody?.SnakedEnd ?? 0));
+            {
+                if (!PotatoMode.UltraActive || !repeat.HasRotation || SliderBody?.SnakingIn.Value == true || SliderBody?.SnakingOut.Value == true)
+                    repeat.UpdateSnakingPosition(HitObject.Path.PositionAt(SliderBody?.SnakedStart ?? 0), HitObject.Path.PositionAt(SliderBody?.SnakedEnd ?? 0));
+            }
 
             Size = SliderBody?.Size ?? Vector2.Zero;
             OriginPosition = SliderBody?.PathOffset ?? Vector2.Zero;
@@ -351,6 +356,12 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         protected override void UpdateHitStateTransforms(ArmedState state)
         {
             base.UpdateHitStateTransforms(state);
+
+            if (PotatoMode.UltraActive)
+            {
+                this.FadeOut().Expire();
+                return;
+            }
 
             const float fade_out_time = 240;
 

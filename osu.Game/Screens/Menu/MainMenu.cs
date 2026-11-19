@@ -34,6 +34,7 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Dialog;
 using osu.Game.Overlays.SkinEditor;
 using osu.Game.Overlays.Volume;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Screens.Backgrounds;
 using osu.Game.Screens.Edit;
@@ -238,16 +239,18 @@ namespace osu.Game.Screens.Menu
 
             Buttons.StateChanged += state =>
             {
+                double fadeDuration = PotatoMode.UltraActive ? 0 : 500;
+
                 switch (state)
                 {
                     case ButtonSystemState.Initial:
                     case ButtonSystemState.Exit:
-                        ApplyToBackground(b => b.FadeColour(OsuColour.Gray(baseDim), 500, Easing.OutSine));
+                        ApplyToBackground(b => b.FadeColour(OsuColour.Gray(baseDim), fadeDuration, Easing.OutSine));
                         onlineMenuBanner.State.Value = Visibility.Hidden;
                         break;
 
                     default:
-                        ApplyToBackground(b => b.FadeColour(OsuColour.Gray(baseDim * 0.8f), 500, Easing.OutSine));
+                        ApplyToBackground(b => b.FadeColour(OsuColour.Gray(baseDim * 0.8f), fadeDuration, Easing.OutSine));
                         onlineMenuBanner.State.Value = Visibility.Visible;
                         break;
                 }
@@ -279,7 +282,7 @@ namespace osu.Game.Screens.Menu
         public override void OnEntering(ScreenTransitionEvent e)
         {
             base.OnEntering(e);
-            Buttons.FadeInFromZero(500);
+            Buttons.FadeInFromZero(PotatoMode.UltraActive ? 0 : 500);
 
             if (e.Last is IntroScreen && musicController.TrackLoaded)
             {
@@ -316,8 +319,9 @@ namespace osu.Game.Screens.Menu
 
             Buttons.SetOsuLogo(logo);
 
-            logo.FadeColour(Color4.White, 100, Easing.OutQuint);
-            logo.FadeIn(100, Easing.OutQuint);
+            double logoFade = PotatoMode.UltraActive ? 0 : 100;
+            logo.FadeColour(Color4.White, logoFade, Easing.OutQuint);
+            logo.FadeIn(logoFade, Easing.OutQuint);
 
             logoProxy = logo.ProxyToContainer(logoTarget);
 
@@ -325,10 +329,12 @@ namespace osu.Game.Screens.Menu
             {
                 Buttons.State = ButtonSystemState.TopLevel;
 
-                this.FadeIn(FADE_IN_DURATION, Easing.OutQuint);
-                buttonsContainer.MoveTo(new Vector2(0, 0), FADE_IN_DURATION, Easing.OutQuint);
+                double fadeIn = PotatoMode.UltraActive ? 0 : FADE_IN_DURATION;
+                this.FadeIn(fadeIn, Easing.OutQuint);
+                buttonsContainer.MoveTo(new Vector2(0, 0), fadeIn, Easing.OutQuint);
 
-                sideFlashes.Delay(FADE_IN_DURATION).FadeIn(64, Easing.InQuint);
+                if (!PotatoMode.UltraActive)
+                    sideFlashes.Delay(FADE_IN_DURATION).FadeIn(64, Easing.InQuint);
             }
             else
             {
@@ -375,8 +381,9 @@ namespace osu.Game.Screens.Menu
 
         protected override void LogoSuspending(OsuLogo logo)
         {
-            var seq = logo.FadeOut(300, Easing.InSine)
-                          .ScaleTo(0.2f, 300, Easing.InSine);
+            double duration = PotatoMode.UltraActive ? 0 : 300;
+            var seq = logo.FadeOut(duration, Easing.InSine)
+                          .ScaleTo(0.2f, duration, Easing.InSine);
 
             logoProxy?.Dispose();
             logoProxy = null;
@@ -399,17 +406,18 @@ namespace osu.Game.Screens.Menu
 
             Buttons.State = ButtonSystemState.EnteringMode;
 
-            this.FadeOut(FADE_OUT_DURATION, Easing.InSine);
-            buttonsContainer.MoveTo(new Vector2(-800, 0), FADE_OUT_DURATION, Easing.InSine);
+            double fadeOut = PotatoMode.UltraActive ? 0 : FADE_OUT_DURATION;
+            this.FadeOut(fadeOut, Easing.InSine);
+            buttonsContainer.MoveTo(new Vector2(-800, 0), fadeOut, Easing.InSine);
 
-            sideFlashes.FadeOut(64, Easing.OutQuint);
+            sideFlashes.FadeOut(PotatoMode.UltraActive ? 0 : 64, Easing.OutQuint);
 
             bottomElementsFlow
-                .ScaleTo(0.9f, 1000, Easing.OutQuint)
-                .FadeOut(500, Easing.OutQuint);
+                .ScaleTo(0.9f, PotatoMode.UltraActive ? 0 : 1000, Easing.OutQuint)
+                .FadeOut(PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
 
             supporterDisplay
-                .FadeOut(500, Easing.OutQuint);
+                .FadeOut(PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
 
             samplePlaybackDisabled.Value = true;
         }
@@ -430,8 +438,8 @@ namespace osu.Game.Screens.Menu
             menuTipDisplay.ShowNextTip();
 
             bottomElementsFlow
-                .ScaleTo(1, 1000, Easing.OutQuint)
-                .FadeIn(1000, Easing.OutQuint);
+                .ScaleTo(1, PotatoMode.UltraActive ? 0 : 1000, Easing.OutQuint)
+                .FadeIn(PotatoMode.UltraActive ? 0 : 1000, Easing.OutQuint);
 
             samplePlaybackDisabled.Value = false;
         }

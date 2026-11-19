@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Game.Beatmaps;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 
@@ -140,6 +141,9 @@ namespace osu.Game.Screens.Select
 
         private void loadContentIfRequired()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             // A load is already in progress if the cancellation token is non-null.
             if (loadCancellation != null || working == null)
                 return;

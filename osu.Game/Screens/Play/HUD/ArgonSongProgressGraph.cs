@@ -1,6 +1,7 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,6 +9,7 @@ using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Game.Beatmaps;
 using osu.Game.Graphics;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Graphics.UserInterface;
 
@@ -26,6 +28,12 @@ namespace osu.Game.Screens.Play.HUD
             set
             {
                 objects = value;
+
+                if (PotatoMode.UltraActive)
+                {
+                    Values = Array.Empty<int>();
+                    return;
+                }
 
                 int[] values = new int[display_granularity];
 

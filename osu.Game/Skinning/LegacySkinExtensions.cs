@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Animations;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
+using osu.Game.Performance;
 using osuTK;
 using static osu.Game.Skinning.SkinConfiguration;
 
@@ -74,10 +75,25 @@ namespace osu.Game.Skinning
 
             if (animatable)
             {
-                var textures = getTextures(retrievalSource).ToArray();
+                if (PotatoMode.UltraActive)
+                {
+                    var firstFrame = retrievalSource.GetTexture(getFrameName(0), wrapModeS, wrapModeT);
 
-                if (textures.Length > 0)
-                    return textures;
+                    if (firstFrame != null)
+                    {
+                        if (maxSize != null)
+                            firstFrame = firstFrame.WithMaximumSize(maxSize.Value);
+
+                        return new[] { firstFrame };
+                    }
+                }
+                else
+                {
+                    var textures = getTextures(retrievalSource).ToArray();
+
+                    if (textures.Length > 0)
+                        return textures;
+                }
             }
 
             // if an animation was not allowed or not found, fall back to a sprite retrieval.

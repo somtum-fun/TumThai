@@ -74,6 +74,9 @@ namespace osu.Game.Screens.Backgrounds
         [BackgroundDependencyLoader]
         private void load()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             var background = new BeatmapBackground(beatmap);
             LoadComponent(background);
             switchBackground(background);
@@ -91,8 +94,14 @@ namespace osu.Game.Screens.Backgrounds
 
                 beatmap = value;
 
+                if (PotatoMode.UltraActive)
+                    return;
+
                 Schedule(() =>
                 {
+                    if (PotatoMode.UltraActive)
+                        return;
+
                     if ((Background as BeatmapBackground)?.Beatmap.BeatmapInfo.BackgroundEquals(beatmap?.BeatmapInfo) ?? false)
                         return;
 
@@ -109,12 +118,12 @@ namespace osu.Game.Screens.Backgrounds
             if (Background != null)
             {
                 newDepth = Background.Depth + 1;
-                Background.FadeOut(250);
+                Background.FadeOut(PotatoMode.UltraActive ? 0 : 250);
                 Background.Expire();
             }
 
             b.Depth = newDepth;
-            b.FadeInFromZero(500, Easing.OutQuint);
+            b.FadeInFromZero(PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
             dimmable.Background = Background = b;
         }
 
@@ -202,7 +211,8 @@ namespace osu.Game.Screens.Backgrounds
             {
                 base.UpdateVisuals();
 
-                Background?.BlurTo(blurTarget, BACKGROUND_FADE_DURATION, Easing.OutQuint);
+                if (!PotatoMode.UltraActive)
+                    Background?.BlurTo(blurTarget, BACKGROUND_FADE_DURATION, Easing.OutQuint);
             }
         }
     }

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Development;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -22,6 +23,7 @@ using osu.Game.Localisation;
 using osu.Game.Online;
 using osu.Game.Online.Chat;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osuTK.Graphics;
@@ -59,6 +61,8 @@ namespace osu.Game.Screens.Select
             private DifficultyStatisticsDisplay countStatisticsDisplay = null!;
             private DifficultyStatisticsDisplay difficultyStatisticsDisplay = null!;
 
+            private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+
             private CancellationTokenSource? cancellationSource;
 
             public DifficultyDisplay()
@@ -68,8 +72,9 @@ namespace osu.Game.Screens.Select
             }
 
             [BackgroundDependencyLoader]
-            private void load(OverlayColourProvider colourProvider)
+            private void load(OverlayColourProvider colourProvider, OsuConfigManager config)
             {
+                config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
                 Masking = true;
                 CornerRadius = 10;
                 Shear = OsuGame.SHEAR;
@@ -213,6 +218,7 @@ namespace osu.Game.Screens.Select
                 // and it's what you'd want to do anyway for performance reasons.
                 beatmap.BindValueChanged(_ => Scheduler.AddOnce(updateDisplay));
                 ruleset.BindValueChanged(_ => Scheduler.AddOnce(updateDisplay));
+                interfaceTheme.BindValueChanged(_ => Scheduler.AddOnce(updateDisplay));
 
                 mods.BindValueChanged(m =>
                 {
@@ -236,16 +242,22 @@ namespace osu.Game.Screens.Select
             private void updateDisplay()
             {
                 cancellationSource?.Cancel();
+
+                if (!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed())
+                    return;
+
                 cancellationSource = new CancellationTokenSource();
+
+                double fadeDuration = PotatoMode.UltraActive ? 0 : 300;
 
                 if (beatmap.IsDefault)
                 {
-                    ratingAndNameContainer.FadeOut(300, Easing.OutQuint);
-                    countStatisticsDisplay.FadeOut(300, Easing.OutQuint);
+                    ratingAndNameContainer.FadeOut(fadeDuration, Easing.OutQuint);
+                    countStatisticsDisplay.FadeOut(fadeDuration, Easing.OutQuint);
                 }
                 else
                 {
-                    ratingAndNameContainer.FadeIn(300, Easing.OutQuint);
+                    ratingAndNameContainer.FadeIn(fadeDuration, Easing.OutQuint);
                     difficultyText.Text = beatmap.Value.BeatmapInfo.DifficultyName;
                     mapperLink.Action = () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, beatmap.Value.Metadata.Author));
                     mapperText.Text = beatmap.Value.Metadata.Author.Username;
@@ -259,6 +271,13 @@ namespace osu.Game.Screens.Select
 
             private void updateCountStatistics(CancellationToken cancellationToken)
             {
+                if (PotatoMode.UltraActive)
+                {
+                    countStatisticsDisplay.ClearTransforms();
+                    countStatisticsDisplay.Alpha = 0;
+                    return;
+                }
+
                 if (beatmap.IsDefault)
                 {
                     countStatisticsDisplay.FadeOut(300, Easing.OutQuint);
@@ -287,6 +306,9 @@ namespace osu.Game.Screens.Select
 
             private void updateDifficultyStatistics() => Scheduler.AddOnce(() =>
             {
+                if (!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed())
+                    return;
+
                 if (beatmap.IsDefault || ruleset.Value == null)
                 {
                     difficultyStatisticsDisplay.Statistics = Array.Empty<StatisticDifficulty.Data>();

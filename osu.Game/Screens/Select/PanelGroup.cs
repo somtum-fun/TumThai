@@ -19,6 +19,7 @@ using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
@@ -154,7 +155,7 @@ namespace osu.Game.Screens.Select
 
         private void onExpanded()
         {
-            const float duration = 500;
+            float duration = PotatoMode.UltraActive ? 0 : 500;
 
             iconContainer.ResizeWidthTo(Expanded.Value ? 20f : 5f, duration, Easing.OutQuint);
             iconContainer.FadeTo(Expanded.Value ? 1f : 0f, duration, Easing.OutQuint);

@@ -12,6 +12,7 @@ using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osu.Game.Graphics.Containers;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Configuration;
@@ -209,6 +210,14 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         protected override void UpdateHitStateTransforms(ArmedState state)
         {
             Debug.Assert(HitObject.HitWindows != null);
+
+            if (PotatoMode.UltraActive && state != ArmedState.Idle)
+            {
+                ApproachCircle.FadeOut();
+                this.FadeOut();
+                Expire();
+                return;
+            }
 
             // todo: temporary / arbitrary, used for lifetime optimisation.
             this.Delay(800).FadeOut();

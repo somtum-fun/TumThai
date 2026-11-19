@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Localisation.SkinComponents;
+using osu.Game.Performance;
 using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Skinning;
 using osuTK;
@@ -115,7 +116,8 @@ namespace osu.Game.Screens.Play.HUD
             if (Flow.Alpha < 1)
                 scroll.ScrollToStart(false);
 
-            Flow.FadeTo(player?.Configuration.ShowLeaderboard != false && (configVisibility.Value || AlwaysShown) ? 1 : 0, 100, Easing.OutQuint);
+            Flow.LayoutDuration = PotatoMode.UltraActive ? 0 : 450;
+            Flow.FadeTo(player?.Configuration.ShowLeaderboard != false && (configVisibility.Value || AlwaysShown) ? 1 : 0, PotatoMode.UltraActive ? 0 : 100, Easing.OutQuint);
             expanded.Value = !CollapseDuringGameplay.Value || userPlayingState.Value != LocalUserPlayingState.Playing || holdingForHUD.Value;
         }
 
@@ -167,6 +169,9 @@ namespace osu.Game.Screens.Play.HUD
 
                 scroll.ScrollTo(scrollTarget);
             }
+
+            if (PotatoMode.UltraActive)
+                return;
 
             const float panel_height = DrawableGameplayLeaderboardScore.PANEL_HEIGHT;
 

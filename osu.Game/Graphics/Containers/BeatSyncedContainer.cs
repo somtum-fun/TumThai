@@ -107,6 +107,9 @@ namespace osu.Game.Graphics.Containers
 
         protected override void Update()
         {
+            if (PotatoMode.UltraActive && SuppressedByPotatoMode)
+                return;
+
             IsBeatSyncedWithTrack = BeatSyncSource.Clock.IsRunning;
 
             double currentTrackTime;

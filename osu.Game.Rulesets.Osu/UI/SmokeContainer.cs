@@ -7,6 +7,7 @@ using osu.Framework.Graphics.Pooling;
 using osu.Framework.Input;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Osu.Skinning;
 using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Skinning;
@@ -19,21 +20,27 @@ namespace osu.Game.Rulesets.Osu.UI
     /// </summary>
     public partial class SmokeContainer : Container, IRequireHighFrequencyMousePosition, IKeyBindingHandler<OsuAction>
     {
-        private DrawablePool<SmokeSkinnableDrawable> segmentPool = null!;
+        private DrawablePool<SmokeSkinnableDrawable>? segmentPool;
         private SmokeSkinnableDrawable? currentSegmentSkinnable;
 
         private Vector2 lastMousePosition;
 
-        public override bool ReceivePositionalInputAt(Vector2 _) => true;
+        public override bool ReceivePositionalInputAt(Vector2 _) => !PotatoMode.UltraActive;
 
         [BackgroundDependencyLoader]
         private void load()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             AddInternal(segmentPool = new DrawablePool<SmokeSkinnableDrawable>(10));
         }
 
         public bool OnPressed(KeyBindingPressEvent<OsuAction> e)
         {
+            if (PotatoMode.UltraActive || segmentPool == null)
+                return false;
+
             if (e.Action == OsuAction.Smoke)
             {
                 AddInternal(currentSegmentSkinnable = segmentPool.Get(segment => segment.Segment?.StartDrawing(Time.Current)));

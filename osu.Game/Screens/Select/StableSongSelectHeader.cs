@@ -11,7 +11,6 @@ using osu.Framework.Bindables;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
@@ -20,7 +19,6 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
-using osu.Game.Audio;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
@@ -30,6 +28,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online;
 using osu.Game.Online.Chat;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Select.Filter;
@@ -95,6 +94,8 @@ namespace osu.Game.Screens.Select
         private IBindable<StarDifficulty>? starDifficultyBindable;
         private CancellationTokenSource? cancellationSource;
         private ModSettingChangeTracker? settingChangeTracker;
+        private string? cachedRulesetShortName;
+        private Ruleset? cachedRulesetInstance;
 
         private static readonly Color4 colour_harder = Color4Extensions.FromHex(@"F69AA1");
         private static readonly Color4 colour_easier = Color4Extensions.FromHex(@"ADD8E6");
@@ -390,8 +391,8 @@ namespace osu.Game.Screens.Select
             searchMatchCountText.Text = text;
         }
 
-        protected override void PopIn() => this.FadeIn(200, Easing.OutQuint);
-        protected override void PopOut() => this.FadeOut(200, Easing.OutQuint);
+        protected override void PopIn() => this.FadeIn(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
+        protected override void PopOut() => this.FadeOut(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
 
         private double currentStars;
 
@@ -420,17 +421,41 @@ namespace osu.Game.Screens.Select
             line2Mapper.Text = $"Mapped by {meta.Author.Username}";
             mapperHover.Action = () => linkHandler?.HandleLink(new LinkDetails(LinkAction.OpenUserProfile, meta.Author));
 
-            starDifficultyBindable = difficultyCache.GetBindableDifficulty(beatmapInfo, token, SongSelect.DIFFICULTY_CALCULATION_DEBOUNCE);
-            starDifficultyBindable.BindValueChanged(d =>
+            if (PotatoMode.UltraActive && mods.Value.Count == 0 && beatmapInfo.Ruleset.Equals(ruleset.Value))
             {
-                currentStars = d.NewValue.Stars;
+                currentStars = Math.Max(0, beatmapInfo.StarRating);
                 updateLine5Attributes();
-            }, true);
+            }
+            else
+            {
+                starDifficultyBindable = difficultyCache.GetBindableDifficulty(beatmapInfo, token, SongSelect.DIFFICULTY_CALCULATION_DEBOUNCE);
+                starDifficultyBindable.BindValueChanged(d =>
+                {
+                    currentStars = d.NewValue.Stars;
+                    updateLine5Attributes();
+                }, true);
+            }
 
             double rate = ModUtils.CalculateRateWithMods(mods.Value);
             line3LengthBpm.Colour = Precision.AlmostEquals(rate, 1.0)
                 ? Color4.White
                 : (rate > 1.0 ? colour_harder : colour_easier);
+
+            if (PotatoMode.UltraActive)
+            {
+                double hitLength = Math.Round(beatmapInfo.Length / rate);
+                int bpm = FormatUtils.RoundBPM(beatmapInfo.BPM, rate);
+                int totalObjects = Math.Max(0, beatmapInfo.TotalObjectCount);
+                int sliderOrHoldCount = Math.Max(0, beatmapInfo.EndTimeObjectCount);
+                int circleCount = Math.Max(0, totalObjects - sliderOrHoldCount);
+
+                line3LengthBpm.Text = $"Length: {hitLength.ToFormattedDuration()} BPM: {bpm} Objects: {totalObjects:N0}";
+                line4Objects.Text = totalObjects > 0
+                    ? $"Circles: {circleCount:N0}  Sliders: {sliderOrHoldCount:N0}"
+                    : string.Empty;
+                updateLine5Attributes();
+                return;
+            }
 
             Task.Run(() =>
             {
@@ -464,8 +489,13 @@ namespace osu.Game.Screens.Select
             var beatmapInfo = working.Value.BeatmapInfo;
             var baseDiff = beatmapInfo.Difficulty;
 
-            var rulesetInstance = ruleset.Value.CreateInstance();
-            var adjustedDiff = rulesetInstance.GetAdjustedDisplayDifficulty(beatmapInfo, mods.Value);
+            if (cachedRulesetInstance == null || cachedRulesetShortName != ruleset.Value.ShortName)
+            {
+                cachedRulesetShortName = ruleset.Value.ShortName;
+                cachedRulesetInstance = ruleset.Value.CreateInstance();
+            }
+
+            var adjustedDiff = cachedRulesetInstance.GetAdjustedDisplayDifficulty(beatmapInfo, mods.Value);
 
             line5Attributes.Text = $"CS:{adjustedDiff.CircleSize:0.##} AR:{adjustedDiff.ApproachRate:0.##} OD:{adjustedDiff.OverallDifficulty:0.##} HP:{adjustedDiff.DrainRate:0.##} Star Rating: {currentStars:0.00}★";
 
@@ -611,14 +641,14 @@ namespace osu.Game.Screens.Select
             protected override bool OnHover(HoverEvent e)
             {
                 if (!isActive)
-                    tabBg.FadeColour(Color4Extensions.FromHex(@"FF4444"), 100);
+                    tabBg.FadeColour(Color4Extensions.FromHex(@"FF4444"), PotatoMode.UltraActive ? 0 : 100);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
                 if (!isActive)
-                    tabBg.FadeColour(Color4Extensions.FromHex(@"D62222"), 100);
+                    tabBg.FadeColour(Color4Extensions.FromHex(@"D62222"), PotatoMode.UltraActive ? 0 : 100);
                 base.OnHoverLost(e);
             }
         }

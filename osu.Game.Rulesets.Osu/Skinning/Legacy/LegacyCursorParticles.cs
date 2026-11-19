@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -13,6 +13,7 @@ using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Utils;
 using osu.Game.Graphics;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Objects.Drawables;
 using osu.Game.Rulesets.Osu.UI;
@@ -65,13 +66,13 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
                 },
             };
 
-            if (player != null)
+            if (player != null && !PotatoMode.UltraActive)
                 ((IBindable<bool>)breakSpewer.Active).BindTo(player.IsBreakTime);
         }
 
         protected override void Update()
         {
-            if (playfield == null || gameplayState == null) return;
+            if (PotatoMode.UltraActive || playfield == null || gameplayState == null) return;
 
             DrawableHitObject? kiaiHitObject = null;
 
@@ -159,7 +160,7 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
             private double velocityFrameLength;
             private Vector2 totalPosDifference;
 
-            public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true;
+            public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => !PotatoMode.UltraActive;
 
             protected override bool OnMouseMove(MouseMoveEvent e)
             {

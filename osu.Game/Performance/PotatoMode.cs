@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 namespace osu.Game.Performance
@@ -28,19 +28,33 @@ namespace osu.Game.Performance
     public static class PotatoMode
     {
         private static bool active;
+        private static bool ultraActive;
 
         /// <summary>
-        /// True when Potato Mode was enabled at app startup. Immutable for
-        /// the process lifetime; toggling the setting only takes effect
-        /// after a restart.
+        /// True when Potato Mode or Ultra Ultimate Potato Mode was enabled at
+        /// app startup. Immutable for the process lifetime; toggling the
+        /// setting only takes effect after a restart.
         /// </summary>
-        public static bool Active => active;
+        public static bool Active => active || ultraActive;
 
         /// <summary>
-        /// Pin the Potato Mode flag from config before the visual tree is
+        /// True when Ultra Ultimate Potato Mode was enabled at app startup.
+        /// Enables all standard <see cref="Active"/> optimisations plus
+        /// aggressive gameplay, slider, HUD, audio concurrency, 2 GB RAM
+        /// texture/GC trimming, 250 Hz update rate cap, and 720p Android
+        /// hardware surface scaling.
+        /// </summary>
+        public static bool UltraActive => ultraActive;
+
+        /// <summary>
+        /// Pin the Potato Mode flags from config before the visual tree is
         /// built. Called by <c>OsuGameBase.load()</c>.
         /// Idempotent; safe to call from tests.
         /// </summary>
-        public static void SetFromConfig(bool enabled) => active = enabled;
+        public static void SetFromConfig(bool enabled, bool ultraEnabled = false)
+        {
+            active = enabled;
+            ultraActive = ultraEnabled;
+        }
     }
 }

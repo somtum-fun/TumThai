@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -28,6 +28,7 @@ using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Online.Rooms;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
@@ -454,7 +455,7 @@ namespace osu.Game.Screens.Menu
 
                 buttonArea.FinishTransforms(true);
 
-                using (buttonArea.BeginDelayedSequence(lastState == ButtonSystemState.Initial ? 150 : 0))
+                using (buttonArea.BeginDelayedSequence(lastState == ButtonSystemState.Initial && !PotatoMode.UltraActive ? 150 : 0))
                 {
                     buttonArea.ButtonSystemState = state;
 
@@ -474,6 +475,7 @@ namespace osu.Game.Screens.Menu
             if (logo == null) return;
 
             bool isStable = interfaceTheme.Value.IsThemed();
+            float animScale = PotatoMode.UltraActive ? 0 : 1;
 
             switch (state)
             {
@@ -488,9 +490,9 @@ namespace osu.Game.Screens.Menu
                         game?.Toolbar.Hide();
 
                         logo?.ClearTransforms(targetMember: nameof(Position));
-                        logo?.MoveTo(new Vector2(0.5f), 800, Easing.OutExpo);
-                        logo?.ScaleTo(1, 800, Easing.OutExpo);
-                    }, isStable ? 0 : buttonArea.Alpha * 150);
+                        logo?.MoveTo(new Vector2(0.5f), 800 * animScale, Easing.OutExpo);
+                        logo?.ScaleTo(1, 800 * animScale, Easing.OutExpo);
+                    }, isStable ? 0 : buttonArea.Alpha * 150 * animScale);
 
                     if (lastState == ButtonSystemState.TopLevel)
                         sampleLogoSwoosh?.Play();
@@ -510,8 +512,8 @@ namespace osu.Game.Screens.Menu
 
                         float targetX = DrawWidth > 0 ? 0.5f - (192f / DrawWidth) : 0.35f;
                         logo.ClearTransforms(targetMember: nameof(Position));
-                        logo.MoveTo(new Vector2(targetX, 0.5f), 320, Easing.OutBack);
-                        logo.ScaleTo(1.02f, 320, Easing.OutBack);
+                        logo.MoveTo(new Vector2(targetX, 0.5f), 320 * animScale, Easing.OutBack);
+                        logo.ScaleTo(1.02f, 320 * animScale, Easing.OutBack);
                         break;
                     }
 
@@ -523,12 +525,12 @@ namespace osu.Game.Screens.Menu
                         case ButtonSystemState.Initial:
                             logo.ClearTransforms(targetMember: nameof(Position));
 
-                            bool impact = logo.Scale.X > 0.6f;
+                            bool impact = logo.Scale.X > 0.6f && !PotatoMode.UltraActive;
 
-                            logo.ScaleTo(0.5f, 200, Easing.In);
+                            logo.ScaleTo(0.5f, 200 * animScale, Easing.In);
 
                             logoTracking?.Dispose();
-                            logoTracking = logoTrackingContainer.StartTracking(logo, 200, Easing.In);
+                            logoTracking = logoTrackingContainer.StartTracking(logo, 200 * animScale, Easing.In);
 
                             logoDelayedAction?.Cancel();
                             logoDelayedAction = Scheduler.AddDelayed(() =>
@@ -537,7 +539,7 @@ namespace osu.Game.Screens.Menu
                                     logo?.Impact();
 
                                 game?.Toolbar.Show();
-                            }, 200);
+                            }, 200 * animScale);
                             break;
 
                         default:
@@ -546,7 +548,7 @@ namespace osu.Game.Screens.Menu
                             logoTracking?.Dispose();
                             logoTracking = logoTrackingContainer.StartTracking(logo, 0, Easing.In);
 
-                            logo.ScaleTo(0.5f, 200, Easing.OutQuint);
+                            logo.ScaleTo(0.5f, 200 * animScale, Easing.OutQuint);
                             break;
                     }
 
@@ -556,7 +558,7 @@ namespace osu.Game.Screens.Menu
                     if (!isStable)
                     {
                         logoTracking?.Dispose();
-                        logoTracking = logoTrackingContainer.StartTracking(logo, lastState == ButtonSystemState.Initial ? MainMenu.FADE_OUT_DURATION : 0, Easing.InSine);
+                        logoTracking = logoTrackingContainer.StartTracking(logo, lastState == ButtonSystemState.Initial ? MainMenu.FADE_OUT_DURATION * animScale : 0, Easing.InSine);
                     }
                     break;
             }

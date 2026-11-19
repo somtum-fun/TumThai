@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -22,6 +22,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
@@ -366,6 +367,9 @@ namespace osu.Game.Screens.Menu
         {
             base.Update();
 
+            if (PotatoMode.UltraActive)
+                return;
+
             const float scale_adjust_cutoff = 0.4f;
 
             if (musicController.CurrentTrack.IsRunning)
@@ -387,7 +391,9 @@ namespace osu.Game.Screens.Menu
         {
             if (e.Button != MouseButton.Left) return true;
 
-            logoBounceContainer.ScaleTo(0.9f, 1000, Easing.Out);
+            if (!PotatoMode.UltraActive)
+                logoBounceContainer.ScaleTo(0.9f, 1000, Easing.Out);
+
             return true;
         }
 
@@ -395,14 +401,18 @@ namespace osu.Game.Screens.Menu
         {
             if (e.Button != MouseButton.Left) return;
 
-            logoBounceContainer.ScaleTo(1f, 500, Easing.OutElastic);
+            if (!PotatoMode.UltraActive)
+                logoBounceContainer.ScaleTo(1f, 500, Easing.OutElastic);
         }
 
         protected override bool OnClick(ClickEvent e)
         {
-            flashLayer.ClearTransforms();
-            flashLayer.Alpha = 0.4f;
-            flashLayer.FadeOut(1500, Easing.OutExpo);
+            if (!PotatoMode.UltraActive)
+            {
+                flashLayer.ClearTransforms();
+                flashLayer.Alpha = 0.4f;
+                flashLayer.FadeOut(1500, Easing.OutExpo);
+            }
 
             if (Action?.Invoke() == true)
             {
@@ -416,7 +426,7 @@ namespace osu.Game.Screens.Menu
 
         protected override bool OnHover(HoverEvent e)
         {
-            if (Action != null)
+            if (Action != null && !PotatoMode.UltraActive)
                 logoHoverContainer.ScaleTo(1.1f, 500, Easing.OutElastic);
 
             return true;
@@ -424,7 +434,8 @@ namespace osu.Game.Screens.Menu
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            logoHoverContainer.ScaleTo(1, 500, Easing.OutElastic);
+            if (!PotatoMode.UltraActive)
+                logoHoverContainer.ScaleTo(1, 500, Easing.OutElastic);
         }
 
         public void Impact()

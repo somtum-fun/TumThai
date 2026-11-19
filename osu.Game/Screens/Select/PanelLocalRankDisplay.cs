@@ -12,6 +12,7 @@ using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Leaderboards;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
 using osuTK;
@@ -84,7 +85,7 @@ namespace osu.Game.Screens.Select
             scoreSubscription?.Dispose();
             setRankFromScore(null);
 
-            if (beatmap == null)
+            if (beatmap == null || PotatoMode.UltraActive)
                 return;
 
             scoreSubscription = realm.RegisterForNotifications(r => r.All<ScoreInfo>().Where(s => s.BeatmapHash == beatmap.Hash && !s.DeletePending), localScoresChanged);

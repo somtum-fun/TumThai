@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -130,7 +130,7 @@ namespace osu.Game.Screens.Play
 
                 backgroundBrightnessReduction = value;
 
-                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(backgroundBrightnessReduction ? 0.8f : 1), 200));
+                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(backgroundBrightnessReduction ? 0.8f : 1), PotatoMode.UltraActive ? 0 : 200));
             }
         }
 
@@ -231,7 +231,7 @@ namespace osu.Game.Screens.Play
                     Origin = Anchor.TopLeft,
                     Width = SettingsToolboxGroup.CONTAINER_WIDTH + padding * 2,
                     AutoSizeAxes = Axes.Y,
-                    AutoSizeDuration = 250,
+                    AutoSizeDuration = PotatoMode.UltraActive ? 0 : 250,
                     AutoSizeEasing = Easing.OutQuint,
                     Direction = FillDirection.Vertical,
                     Padding = new MarginPadding(padding),
@@ -343,7 +343,7 @@ namespace osu.Game.Screens.Play
 
             inputManager = GetContainingInputManager()!;
 
-            showStoryboards.BindValueChanged(val => epilepsyWarning?.FadeTo(val.NewValue ? 1 : 0, 250, Easing.OutQuint), true);
+            showStoryboards.BindValueChanged(val => epilepsyWarning?.FadeTo(val.NewValue ? 1 : 0, PotatoMode.UltraActive ? 0 : 250, Easing.OutQuint), true);
             epilepsyWarning?.FinishTransforms(true);
 
             // this re-fetch has two purposes:
@@ -379,12 +379,12 @@ namespace osu.Game.Screens.Play
             disclaimers.MoveToX(-disclaimers.DrawWidth);
             sideContent.MoveToX(sideContent.DrawWidth);
 
-            content.ScaleTo(0.7f);
+            content.ScaleTo(PotatoMode.UltraActive ? 1f : 0.7f);
 
             const double metadata_delay = 500;
 
-            MetadataInfo.Delay(metadata_delay).FadeIn(500, Easing.OutQuint);
-            contentIn(metadata_delay + 250);
+            MetadataInfo.Delay(PotatoMode.UltraActive ? 0 : metadata_delay).FadeIn(PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
+            contentIn(PotatoMode.UltraActive ? 0 : metadata_delay + 250);
 
             // after an initial delay, start the debounced load check.
             // this will continue to execute even after resuming back on restart.
@@ -416,7 +416,7 @@ namespace osu.Game.Screens.Play
         {
             base.OnSuspending(e);
 
-            quickRestartBlackLayer?.FadeOut(500, Easing.OutQuint).Expire();
+            quickRestartBlackLayer?.FadeOut(PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint).Expire();
             quickRestartBlackLayer = null;
 
             BackgroundBrightnessReduction = false;
@@ -459,7 +459,8 @@ namespace osu.Game.Screens.Play
 
             osuLogo = logo;
 
-            const double duration = 300;
+            double duration = PotatoMode.UltraActive ? 0 : 300;
+            double fadeDuration = PotatoMode.UltraActive ? 0 : 350;
 
             if (!resuming) logo.MoveTo(new Vector2(0.5f), duration, Easing.OutQuint);
 
@@ -468,16 +469,16 @@ namespace osu.Game.Screens.Play
             if (QuickRestart)
             {
                 logo.Delay(quick_restart_initial_delay)
-                    .FadeIn(350);
+                    .FadeIn(fadeDuration);
             }
             else
-                logo.FadeIn(350);
+                logo.FadeIn(fadeDuration);
 
             Scheduler.AddDelayed(() =>
             {
                 if (this.IsCurrentScreen())
-                    logoTracking = content.StartTracking(logo, resuming ? 0 : 500, Easing.InOutExpo);
-            }, resuming ? 0 : 250);
+                    logoTracking = content.StartTracking(logo, resuming || PotatoMode.UltraActive ? 0 : 500, Easing.InOutExpo);
+            }, resuming || PotatoMode.UltraActive ? 0 : 250);
         }
 
         protected override void LogoExiting(OsuLogo logo)
@@ -497,9 +498,11 @@ namespace osu.Game.Screens.Play
             logoTracking?.Dispose();
             logoTracking = null;
 
+            double outDuration = PotatoMode.UltraActive ? 0 : CONTENT_OUT_DURATION;
+
             logo
-                .FadeOut(CONTENT_OUT_DURATION / 2, Easing.OutQuint)
-                .ScaleTo(logo.Scale * 0.8f, CONTENT_OUT_DURATION * 2, Easing.OutQuint);
+                .FadeOut(outDuration / 2, Easing.OutQuint)
+                .ScaleTo(logo.Scale * 0.8f, outDuration * 2, Easing.OutQuint);
 
             osuLogo = null;
         }
@@ -609,41 +612,46 @@ namespace osu.Game.Screens.Play
                 content
                     .Delay(quick_restart_initial_delay)
                     .ScaleTo(1)
-                    .FadeInFromZero(500, Easing.OutQuint);
+                    .FadeInFromZero(PotatoMode.UltraActive ? 0 : 500, Easing.OutQuint);
 
                 quickRestartBackButtonRestore?.Cancel();
                 quickRestartBackButtonRestore = Scheduler.AddDelayed(() => FooterContent.Value = originalFooterContent, quick_restart_initial_delay);
             }
             else
             {
-                content.FadeInFromZero(500, Easing.OutQuint);
+                double inDuration = PotatoMode.UltraActive ? 0 : 500;
+
+                content.FadeInFromZero(inDuration, Easing.OutQuint);
 
                 content
-                    .ScaleTo(0.7f)
-                    .ScaleTo(1, 650, Easing.OutQuint)
+                    .ScaleTo(PotatoMode.UltraActive ? 1f : 0.7f)
+                    .ScaleTo(1, PotatoMode.UltraActive ? 0 : 650, Easing.OutQuint)
                     .Then()
                     .Schedule(prepareNewPlayer);
 
                 using (BeginDelayedSequence(delayBeforeSideDisplays))
                 {
-                    sideContent.FadeInFromZero(500, Easing.Out)
-                               .MoveToX(0, 500, Easing.OutQuint);
+                    sideContent.FadeInFromZero(inDuration, Easing.Out)
+                               .MoveToX(0, inDuration, Easing.OutQuint);
 
-                    disclaimers.FadeInFromZero(500, Easing.Out)
-                               .MoveToX(0, 500, Easing.OutQuint);
+                    disclaimers.FadeInFromZero(inDuration, Easing.Out)
+                               .MoveToX(0, inDuration, Easing.OutQuint);
                 }
             }
 
-            AddRangeInternal(new[]
+            if (!PotatoMode.UltraActive)
             {
-                lowPassFilter = new AudioFilter(audioManager.TrackMixer),
-                highPassFilter = new AudioFilter(audioManager.TrackMixer, BQFType.HighPass),
-            });
+                AddRangeInternal(new[]
+                {
+                    lowPassFilter = new AudioFilter(audioManager.TrackMixer),
+                    highPassFilter = new AudioFilter(audioManager.TrackMixer, BQFType.HighPass),
+                });
 
-            lowPassFilter.CutoffTo(1000, 650, Easing.OutQuint);
-            highPassFilter.CutoffTo(300).Then().CutoffTo(0, 1250); // 1250 is to line up with the appearance of MetadataInfo (750 delay + 500 fade-in)
+                lowPassFilter.CutoffTo(1000, 650, Easing.OutQuint);
+                highPassFilter.CutoffTo(300).Then().CutoffTo(0, 1250); // 1250 is to line up with the appearance of MetadataInfo (750 delay + 500 fade-in)
+            }
 
-            ApplyToBackground(b => b.FadeColour(Color4.White, 800, Easing.OutQuint));
+            ApplyToBackground(b => b.FadeColour(Color4.White, PotatoMode.UltraActive ? 0 : 800, Easing.OutQuint));
         }
 
         protected virtual void ContentOut()
@@ -652,8 +660,10 @@ namespace osu.Game.Screens.Play
             logoTracking?.Dispose();
             logoTracking = null;
 
-            content.ScaleTo(0.7f, CONTENT_OUT_DURATION * 2, Easing.OutQuint);
-            content.FadeOut(CONTENT_OUT_DURATION, Easing.OutQuint)
+            double outDuration = PotatoMode.UltraActive ? 0 : CONTENT_OUT_DURATION;
+
+            content.ScaleTo(0.7f, outDuration * 2, Easing.OutQuint);
+            content.FadeOut(outDuration, Easing.OutQuint)
                    // Safety for filter potentially getting stuck in applied state due to
                    // transforms on `this` causing children to no longer be updated.
                    .OnComplete(_ =>
@@ -665,13 +675,13 @@ namespace osu.Game.Screens.Play
                        lowPassFilter = null;
                    });
 
-            disclaimers.FadeOut(CONTENT_OUT_DURATION, Easing.Out)
-                       .MoveToX(-disclaimers.DrawWidth, CONTENT_OUT_DURATION * 2, Easing.OutQuint);
-            sideContent.FadeOut(CONTENT_OUT_DURATION, Easing.OutQuint)
-                       .MoveToX(sideContent.DrawWidth, CONTENT_OUT_DURATION * 2, Easing.OutQuint);
+            disclaimers.FadeOut(outDuration, Easing.Out)
+                       .MoveToX(-disclaimers.DrawWidth, outDuration * 2, Easing.OutQuint);
+            sideContent.FadeOut(outDuration, Easing.OutQuint)
+                       .MoveToX(sideContent.DrawWidth, outDuration * 2, Easing.OutQuint);
 
-            lowPassFilter?.CutoffTo(AudioFilter.MAX_LOWPASS_CUTOFF, CONTENT_OUT_DURATION);
-            highPassFilter?.CutoffTo(0, CONTENT_OUT_DURATION);
+            lowPassFilter?.CutoffTo(AudioFilter.MAX_LOWPASS_CUTOFF, outDuration);
+            highPassFilter?.CutoffTo(0, outDuration);
         }
 
         private void pushWhenLoaded()

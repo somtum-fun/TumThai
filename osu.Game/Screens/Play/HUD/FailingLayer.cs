@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Scoring;
 using osuTK.Graphics;
 
@@ -93,6 +94,12 @@ namespace osu.Game.Screens.Play.HUD
 
         private void updateState()
         {
+            if (PotatoMode.UltraActive)
+            {
+                this.FadeOut();
+                return;
+            }
+
             // Don't display ever if the ruleset is not using a draining health display.
             bool showLayer = HealthProcessor is DrainingHealthProcessor && fadePlayfieldWhenHealthLow.Value && ShowHealth.Value;
             this.FadeTo(showLayer ? 1 : 0, fade_time, Easing.OutQuint);
@@ -101,6 +108,9 @@ namespace osu.Game.Screens.Play.HUD
         protected override void Update()
         {
             base.Update();
+
+            if (PotatoMode.UltraActive)
+                return;
 
             double target = Math.Clamp(max_alpha * (1 - Current.Value / low_health_threshold), 0, max_alpha);
 

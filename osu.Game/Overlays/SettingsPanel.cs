@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -22,7 +22,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Settings;
-using osu.Game.Screens;
+using osu.Game.Performance;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays
@@ -194,18 +194,21 @@ namespace osu.Game.Overlays
 
         protected override void PopIn()
         {
-            ContentContainer.MoveToX(ExpandedPosition, TRANSITION_LENGTH, Easing.OutQuint);
+            double transitionLength = PotatoMode.UltraActive ? 0 : TRANSITION_LENGTH;
+            double waveDuration = PotatoMode.UltraActive ? 0 : WaveContainer.APPEAR_DURATION;
 
-            SectionsContainer.FadeEdgeEffectTo(WaveContainer.SHADOW_OPACITY, WaveContainer.APPEAR_DURATION, Easing.Out);
+            ContentContainer.MoveToX(ExpandedPosition, transitionLength, Easing.OutQuint);
+
+            SectionsContainer.FadeEdgeEffectTo(WaveContainer.SHADOW_OPACITY, waveDuration, Easing.Out);
 
             // delay load enough to ensure it doesn't overlap with the initial animation.
             // this is done as there is still a brief stutter during load completion which is more visible if the transition is in progress.
             // the eventual goal would be to remove the need for this by splitting up load into smaller work pieces, or fixing the remaining
             // load complete overheads.
-            Scheduler.AddDelayed(loadSections, TRANSITION_LENGTH / 3);
+            Scheduler.AddDelayed(loadSections, transitionLength / 3);
 
-            Sidebar?.MoveToX(0, TRANSITION_LENGTH, Easing.OutQuint);
-            this.FadeTo(1, TRANSITION_LENGTH / 2, Easing.OutQuint);
+            Sidebar?.MoveToX(0, transitionLength, Easing.OutQuint);
+            this.FadeTo(1, transitionLength / 2, Easing.OutQuint);
 
             SearchTextBox.TakeFocus();
             SearchTextBox.HoldFocus = true;
@@ -217,11 +220,14 @@ namespace osu.Game.Overlays
         {
             base.PopOut();
 
-            SectionsContainer.FadeEdgeEffectTo(0, WaveContainer.DISAPPEAR_DURATION, Easing.In);
-            ContentContainer.MoveToX(-WIDTH + ExpandedPosition, TRANSITION_LENGTH, Easing.OutQuint);
+            double transitionLength = PotatoMode.UltraActive ? 0 : TRANSITION_LENGTH;
+            double waveDuration = PotatoMode.UltraActive ? 0 : WaveContainer.DISAPPEAR_DURATION;
 
-            Sidebar?.MoveToX(-sidebar_width, TRANSITION_LENGTH, Easing.OutQuint);
-            this.FadeTo(0, TRANSITION_LENGTH / 2, Easing.OutQuint);
+            SectionsContainer.FadeEdgeEffectTo(0, waveDuration, Easing.In);
+            ContentContainer.MoveToX(-WIDTH + ExpandedPosition, transitionLength, Easing.OutQuint);
+
+            Sidebar?.MoveToX(-sidebar_width, transitionLength, Easing.OutQuint);
+            this.FadeTo(0, transitionLength / 2, Easing.OutQuint);
 
             SearchTextBox.HoldFocus = false;
             if (SearchTextBox.HasFocus)
@@ -252,9 +258,10 @@ namespace osu.Game.Overlays
 
             sectionsLoadingTask = LoadComponentsAsync(loadableSections, sections =>
             {
+                double fadeDuration = PotatoMode.UltraActive ? 0 : fade_in_duration;
                 SectionsContainer.AddRange(sections);
-                SectionsContainer.Footer.FadeInFromZero(fade_in_duration, Easing.OutQuint);
-                SectionsContainer.SearchContainer.FadeInFromZero(fade_in_duration, Easing.OutQuint);
+                SectionsContainer.Footer.FadeInFromZero(fadeDuration, Easing.OutQuint);
+                SectionsContainer.SearchContainer.FadeInFromZero(fadeDuration, Easing.OutQuint);
 
                 loading.Hide();
 
@@ -272,16 +279,22 @@ namespace osu.Game.Overlays
             LoadComponentsAsync(createSidebarButtons(), buttons =>
             {
                 float delay = 0;
+                double fadeDuration = PotatoMode.UltraActive ? 0 : fade_in_duration;
 
                 foreach (var button in buttons)
                 {
                     Sidebar.Add(button);
 
-                    button.FadeOut()
-                          .Delay(delay)
-                          .FadeInFromZero(fade_in_duration, Easing.OutQuint);
+                    if (PotatoMode.UltraActive)
+                        button.Alpha = 1;
+                    else
+                    {
+                        button.FadeOut()
+                              .Delay(delay)
+                              .FadeInFromZero(fadeDuration, Easing.OutQuint);
 
-                    delay += 40;
+                        delay += 40;
+                    }
                 }
 
                 SectionsContainer.SelectedSection.BindValueChanged(section =>

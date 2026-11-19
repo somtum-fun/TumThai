@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -28,6 +28,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Skinning;
 using osuTK;
@@ -57,6 +58,7 @@ namespace osu.Game.Screens.Select
         private PanelUpdateBeatmapButton updateButton = null!;
         private BeatmapSetOnlineStatusPill statusPill = null!;
         private SpreadDisplay spreadDisplay = null!;
+        private bool hasBeenPlayed;
 
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
@@ -224,7 +226,6 @@ namespace osu.Game.Screens.Select
 
             if (themed && CurrentInterfaceTheme == InterfaceTheme.OsuStable && Item != null)
             {
-                bool hasBeenPlayed = groupedBeatmapSet.BeatmapSet.Beatmaps.Any(b => b.LastPlayed != null);
                 themeTintBox.Colour = hasBeenPlayed
                     ? osu.Framework.Extensions.Color4Extensions.Color4Extensions.FromHex(@"E96800")
                     : osu.Framework.Extensions.Color4Extensions.Color4Extensions.FromHex(@"EB4999");
@@ -291,17 +292,19 @@ namespace osu.Game.Screens.Select
 
         private void onExpanded()
         {
+            float duration = PotatoMode.UltraActive ? 0 : DURATION;
+
             if (Expanded.Value)
             {
-                chevronBackground.FadeIn(DURATION / 2, Easing.OutQuint);
-                chevronIcon.ResizeWidthTo(18, DURATION * 1.5f, Easing.OutElasticQuarter);
-                chevronIcon.FadeTo(1f, DURATION, Easing.OutQuint);
+                chevronBackground.FadeIn(duration / 2, Easing.OutQuint);
+                chevronIcon.ResizeWidthTo(18, duration * 1.5f, Easing.OutElasticQuarter);
+                chevronIcon.FadeTo(1f, duration, Easing.OutQuint);
             }
             else
             {
-                chevronBackground.FadeOut(DURATION, Easing.OutQuint);
-                chevronIcon.ResizeWidthTo(0f, DURATION, Easing.OutQuint);
-                chevronIcon.FadeTo(0f, DURATION, Easing.OutQuint);
+                chevronBackground.FadeOut(duration, Easing.OutQuint);
+                chevronIcon.ResizeWidthTo(0f, duration, Easing.OutQuint);
+                chevronIcon.FadeTo(0f, duration, Easing.OutQuint);
             }
 
             spreadDisplay.Expanded.Value = Expanded.Value;
@@ -312,20 +315,30 @@ namespace osu.Game.Screens.Select
             base.PrepareForUse();
 
             var beatmapSet = groupedBeatmapSet.BeatmapSet;
+            hasBeenPlayed = beatmapSet.Beatmaps.Any(b => b.LastPlayed != null);
 
             // Choice of background image matches BSS implementation (always uses the lowest `beatmap_id` from the set).
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(s =>
+            if (!PotatoMode.UltraActive)
             {
-                var working = beatmaps.GetWorkingBeatmap(s.Beatmaps.MinBy(b => b.OnlineID));
-                setBackground.Beatmap = working;
-                stableThumbBackground.Beatmap = working;
-            }, beatmapSet, 50);
+                scheduledBackgroundRetrieval = Scheduler.AddDelayed(s =>
+                {
+                    var working = beatmaps.GetWorkingBeatmap(s.Beatmaps.MinBy(b => b.OnlineID));
+                    if (!CurrentInterfaceTheme.IsThemed())
+                        setBackground.Beatmap = working;
+                    stableThumbBackground.Beatmap = working;
+                }, beatmapSet, 50);
+            }
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             updateArtistText(beatmapSet);
-            updateButton.BeatmapSet = beatmapSet;
-            statusPill.Status = beatmapSet.Status;
-            spreadDisplay.BeatmapSet.Value = beatmapSet;
+
+            if (!CurrentInterfaceTheme.IsThemed() && !PotatoMode.UltraActive)
+            {
+                updateButton.BeatmapSet = beatmapSet;
+                statusPill.Status = beatmapSet.Status;
+                spreadDisplay.BeatmapSet.Value = beatmapSet;
+            }
+
             ApplyInterfaceTheme();
         }
 

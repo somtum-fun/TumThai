@@ -9,7 +9,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
@@ -58,6 +57,7 @@ namespace osu.Game.Screens.Select
 
         private IBindable<StarDifficulty>? starDifficultyBindable;
         private CancellationTokenSource? starDifficultyCancellationSource;
+        private string? lastIconRulesetShortName;
 
         private PanelSetBackground beatmapBackground = null!;
         private ScheduledDelegate? scheduledBackgroundRetrieval;
@@ -243,7 +243,7 @@ namespace osu.Game.Screens.Select
                                     AutoSizeAxes = Axes.Both,
                                     Children = new Drawable[]
                                     {
-                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: true)
+                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: !PotatoMode.UltraActive)
                                         {
                                             Origin = Anchor.CentreLeft,
                                             Anchor = Anchor.CentreLeft,
@@ -287,27 +287,40 @@ namespace osu.Game.Screens.Select
 
             var beatmapSet = beatmap.BeatmapSet!;
 
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+            if (!PotatoMode.UltraActive)
             {
-                var working = beatmaps.GetWorkingBeatmap(b);
-                beatmapBackground.Beatmap = working;
-                stableThumbSprite.Texture = working.GetStableThumbnail();
-            }, beatmap, 50);
+                scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+                {
+                    var working = beatmaps.GetWorkingBeatmap(b);
+                    if (!CurrentInterfaceTheme.IsThemed())
+                        beatmapBackground.Beatmap = working;
+                    stableThumbSprite.Texture = working.GetStableThumbnail();
+                }, beatmap, 50);
+            }
 
             titleText.Text = new RomanisableString(beatmapSet.Metadata.TitleUnicode, beatmapSet.Metadata.Title);
             artistText.Text = new RomanisableString(beatmapSet.Metadata.ArtistUnicode, beatmapSet.Metadata.Artist);
-            updateButton.BeatmapSet = beatmapSet;
-            statusPill.Status = beatmap.Status;
 
-            difficultyIcon.Icon = beatmap.Ruleset.CreateInstance().CreateIcon();
-            difficultyIcon.Show();
+            if (!CurrentInterfaceTheme.IsThemed() && !PotatoMode.UltraActive)
+            {
+                updateButton.BeatmapSet = beatmapSet;
+                statusPill.Status = beatmap.Status;
+
+                if (lastIconRulesetShortName != beatmap.Ruleset.ShortName)
+                {
+                    lastIconRulesetShortName = beatmap.Ruleset.ShortName;
+                    difficultyIcon.Icon = beatmap.Ruleset.CreateInstance().CreateIcon();
+                }
+
+                difficultyIcon.Show();
+                spreadDisplay.Beatmap.Value = beatmap;
+            }
 
             localRank.Beatmap = beatmap;
             difficultyText.Text = beatmap.DifficultyName;
             authorText.Text = BeatmapsetsStrings.ShowDetailsMappedBy(beatmap.Metadata.Author.Username);
 
             computeStarRating();
-            spreadDisplay.Beatmap.Value = beatmap;
             updateKeyCount();
             ApplyInterfaceTheme();
         }
@@ -429,26 +442,35 @@ namespace osu.Game.Screens.Select
 
             // Dirty hack to make sure we don't take up spacing in parent fill flow when not displaying a rank.
             // I can't find a better way to do this.
-            mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3) };
+            float targetMarginLeft = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3);
+            if (Math.Abs(mainFill.Margin.Left - targetMarginLeft) > 0.05f)
+                mainFill.Margin = new MarginPadding { Left = targetMarginLeft };
 
             if (CurrentInterfaceTheme.IsThemed())
             {
                 FitStableTextBlock(mainFill);
 
                 var borderColour = Selected.Value ? Color4.White : CurrentInterfaceTheme.SetCardTint();
-                AccentColour = borderColour;
-                backgroundBorder.Colour = borderColour;
-                difficultyIcon.Colour = Selected.Value ? Color4.Black : Color4.White;
+
+                if (AccentColour != borderColour)
+                {
+                    AccentColour = borderColour;
+                    backgroundBorder.Colour = borderColour;
+                }
             }
             else
             {
                 var diffColour = starRatingDisplay.DisplayedDifficultyColour;
 
-                AccentColour = diffColour;
-                spreadDisplay.Current.Colour = diffColour;
+                if (AccentColour != diffColour)
+                {
+                    AccentColour = diffColour;
+                    spreadDisplay.Current.Colour = diffColour;
+                    backgroundBorder.Colour = diffColour;
+                }
 
-                backgroundBorder.Colour = diffColour;
-                difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
+                if (difficultyIcon.Colour != starRatingDisplay.DisplayedDifficultyTextColour)
+                    difficultyIcon.Colour = starRatingDisplay.DisplayedDifficultyTextColour;
             }
         }
 
@@ -456,6 +478,12 @@ namespace osu.Game.Screens.Select
         {
             if (Item == null)
                 return;
+
+            if (ruleset.Value.ShortName is @"osu" or @"taiko" or @"fruits")
+            {
+                keyCountText.Alpha = 0;
+                return;
+            }
 
             var rulesetInstance = ruleset.Value.CreateInstance();
 

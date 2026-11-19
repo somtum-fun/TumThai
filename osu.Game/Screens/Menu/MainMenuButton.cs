@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -21,6 +21,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Performance;
 
 namespace osu.Game.Screens.Menu
 {
@@ -218,13 +219,20 @@ namespace osu.Game.Screens.Menu
         {
             if (State != ButtonState.Expanded) return true;
 
+            sampleHover?.Play();
+
+            if (PotatoMode.UltraActive)
+            {
+                background.Size = Vector2.Multiply(initialSize, new Vector2(1.5f, 1));
+                return true;
+            }
+
             double duration = TimeUntilNextBeat;
 
             icon.ClearTransforms();
             icon.RotateTo(rightward ? -BOUNCE_ROTATION : BOUNCE_ROTATION, duration, Easing.InOutSine);
             icon.ScaleTo(new Vector2(HOVER_SCALE, HOVER_SCALE * BOUNCE_COMPRESSION), duration, Easing.Out);
 
-            sampleHover?.Play();
             background.ResizeTo(Vector2.Multiply(initialSize, new Vector2(1.5f, 1)), 500, Easing.OutElastic);
 
             return true;
@@ -233,6 +241,17 @@ namespace osu.Game.Screens.Menu
         protected override void OnHoverLost(HoverLostEvent e)
         {
             icon.ClearTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                icon.Rotation = 0;
+                icon.Position = Vector2.Zero;
+                icon.Scale = Vector2.One;
+                if (State == ButtonState.Expanded)
+                    background.Size = initialSize;
+                return;
+            }
+
             icon.RotateTo(0, 500, Easing.Out);
             icon.MoveTo(Vector2.Zero, 500, Easing.Out);
             icon.ScaleTo(Vector2.One, 200, Easing.Out);
@@ -326,6 +345,29 @@ namespace osu.Game.Screens.Menu
 
         private void animateState()
         {
+            if (PotatoMode.UltraActive)
+            {
+                switch (state)
+                {
+                    case ButtonState.Contracted:
+                        background.ResizeTo(Vector2.Multiply(initialSize, new Vector2(0, 1)));
+                        this.FadeOut();
+                        break;
+
+                    case ButtonState.Expanded:
+                        background.ResizeTo(initialSize);
+                        this.FadeIn();
+                        break;
+
+                    case ButtonState.Exploded:
+                        background.ResizeTo(Vector2.Multiply(initialSize, new Vector2(2, 1)));
+                        this.FadeOut();
+                        break;
+                }
+
+                return;
+            }
+
             switch (state)
             {
                 case ButtonState.Contracted:

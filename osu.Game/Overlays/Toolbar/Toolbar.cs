@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -19,6 +19,7 @@ using osu.Framework.Input.Bindings;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
+using osu.Game.Performance;
 using osu.Game.Screens.Menu;
 
 namespace osu.Game.Overlays.Toolbar
@@ -255,9 +256,9 @@ namespace osu.Game.Overlays.Toolbar
             private void updateState()
             {
                 if (ShowGradient.Value)
-                    gradientBackground.FadeIn(2500, Easing.OutQuint);
+                    gradientBackground.FadeIn(PotatoMode.UltraActive ? 0 : 2500, Easing.OutQuint);
                 else
-                    gradientBackground.FadeOut(200, Easing.OutQuint);
+                    gradientBackground.FadeOut(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuint);
             }
         }
 
@@ -300,16 +301,18 @@ namespace osu.Game.Overlays.Toolbar
 
         protected override void PopIn()
         {
-            this.MoveToY(0, transition_time, Easing.OutQuint);
-            this.FadeIn(transition_time / 4, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : transition_time;
+            this.MoveToY(0, duration, Easing.OutQuint);
+            this.FadeIn(duration / 4, Easing.OutQuint);
         }
 
         protected override void PopOut()
         {
             userButton.StateContainer?.Hide();
 
-            this.MoveToY(-DrawSize.Y, transition_time, Easing.OutQuint);
-            this.FadeOut(transition_time, Easing.InQuint);
+            double duration = PotatoMode.UltraActive ? 0 : transition_time;
+            this.MoveToY(-DrawSize.Y, duration, Easing.OutQuint);
+            this.FadeOut(duration, Easing.InQuint);
         }
 
         public bool OnPressed(KeyBindingPressEvent<GlobalAction> e)

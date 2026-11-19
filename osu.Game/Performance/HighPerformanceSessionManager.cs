@@ -56,15 +56,23 @@ namespace osu.Game.Performance
 
             // Flush beatmap, skin, and sample loading allocations across all generations while still in PlayerLoader
             // (before gameplay starts) so the Gen 2 heap begins clean and avoids emergency mid-combo collections.
-            GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: false);
+            if (PotatoMode.UltraActive)
+            {
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+            }
+            else
+            {
+                GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: false);
+            }
 
             originalGCMode = GCSettings.LatencyMode;
 
-            // On memory-tight mobile devices (e.g. <= 6 GB RAM), SustainedLowLatency suppresses blocking Gen 2 pauses
-            // while still permitting concurrent background Gen 2 sweeps on marathon maps instead of hitting a sudden
-            // stop-the-world OOM collection mid-song.
+            // On memory-tight mobile devices (e.g. <= 6 GB RAM) or in Ultra Ultimate Potato Mode, SustainedLowLatency
+            // suppresses blocking Gen 2 pauses while still permitting concurrent background Gen 2 sweeps on marathon maps
+            // instead of hitting a sudden stop-the-world OOM collection mid-song.
             long totalMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
-            bool useSustainedMode = RuntimeInfo.IsMobile && totalMemory > 0 && totalMemory < low_ram_threshold_bytes;
+            bool useSustainedMode = PotatoMode.UltraActive || (RuntimeInfo.IsMobile && totalMemory > 0 && totalMemory < low_ram_threshold_bytes);
 
             appliedGCMode = useSustainedMode ? GCLatencyMode.SustainedLowLatency : GCLatencyMode.LowLatency;
             GCSettings.LatencyMode = appliedGCMode;
@@ -101,7 +109,8 @@ namespace osu.Game.Performance
             if (GCSettings.LatencyMode == appliedGCMode)
                 GCSettings.LatencyMode = originalGCMode;
 
-            // No GC.Collect() as we were already collecting at a higher frequency in the old mode.
+            if (PotatoMode.UltraActive)
+                GC.Collect(1, GCCollectionMode.Optimized, blocking: false);
         }
     }
 }

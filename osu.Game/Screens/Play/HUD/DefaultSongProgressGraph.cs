@@ -3,10 +3,12 @@
 
 #nullable disable
 
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using osu.Game.Beatmaps;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects;
 
 namespace osu.Game.Screens.Play.HUD
@@ -20,6 +22,12 @@ namespace osu.Game.Screens.Play.HUD
             set
             {
                 objects = value;
+
+                if (PotatoMode.UltraActive)
+                {
+                    Values = Array.Empty<int>();
+                    return;
+                }
 
                 const int granularity = 200;
                 Values = new int[granularity];

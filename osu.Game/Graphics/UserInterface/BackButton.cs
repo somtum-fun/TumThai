@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -9,6 +9,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Game.Configuration;
 using osu.Game.Localisation;
+using osu.Game.Performance;
 using osu.Game.Screens.Footer;
 
 namespace osu.Game.Graphics.UserInterface
@@ -79,14 +80,14 @@ namespace osu.Game.Graphics.UserInterface
 
         protected override void PopIn()
         {
-            this.MoveToX(0, 400, Easing.OutQuint);
-            this.FadeIn(150, Easing.OutQuint);
+            this.MoveToX(0, PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
+            this.FadeIn(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint);
         }
 
         protected override void PopOut()
         {
-            this.MoveToX(-TwoLayerButton.SIZE_EXTENDED.X / 2, 400, Easing.OutQuint);
-            this.FadeOut(400, Easing.OutQuint);
+            this.MoveToX(-TwoLayerButton.SIZE_EXTENDED.X / 2, PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
         }
     }
 }

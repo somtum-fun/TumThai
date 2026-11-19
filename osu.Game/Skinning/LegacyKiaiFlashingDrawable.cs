@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -6,6 +6,7 @@ using osu.Framework.Audio.Track;
 using osu.Framework.Graphics;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Graphics.Containers;
+using osu.Game.Performance;
 using osuTK.Graphics;
 
 namespace osu.Game.Skinning
@@ -26,6 +27,17 @@ namespace osu.Game.Skinning
         {
             AutoSizeAxes = Axes.Both;
 
+            if (PotatoMode.UltraActive)
+            {
+                FlashingDrawable = Empty();
+                Child = (creationFunc.Invoke() ?? Empty()).With(d =>
+                {
+                    d.Anchor = Anchor.Centre;
+                    d.Origin = Anchor.Centre;
+                });
+                return;
+            }
+
             Children = new[]
             {
                 (creationFunc.Invoke() ?? Empty()).With(d =>
@@ -45,7 +57,7 @@ namespace osu.Game.Skinning
 
         protected override void OnNewBeat(int beatIndex, TimingControlPoint timingPoint, EffectControlPoint effectPoint, ChannelAmplitudes amplitudes)
         {
-            if (!effectPoint.KiaiMode)
+            if (PotatoMode.UltraActive || !effectPoint.KiaiMode)
                 return;
 
             FlashingDrawable

@@ -10,6 +10,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Utils;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Osu.Skinning.Default;
 using osu.Game.Skinning;
@@ -95,7 +96,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         {
             base.UpdateHitStateTransforms(state);
 
-            double animDuration = Math.Min(300, HitObject.SpanDuration);
+            double animDuration = PotatoMode.UltraActive ? 0 : Math.Min(300, HitObject.SpanDuration);
 
             switch (state)
             {
@@ -113,6 +114,7 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             }
         }
 
+        internal bool HasRotation => hasRotation;
         private bool hasRotation;
 
         public void UpdateSnakingPosition(Vector2 start, Vector2 end)

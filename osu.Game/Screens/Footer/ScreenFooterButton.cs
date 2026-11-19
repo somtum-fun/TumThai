@@ -19,6 +19,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Input.Bindings;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 
@@ -212,7 +213,13 @@ namespace osu.Game.Screens.Footer
             return base.OnClick(e);
         }
 
-        protected virtual void Flash() => flashLayer.FadeOutFromOne(800, Easing.OutQuint);
+        protected virtual void Flash()
+        {
+            if (PotatoMode.UltraActive)
+                return;
+
+            flashLayer.FadeOutFromOne(800, Easing.OutQuint);
+        }
 
         protected override bool OnHover(HoverEvent e)
         {
@@ -243,21 +250,31 @@ namespace osu.Game.Screens.Footer
             else if (IsHovered)
                 backgroundColour = backgroundColour.Lighten(0.2f);
 
-            backgroundBox.FadeColour(backgroundColour, 150, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : 150;
+
+            backgroundBox.FadeColour(backgroundColour, duration, Easing.OutQuint);
 
             if (!Enabled.Value)
                 textColour = textColour.Opacity(0.6f);
 
-            text.FadeColour(textColour, 150, Easing.OutQuint);
-            icon.FadeColour(accentColour, 150, Easing.OutQuint);
-            bar.FadeColour(accentColour, 150, Easing.OutQuint);
+            text.FadeColour(textColour, duration, Easing.OutQuint);
+            icon.FadeColour(accentColour, duration, Easing.OutQuint);
+            bar.FadeColour(accentColour, duration, Easing.OutQuint);
 
-            glowBox.FadeColour(ColourInfo.GradientVertical(buttonAccentColour.Opacity(0f), buttonAccentColour.Opacity(0.2f)), 150, Easing.OutQuint);
+            glowBox.FadeColour(ColourInfo.GradientVertical(buttonAccentColour.Opacity(0f), buttonAccentColour.Opacity(0.2f)), duration, Easing.OutQuint);
         }
 
         public void AppearFromLeft(double delay)
         {
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.X = 0f;
+                Content.Alpha = 1f;
+                return;
+            }
+
             Content.MoveToX(-300f)
                    .FadeOut()
                    .Delay(delay)
@@ -268,6 +285,14 @@ namespace osu.Game.Screens.Footer
         public void AppearFromBottom(double delay)
         {
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.Y = 0f;
+                Content.Alpha = 1f;
+                return;
+            }
+
             Content.MoveToY(100f)
                    .FadeOut()
                    .Delay(delay)
@@ -278,6 +303,15 @@ namespace osu.Game.Screens.Footer
         public void DisappearToRight(double delay, bool expire)
         {
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.Alpha = 0f;
+                if (expire)
+                    Expire();
+                return;
+            }
+
             Content.Delay(delay)
                    .FadeOut(240, Easing.InOutCubic)
                    .MoveToX(300f, 360, Easing.InOutCubic);
@@ -289,6 +323,15 @@ namespace osu.Game.Screens.Footer
         public void DisappearToBottom(double delay, bool expire)
         {
             Content.FinishTransforms();
+
+            if (PotatoMode.UltraActive)
+            {
+                Content.Alpha = 0f;
+                if (expire)
+                    Expire();
+                return;
+            }
+
             Content.Delay(delay)
                    .FadeOut(240, Easing.InOutCubic)
                    .MoveToY(100f, 240, Easing.InOutCubic);

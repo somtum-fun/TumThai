@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
@@ -8,6 +8,7 @@ using osu.Framework.Input.Events;
 using osuTK.Graphics;
 using System.Collections.Generic;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Performance;
 
 namespace osu.Game.Graphics.Containers
 {
@@ -79,8 +80,8 @@ namespace osu.Game.Graphics.Containers
             EffectTargets.ForEach(d => d.FadeColour(IdleColour ?? fallbackIdleColour));
         }
 
-        private void fadeIn() => EffectTargets.ForEach(d => d.FadeColour(HoverColour ?? fallbackHoverColour, FADE_DURATION, Easing.OutQuint));
+        private void fadeIn() => EffectTargets.ForEach(d => d.FadeColour(HoverColour ?? fallbackHoverColour, PotatoMode.UltraActive ? 0 : FADE_DURATION, Easing.OutQuint));
 
-        private void fadeOut() => EffectTargets.ForEach(d => d.FadeColour(IdleColour ?? fallbackIdleColour, FADE_DURATION, Easing.OutQuint));
+        private void fadeOut() => EffectTargets.ForEach(d => d.FadeColour(IdleColour ?? fallbackIdleColour, PotatoMode.UltraActive ? 0 : FADE_DURATION, Easing.OutQuint));
     }
 }

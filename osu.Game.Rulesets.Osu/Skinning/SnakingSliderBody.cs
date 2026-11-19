@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Objects;
@@ -75,6 +76,12 @@ namespace osu.Game.Rulesets.Osu.Skinning
             if (drawableSlider.HitObject == null)
                 return;
 
+            if (PotatoMode.UltraActive)
+            {
+                setRange(0, 1);
+                return;
+            }
+
             Slider slider = drawableSlider.HitObject;
 
             int span = slider.SpanAt(completionProgress);
@@ -118,6 +125,14 @@ namespace osu.Game.Rulesets.Osu.Skinning
             snakedPosition = Path.PositionInBoundingBox(Vector2.Zero);
             snakedPathOffset = Path.PositionInBoundingBox(Path.Vertices[0]);
             snakedPathEndOffset = Path.PositionInBoundingBox(Path.Vertices[^1]);
+
+            if (PotatoMode.UltraActive)
+            {
+                SnakedStart = 0;
+                SnakedEnd = 1;
+                Path.Position = Vector2.Zero;
+                return;
+            }
 
             double lastSnakedStart = SnakedStart ?? 0;
             double lastSnakedEnd = SnakedEnd ?? 0;

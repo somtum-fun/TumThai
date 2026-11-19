@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -15,6 +15,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Users;
@@ -344,15 +345,18 @@ namespace osu.Game.Screens.Play.HUD
 
         private void onExpanded(ValueChangedEvent<bool> expanded)
         {
+            double panelDuration = PotatoMode.UltraActive ? 0 : panel_transition_duration;
+            double textDuration = PotatoMode.UltraActive ? 0 : text_transition_duration;
+
             if (expanded.NewValue)
             {
-                rightLayer.ResizeWidthTo(computeRightLayerWidth(), panel_transition_duration, Easing.OutQuint);
-                scoreComponents.FadeIn(panel_transition_duration, Easing.OutQuint);
+                rightLayer.ResizeWidthTo(computeRightLayerWidth(), panelDuration, Easing.OutQuint);
+                scoreComponents.FadeIn(panelDuration, Easing.OutQuint);
             }
             else
             {
-                rightLayer.ResizeWidthTo(avatar_size / 2, panel_transition_duration, Easing.OutQuint);
-                scoreComponents.FadeOut(text_transition_duration, Easing.OutQuint);
+                rightLayer.ResizeWidthTo(avatar_size / 2, panelDuration, Easing.OutQuint);
+                scoreComponents.FadeOut(textDuration, Easing.OutQuint);
             }
         }
 
@@ -386,10 +390,13 @@ namespace osu.Game.Screens.Play.HUD
             else
                 setPanelColour(BackgroundColour ?? colours.Blue4);
 
-            usernameText.FadeColour(usernameColour, text_transition_duration, Easing.OutQuint);
+            double panelDuration = PotatoMode.UltraActive ? 0 : panel_transition_duration;
+            double textDuration = PotatoMode.UltraActive ? 0 : text_transition_duration;
 
-            scorePanel.MoveToX(widthExtension ? 0 : left_panel_extension_width, panel_transition_duration, Easing.OutElastic);
-            leftLayer.ResizeWidthTo(widthExtension ? extended_left_panel_width : regular_left_panel_width, panel_transition_duration, Easing.OutElastic);
+            usernameText.FadeColour(usernameColour, textDuration, Easing.OutQuint);
+
+            scorePanel.MoveToX(widthExtension ? 0 : left_panel_extension_width, panelDuration, Easing.OutElastic);
+            leftLayer.ResizeWidthTo(widthExtension ? extended_left_panel_width : regular_left_panel_width, panelDuration, Easing.OutElastic);
         }
 
         private void setPanelColour(Color4 baseColour)
@@ -453,6 +460,9 @@ namespace osu.Game.Screens.Play.HUD
             protected override void LoadComplete()
             {
                 base.LoadComplete();
+
+                if (PotatoMode.UltraActive)
+                    return;
 
                 LoadComponentAsync(new DrawableAvatar(user), a =>
                 {

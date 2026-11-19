@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Utils;
+using osu.Game.Performance;
 using osu.Game.Screens.Play.HUD;
 using osu.Game.Utils;
 using osuTK;
@@ -72,9 +73,14 @@ namespace osu.Game.Skinning
         {
             base.Update();
 
-            fill.Width = Interpolation.ValueAt(
-                Math.Clamp(Clock.ElapsedFrameTime, 0, 200),
-                fill.Width, (float)Current.Value * maxFillWidth, 0, 200, Easing.OutQuint);
+            if (PotatoMode.UltraActive)
+                fill.Width = (float)Current.Value * maxFillWidth;
+            else
+            {
+                fill.Width = Interpolation.ValueAt(
+                    Math.Clamp(Clock.ElapsedFrameTime, 0, 200),
+                    fill.Width, (float)Current.Value * maxFillWidth, 0, 200, Easing.OutQuint);
+            }
 
             marker.Position = fill.Position + new Vector2(fill.DrawWidth, isNewStyle ? fill.DrawHeight / 2 : 0);
         }
@@ -232,6 +238,9 @@ namespace osu.Game.Skinning
 
             public override void Flash(bool isEpic)
             {
+                if (PotatoMode.UltraActive)
+                    return;
+
                 Bulge();
                 explode.Texture = Main.Texture;
                 explode.Blending = isEpic ? BlendingParameters.Additive : BlendingParameters.Inherit;
@@ -242,6 +251,10 @@ namespace osu.Game.Skinning
             public override void Bulge()
             {
                 base.Bulge();
+
+                if (PotatoMode.UltraActive)
+                    return;
+
                 Main.ScaleTo(1.2f).Then().ScaleTo(0.8f, 150);
             }
         }

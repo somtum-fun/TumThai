@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -59,6 +59,7 @@ namespace osu.Game.Screens.Select
 
         private IBindable<StarDifficulty>? starDifficultyBindable;
         private CancellationTokenSource? starDifficultyCancellationSource;
+        private string? lastIconRulesetShortName;
 
         private Box backgroundBorder = null!;
         private Box backgroundDifficultyTint = null!;
@@ -147,9 +148,9 @@ namespace osu.Game.Screens.Select
                 {
                     ScaleAdjust = 1.2f,
                     Thickness = 0.01f,
-                    Velocity = 0.3f,
+                    Velocity = PotatoMode.Active ? 0f : 0.3f,
                     RelativeSizeAxes = Axes.Both,
-                    Alpha = CurrentInterfaceTheme.IsThemed() ? 0 : 1,
+                    Alpha = CurrentInterfaceTheme.IsThemed() || PotatoMode.Active ? 0 : 1,
                 },
                 stableThumbContainer = new Container
                 {
@@ -253,7 +254,7 @@ namespace osu.Game.Screens.Select
                                     AutoSizeAxes = Axes.Both,
                                     Children = new Drawable[]
                                     {
-                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: true)
+                                        starRatingDisplay = new StarRatingDisplay(default, StarRatingDisplaySize.Small, animated: !PotatoMode.UltraActive)
                                         {
                                             Origin = Anchor.CentreLeft,
                                             Anchor = Anchor.CentreLeft,
@@ -319,7 +320,7 @@ namespace osu.Game.Screens.Select
             else
                 contentBackground.Colour = CurrentInterfaceTheme.DifficultyRowBackground(ColourInfo.GradientHorizontal(colourProvider.Background3, colourProvider.Background4));
 
-            triangles.Alpha = isStable ? 0 : 1;
+            triangles.Alpha = isStable || PotatoMode.Active ? 0 : 1;
             backgroundDifficultyTint.Alpha = isStable ? 0 : 1;
 
             stableTitleText.Colour = isSelectedStable ? activeText : inactiveText.Opacity(0.75f);
@@ -340,7 +341,11 @@ namespace osu.Game.Screens.Select
         {
             base.PrepareForUse();
 
-            difficultyIcon.Icon = getRulesetIcon(beatmap.Ruleset);
+            if (!PotatoMode.UltraActive && lastIconRulesetShortName != beatmap.Ruleset.ShortName)
+            {
+                lastIconRulesetShortName = beatmap.Ruleset.ShortName;
+                difficultyIcon.Icon = getRulesetIcon(beatmap.Ruleset);
+            }
 
             if (SkinManager != null)
             {
@@ -355,10 +360,13 @@ namespace osu.Game.Screens.Select
                 stableModeIcon.Texture = SkinManager.DefaultClassicSkin.GetTexture(modeTex);
             }
 
-            scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+            if (!PotatoMode.UltraActive)
             {
-                stableThumbBackground.Beatmap = beatmaps.GetWorkingBeatmap(b);
-            }, beatmap, 50);
+                scheduledBackgroundRetrieval = Scheduler.AddDelayed(b =>
+                {
+                    stableThumbBackground.Beatmap = beatmaps.GetWorkingBeatmap(b);
+                }, beatmap, 50);
+            }
 
             localRank.Beatmap = beatmap;
             stableTitleText.Text = new RomanisableString(beatmap.Metadata.TitleUnicode, beatmap.Metadata.Title);
@@ -411,8 +419,12 @@ namespace osu.Game.Screens.Select
             // per panel while scrolling (the wedge still shows mod-adjusted difficulty).
             if (PotatoMode.Active)
             {
-                starRatingDisplay.Current.Value = initialStored;
-                starCounter.Current = (float)initialStored.Stars;
+                if (!CurrentInterfaceTheme.IsThemed())
+                {
+                    starRatingDisplay.Current.Value = initialStored;
+                    starCounter.Current = (float)initialStored.Stars;
+                }
+
                 return;
             }
 
@@ -438,7 +450,9 @@ namespace osu.Game.Screens.Select
 
             // Dirty hack to make sure we don't take up spacing in parent fill flow when not displaying a rank.
             // I can't find a better way to do this.
-            mainFill.Margin = new MarginPadding { Left = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3) };
+            float targetMarginLeft = 1 / starRatingDisplay.Scale.X * (localRank.HasRank ? 0 : -3);
+            if (Math.Abs(mainFill.Margin.Left - targetMarginLeft) > 0.05f)
+                mainFill.Margin = new MarginPadding { Left = targetMarginLeft };
 
             if (CurrentInterfaceTheme.IsThemed())
             {
@@ -451,8 +465,10 @@ namespace osu.Game.Screens.Select
                     stableThumbContainer.Margin = new MarginPadding { Left = thumbLeft };
 
                 FitStableTextBlock(leftRowFill);
+                return;
             }
-            else if (leftRowFill.Scale.X != 1)
+
+            if (leftRowFill.Scale.X != 1)
                 leftRowFill.Scale = Vector2.One;
 
             var diffColour = starRatingDisplay.DisplayedDifficultyColour;
@@ -478,6 +494,12 @@ namespace osu.Game.Screens.Select
         {
             if (Item == null)
                 return;
+
+            if (ruleset.Value.ShortName is @"osu" or @"taiko" or @"fruits")
+            {
+                variantText.Alpha = 0;
+                return;
+            }
 
             var rulesetInstance = ruleset.Value.CreateInstance();
 

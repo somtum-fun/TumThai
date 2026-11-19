@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -17,6 +17,7 @@ using osu.Game.Configuration;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 
 namespace osu.Game.Screens.Backgrounds
@@ -101,6 +102,9 @@ namespace osu.Game.Screens.Backgrounds
         /// <returns>Whether a new background was queued for load. May return false if the current background is still valid.</returns>
         public virtual bool Next()
         {
+            if (PotatoMode.UltraActive)
+                return false;
+
             var nextBackground = createBackground();
 
             // in the case that the background hasn't changed, we want to avoid cancelling any tasks that could still be loading.

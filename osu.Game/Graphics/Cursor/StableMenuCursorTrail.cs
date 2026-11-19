@@ -5,6 +5,7 @@ using System;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Osu.UI.Cursor;
 using osuTK;
 
@@ -69,7 +70,7 @@ namespace osu.Game.Graphics.Cursor
         {
             base.Update();
 
-            if (!disjointTrail || !currentPosition.HasValue || !hasTexture)
+            if (PotatoMode.UltraActive || !disjointTrail || !currentPosition.HasValue || !hasTexture)
                 return;
 
             if (Time.Current - lastTrailTime >= disjoint_trail_time_separation)
@@ -81,7 +82,7 @@ namespace osu.Game.Graphics.Cursor
 
         protected override bool OnMouseMove(MouseMoveEvent e)
         {
-            if (!hasTexture)
+            if (PotatoMode.UltraActive || !hasTexture)
                 return false;
 
             if (!disjointTrail)

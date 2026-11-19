@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Linq;
@@ -19,6 +19,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
 using osu.Game.Overlays.Volume;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 
@@ -163,14 +164,14 @@ namespace osu.Game.Overlays
         protected override void PopIn()
         {
             ClearTransforms();
-            this.FadeIn(100);
+            this.FadeIn(PotatoMode.UltraActive ? 0 : 100);
 
             schedulePopOut();
         }
 
         protected override void PopOut()
         {
-            this.FadeOut(100);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : 100);
         }
 
         protected override bool OnMouseMove(MouseMoveEvent e)

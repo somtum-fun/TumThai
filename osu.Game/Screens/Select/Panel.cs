@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -23,6 +23,7 @@ using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
@@ -208,6 +209,9 @@ namespace osu.Game.Screens.Select
             {
                 base.OnNewBeat(beatIndex, timingPoint, effectPoint, amplitudes);
 
+                if (PotatoMode.UltraActive || Alpha == 0)
+                    return;
+
                 if (beatIndex % getFlashInterval(timingPoint.TimeSignature.Numerator) != 0)
                     return;
 
@@ -297,6 +301,14 @@ namespace osu.Game.Screens.Select
 
             KeyboardSelected.BindValueChanged(selected =>
             {
+                if (PotatoMode.UltraActive)
+                {
+                    keyboardSelectionLayer.ClearTransforms();
+                    keyboardSelectionLayer.Alpha = selected.NewValue && !CurrentInterfaceTheme.IsThemed() ? 0.5f : 0f;
+                    updateXOffset(animated: false);
+                    return;
+                }
+
                 if (selected.NewValue && !CurrentInterfaceTheme.IsThemed())
                 {
                     keyboardSelectionLayer.FadeIn(80, Easing.Out)
@@ -343,7 +355,10 @@ namespace osu.Game.Screens.Select
             updateXOffset(animated: false);
             updateSelectedState(animated: false);
 
-            this.FadeIn(DURATION, Easing.OutQuint);
+            if (PotatoMode.UltraActive)
+                Alpha = 1;
+            else
+                this.FadeIn(DURATION, Easing.OutQuint);
         }
 
         protected override void FreeAfterUse()
@@ -386,6 +401,14 @@ namespace osu.Game.Screens.Select
             }
 
             bool selectedOrExpanded = Expanded.Value || Selected.Value;
+
+            if (PotatoMode.UltraActive)
+            {
+                TopLevelContent.EdgeEffect = default;
+                selectionLayer.ClearTransforms();
+                selectionLayer.Alpha = selectedOrExpanded ? 1f : 0f;
+                return;
+            }
 
             var edgeEffectColour = accentColour ?? Color4Extensions.FromHex(@"4EBFFF");
 
@@ -435,12 +458,12 @@ namespace osu.Game.Screens.Select
             if (IsHovered && CurrentInterfaceTheme.IsThemed())
                 x -= 28f;
 
-            TopLevelContent.MoveToX(x, animated ? DURATION : 0, Easing.OutQuint);
+            TopLevelContent.MoveToX(x, animated && !PotatoMode.UltraActive ? DURATION : 0, Easing.OutQuint);
         }
 
         protected override bool OnHover(HoverEvent e)
         {
-            hoverLayer.FadeIn(100, Easing.OutQuint);
+            hoverLayer.FadeIn(PotatoMode.UltraActive ? 0 : 100, Easing.OutQuint);
             if (CurrentInterfaceTheme.IsThemed())
                 updateXOffset();
             return true;
@@ -448,7 +471,7 @@ namespace osu.Game.Screens.Select
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            hoverLayer.FadeOut(1000, Easing.OutQuint);
+            hoverLayer.FadeOut(PotatoMode.UltraActive ? 0 : 1000, Easing.OutQuint);
             if (CurrentInterfaceTheme.IsThemed())
                 updateXOffset();
             base.OnHoverLost(e);
@@ -489,7 +512,10 @@ namespace osu.Game.Screens.Select
         protected override void Update()
         {
             base.Update();
-            contentPaddingContainer.Padding = contentPaddingContainer.Padding with { Left = CurrentInterfaceTheme.IsThemed() ? 0 : iconContainer.DrawWidth };
+
+            float targetLeft = CurrentInterfaceTheme.IsThemed() ? 0 : iconContainer.DrawWidth;
+            if (Math.Abs(contentPaddingContainer.Padding.Left - targetLeft) > 0.05f)
+                contentPaddingContainer.Padding = contentPaddingContainer.Padding with { Left = targetLeft };
         }
 
         public abstract MenuItem[]? ContextMenuItems { get; }
@@ -529,6 +555,9 @@ namespace osu.Game.Screens.Select
 
         public virtual void Activated()
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             activationFlash.FadeOutFromOne(1000, Easing.OutQuint);
         }
 

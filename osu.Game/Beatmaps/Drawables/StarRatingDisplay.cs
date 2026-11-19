@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Utils;
 using osuTK;
 using osuTK.Graphics;
@@ -153,7 +154,7 @@ namespace osu.Game.Beatmaps.Drawables
 
             Current.BindValueChanged(c =>
             {
-                if (animated)
+                if (animated && !PotatoMode.UltraActive)
                     // Animation roughly matches `StarCounter`'s implementation.
                     this.TransformBindableTo(displayedStars, c.NewValue.Stars, Math.Min(1000, 100 + 80 * Math.Abs(c.NewValue.Stars - c.OldValue.Stars)), Easing.OutQuint);
                 else

@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Graphics.Transforms;
+using osu.Game.Performance;
 using osuTK;
 
 namespace osu.Game.Graphics.Backgrounds
@@ -43,7 +44,7 @@ namespace osu.Game.Graphics.Backgrounds
         [BackgroundDependencyLoader]
         private void load(LargeTextureStore textures)
         {
-            if (!string.IsNullOrEmpty(textureName))
+            if (!PotatoMode.UltraActive && !string.IsNullOrEmpty(textureName))
                 Sprite.Texture = textures.Get(textureName);
         }
 
@@ -55,6 +56,9 @@ namespace osu.Game.Graphics.Backgrounds
         /// <returns>A <see cref="TransformSequence{T}"/> to which further transforms can be added.</returns>
         public void BlurTo(Vector2 newBlurSigma, double duration = 0, Easing easing = Easing.None)
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             if (bufferedContainer == null && newBlurSigma != Vector2.Zero)
             {
                 RemoveInternal(Sprite, false);

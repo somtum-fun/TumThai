@@ -14,6 +14,7 @@ using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 
@@ -141,17 +142,19 @@ namespace osu.Game.Screens.Select
 
                 if (displayedTinyStatistics != tiny)
                 {
+                    double duration = PotatoMode.UltraActive ? 0 : 200;
+
                     if (tiny)
                     {
                         statisticsFlow.Hide();
                         // Slow fade hides fill flow layout weirdness.
-                        tinyStatisticsGrid.FadeIn(200, Easing.InQuint);
+                        tinyStatisticsGrid.FadeIn(duration, Easing.InQuint);
                     }
                     else
                     {
                         tinyStatisticsGrid.Hide();
                         // Slow fade hides fill flow layout weirdness.
-                        statisticsFlow.FadeIn(200, Easing.InQuint);
+                        statisticsFlow.FadeIn(duration, Easing.InQuint);
                     }
 
                     displayedTinyStatistics = tiny;
@@ -164,12 +167,13 @@ namespace osu.Game.Screens.Select
                     return;
 
                 float statisticWidth = Math.Max(65, statisticsFlow.Max(s => s.LabelWidth));
+                double duration = PotatoMode.UltraActive ? 0 : 200;
 
                 foreach (var statistic in statisticsFlow)
                 {
                     statistic.Width = statisticWidth;
                     // Slow fade hides fill flow layout weirdness.
-                    statistic.FadeIn(200, Easing.InQuint);
+                    statistic.FadeIn(duration, Easing.InQuint);
                 }
 
                 drawSizeLayout.Invalidate();

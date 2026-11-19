@@ -18,6 +18,7 @@ using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Online.API;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using WebCommonStrings = osu.Game.Resources.Localisation.Web.CommonStrings;
@@ -129,6 +130,12 @@ namespace osu.Game.Screens.Select
 
         private void beatmapChanged()
         {
+            if (PotatoMode.UltraActive)
+            {
+                Alpha = 0;
+                return;
+            }
+
             Alpha = beatmapSet?.AllBeatmapsUpToDate == false ? 1 : 0;
             icon.Spin(4000, RotationDirection.Clockwise);
         }

@@ -23,6 +23,7 @@ using osu.Game.Beatmaps.Formats;
 using osu.Game.Database;
 using osu.Game.Extensions;
 using osu.Game.IO;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 using osu.Game.Storyboards;
 
@@ -170,7 +171,7 @@ namespace osu.Game.Beatmaps
                     }
 
                     string streamMD5 = stream.ComputeMD5Hash();
-                    string streamSHA2 = stream.ComputeSHA2Hash();
+                    string streamSHA2 = PotatoMode.UltraActive ? (BeatmapInfo.Hash ?? string.Empty) : stream.ComputeSHA2Hash();
 
                     if (streamMD5 != BeatmapInfo.MD5Hash)
                     {
@@ -184,7 +185,9 @@ namespace osu.Game.Beatmaps
 
                         beatmap.BeatmapInfo.MD5Hash = streamMD5;
                         beatmap.BeatmapInfo.Hash = streamSHA2;
-                        beatmap.BeatmapInfo.UpdateStatisticsFromBeatmap(beatmap);
+
+                        if (!PotatoMode.UltraActive)
+                            beatmap.BeatmapInfo.UpdateStatisticsFromBeatmap(beatmap);
 
                         return beatmap;
                     }
@@ -196,11 +199,13 @@ namespace osu.Game.Beatmaps
                 }
             }
 
-            public override Texture GetPanelBackground() => getBackgroundFromStore(resources.BeatmapPanelTextureStore);
+            public override Texture GetPanelBackground() => PotatoMode.UltraActive ? null : getBackgroundFromStore(resources.BeatmapPanelTextureStore);
 
-            public override Texture GetStableThumbnail() => resources.StableThumbnailTextureStore is TextureStore store ? getBackgroundFromStore(store) : GetBackground();
+            public override Texture GetStableThumbnail() => PotatoMode.UltraActive
+                ? null
+                : (resources.StableThumbnailTextureStore is TextureStore store ? getBackgroundFromStore(store) : GetBackground());
 
-            public override Texture GetBackground() => getBackgroundFromStore(resources.LargeTextureStore);
+            public override Texture GetBackground() => PotatoMode.UltraActive ? null : getBackgroundFromStore(resources.LargeTextureStore);
 
             private Texture getBackgroundFromStore(TextureStore store)
             {
@@ -257,6 +262,9 @@ namespace osu.Game.Beatmaps
 
             protected override Waveform GetWaveform()
             {
+                if (PotatoMode.UltraActive)
+                    return null;
+
                 if (string.IsNullOrEmpty(Metadata?.AudioFile))
                     return null;
 
@@ -286,6 +294,9 @@ namespace osu.Game.Beatmaps
 
             protected override Storyboard GetStoryboard()
             {
+                if (PotatoMode.UltraActive)
+                    return new Storyboard { BeatmapInfo = BeatmapInfo };
+
                 Storyboard storyboard;
 
                 if (BeatmapInfo.Path == null)

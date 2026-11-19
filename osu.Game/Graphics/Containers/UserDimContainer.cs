@@ -117,8 +117,9 @@ namespace osu.Game.Graphics.Containers
         {
             ContentDisplayed = ShowDimContent;
 
-            dimContent.FadeTo(ContentDisplayed ? 1 : 0, BACKGROUND_FADE_DURATION, Easing.OutQuint);
-            dimContent.FadeColour(OsuColour.Gray(1f - DimLevel), BACKGROUND_FADE_DURATION, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : BACKGROUND_FADE_DURATION;
+            dimContent.FadeTo(ContentDisplayed ? 1 : 0, duration, Easing.OutQuint);
+            dimContent.FadeColour(OsuColour.Gray(1f - DimLevel), duration, Easing.OutQuint);
         }
     }
 }

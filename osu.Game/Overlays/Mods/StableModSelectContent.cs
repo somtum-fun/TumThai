@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -23,6 +23,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Rulesets.UI;
@@ -443,7 +444,7 @@ namespace osu.Game.Overlays.Mods
 
             private Container iconHolder = null!;
             private Sprite stableModSprite = null!;
-            private ModIcon fallbackModIcon = null!;
+            private ModIcon? fallbackModIcon;
             private Sprite lightingGlow = null!;
 
             public StableModSlotButton(IReadOnlyList<ModState> states, Key? shortcutKey, string? keyLabel, Action<bool> onCycled)
@@ -477,20 +478,10 @@ namespace osu.Game.Overlays.Mods
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         AutoSizeAxes = Axes.Both,
-                        Children = new Drawable[]
+                        Child = stableModSprite = new Sprite
                         {
-                            stableModSprite = new Sprite
-                            {
-                                Anchor = Anchor.Centre,
-                                Origin = Anchor.Centre,
-                            },
-                            fallbackModIcon = new ModIcon(states[0].Mod)
-                            {
-                                Anchor = Anchor.Centre,
-                                Origin = Anchor.Centre,
-                                Scale = new Vector2(0.75f),
-                                Alpha = 0,
-                            },
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
                         },
                     },
                 };
@@ -554,30 +545,45 @@ namespace osu.Game.Overlays.Mods
                 {
                     stableModSprite.Texture = tex;
                     stableModSprite.Alpha = 1f;
-                    fallbackModIcon.Alpha = 0f;
+                    if (fallbackModIcon != null)
+                        fallbackModIcon.Alpha = 0f;
                 }
                 else
                 {
-                    fallbackModIcon.Mod = displayedMod;
+                    if (fallbackModIcon == null)
+                    {
+                        iconHolder.Add(fallbackModIcon = new ModIcon(displayedMod)
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Scale = new Vector2(0.75f),
+                        });
+                    }
+                    else
+                    {
+                        fallbackModIcon.Mod = displayedMod;
+                    }
+
                     fallbackModIcon.Alpha = 1f;
                     stableModSprite.Alpha = 0f;
                 }
 
                 TooltipText = $"{displayedMod.Name} ({displayedMod.Acronym}): {displayedMod.Description}";
 
+                double duration = PotatoMode.UltraActive ? 0 : 150;
                 if (activeState != null)
                 {
-                    lightingGlow.FadeTo(0.85f, 180, Easing.OutQuint);
-                    iconHolder.ScaleTo(1.2f, 150, Easing.OutBack);
-                    iconHolder.RotateTo(5.73f, 150, Easing.OutBack);
-                    iconHolder.FadeColour(Color4.White, 150);
+                    lightingGlow.FadeTo(0.85f, PotatoMode.UltraActive ? 0 : 180, Easing.OutQuint);
+                    iconHolder.ScaleTo(1.2f, duration, Easing.OutBack);
+                    iconHolder.RotateTo(5.73f, duration, Easing.OutBack);
+                    iconHolder.FadeColour(Color4.White, duration);
                 }
                 else
                 {
-                    lightingGlow.FadeOut(180, Easing.OutQuint);
-                    iconHolder.ScaleTo(IsHovered ? 1.04f : 1.0f, 150, Easing.OutQuint);
-                    iconHolder.RotateTo(0f, 150, Easing.OutQuint);
-                    iconHolder.FadeColour(IsHovered ? Color4.White : OsuColour.Gray(0.88f), 150);
+                    lightingGlow.FadeOut(PotatoMode.UltraActive ? 0 : 180, Easing.OutQuint);
+                    iconHolder.ScaleTo(IsHovered && !PotatoMode.UltraActive ? 1.04f : 1.0f, duration, Easing.OutQuint);
+                    iconHolder.RotateTo(0f, duration, Easing.OutQuint);
+                    iconHolder.FadeColour(IsHovered ? Color4.White : OsuColour.Gray(0.88f), duration);
                 }
             }
 
@@ -585,8 +591,9 @@ namespace osu.Game.Overlays.Mods
             {
                 if (states.All(s => !s.Active.Value))
                 {
-                    iconHolder.ScaleTo(1.06f, 120, Easing.OutQuint);
-                    iconHolder.FadeColour(Color4.White, 120);
+                    if (!PotatoMode.UltraActive)
+                        iconHolder.ScaleTo(1.06f, 120, Easing.OutQuint);
+                    iconHolder.FadeColour(Color4.White, PotatoMode.UltraActive ? 0 : 120);
                 }
 
                 return base.OnHover(e);
@@ -596,8 +603,9 @@ namespace osu.Game.Overlays.Mods
             {
                 if (states.All(s => !s.Active.Value))
                 {
-                    iconHolder.ScaleTo(1.0f, 150, Easing.OutQuint);
-                    iconHolder.FadeColour(OsuColour.Gray(0.88f), 150);
+                    if (!PotatoMode.UltraActive)
+                        iconHolder.ScaleTo(1.0f, 150, Easing.OutQuint);
+                    iconHolder.FadeColour(OsuColour.Gray(0.88f), PotatoMode.UltraActive ? 0 : 150);
                 }
 
                 base.OnHoverLost(e);

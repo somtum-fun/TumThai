@@ -19,6 +19,7 @@ using osu.Game.Localisation;
 using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.Chat;
+using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osuTK;
 
@@ -261,16 +262,18 @@ namespace osu.Game.Screens.Select
 
         protected override void PopIn()
         {
-            this.FadeIn(transition_duration, Easing.OutQuint)
-                .MoveToX(0, transition_duration, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : transition_duration;
+            this.FadeIn(duration, Easing.OutQuint)
+                .MoveToX(0, duration, Easing.OutQuint);
 
             updateSubWedgeVisibility();
         }
 
         protected override void PopOut()
         {
-            this.FadeOut(transition_duration, Easing.OutQuint)
-                .MoveToX(-100, transition_duration, Easing.OutQuint);
+            double duration = PotatoMode.UltraActive ? 0 : transition_duration;
+            this.FadeOut(duration, Easing.OutQuint)
+                .MoveToX(-100, duration, Easing.OutQuint);
 
             updateSubWedgeVisibility();
         }
@@ -282,32 +285,34 @@ namespace osu.Game.Screens.Select
 
             var beatmapInfo = beatmap.Value.BeatmapInfo;
             var currentOnlineBeatmap = onlineLookupResult.Value?.Result?.Beatmaps.SingleOrDefault(b => b.OnlineID == beatmapInfo.OnlineID);
+            double duration = PotatoMode.UltraActive ? 0 : transition_duration;
+            double delay = PotatoMode.UltraActive ? 0 : 100;
 
             if (State.Value == Visibility.Visible && currentOnlineBeatmap != null)
             {
                 // play show sounds only if the wedges were previously hidden
-                if (ratingsWedge.Alpha < 1)
+                if (ratingsWedge.Alpha < 1 && !PotatoMode.UltraActive)
                     playWedgeAppearSound();
 
-                ratingsWedge.FadeIn(transition_duration, Easing.OutQuint)
-                            .MoveToX(0, transition_duration, Easing.OutQuint);
+                ratingsWedge.FadeIn(duration, Easing.OutQuint)
+                            .MoveToX(0, duration, Easing.OutQuint);
 
-                failRetryWedge.Delay(100)
-                              .FadeIn(transition_duration, Easing.OutQuint)
-                              .MoveToX(0, transition_duration, Easing.OutQuint);
+                failRetryWedge.Delay(delay)
+                              .FadeIn(duration, Easing.OutQuint)
+                              .MoveToX(0, duration, Easing.OutQuint);
             }
             else
             {
                 // play hide sounds only if the wedges were previously visible
-                if (ratingsWedge.Alpha > 0)
+                if (ratingsWedge.Alpha > 0 && !PotatoMode.UltraActive)
                     playWedgeHideSound();
 
-                failRetryWedge.FadeOut(transition_duration, Easing.OutQuint)
-                              .MoveToX(-50, transition_duration, Easing.OutQuint);
+                failRetryWedge.FadeOut(duration, Easing.OutQuint)
+                              .MoveToX(-50, duration, Easing.OutQuint);
 
-                ratingsWedge.Delay(100)
-                            .FadeOut(transition_duration, Easing.OutQuint)
-                            .MoveToX(-50, transition_duration, Easing.OutQuint);
+                ratingsWedge.Delay(delay)
+                            .FadeOut(duration, Easing.OutQuint)
+                            .MoveToX(-50, duration, Easing.OutQuint);
             }
         }
 

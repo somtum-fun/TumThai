@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -63,7 +63,6 @@ namespace osu.Game.Screens.Select
 
         public StableStarRatingRow()
         {
-            AutoSizeAxes = Axes.Both;
         }
 
         [BackgroundDependencyLoader]
@@ -71,50 +70,39 @@ namespace osu.Game.Screens.Select
         {
             var starTex = skinManager.GetClassicTexture(@"star");
 
-            var row = new FillFlowContainer
-            {
-                AutoSizeAxes = Axes.Both,
-                Direction = FillDirection.Horizontal,
-            };
-
             // osu!stable (BeatmapTreeItem): each star is the skin's star at its own size times 0.6, centred in a slot as wide as
             // that, so a skin's large or odd-shaped star.png shows as the skin made it (never squeezed into a fixed box).
+            var children = new Drawable[star_count * 2];
+
             for (int i = 0; i < star_count; i++)
             {
-                row.Add(slots[i] = new Container
+                children[i * 2] = bgStars[i] = new Sprite
                 {
-                    Anchor = Anchor.CentreLeft,
-                    Origin = Anchor.CentreLeft,
-                    Children = new Drawable[]
-                    {
-                        bgStars[i] = new Sprite
-                        {
-                            Anchor = Anchor.Centre,
-                            Origin = Anchor.Centre,
-                        },
-                        fgStars[i] = new Sprite
-                        {
-                            Anchor = Anchor.Centre,
-                            Origin = Anchor.Centre,
-                        },
-                    },
-                });
+                    Anchor = Anchor.TopLeft,
+                    Origin = Anchor.Centre,
+                };
+                children[i * 2 + 1] = fgStars[i] = new Sprite
+                {
+                    Anchor = Anchor.TopLeft,
+                    Origin = Anchor.Centre,
+                };
             }
 
-            InternalChild = row;
+            InternalChildren = children;
             applyTexture(starTex);
             updateStars();
         }
 
-        private readonly Container[] slots = new Container[star_count];
-
         private void applyTexture(Texture? starTex)
         {
             Vector2 slot = starTex != null ? new Vector2(starTex.DisplayWidth, starTex.DisplayHeight) * star_scale : new Vector2(15f);
+            Size = new Vector2(slot.X * star_count, slot.Y);
 
             for (int i = 0; i < star_count; i++)
             {
-                slots[i].Size = slot;
+                Vector2 pos = new Vector2((i + 0.5f) * slot.X, slot.Y * 0.5f);
+                bgStars[i].Position = pos;
+                fgStars[i].Position = pos;
                 bgStars[i].Texture = starTex;
                 fgStars[i].Texture = starTex;
             }
@@ -146,6 +134,7 @@ namespace osu.Game.Screens.Select
                 float fill = (float)Math.Clamp(stars - i, 0.0, 1.0);
 
                 bgStars[i].Colour = bgColour;
+                bgStars[i].Alpha = fill >= 1f ? 0f : 1f;
                 bgStars[i].Scale = new Vector2(star_scale);
 
                 fgStars[i].Colour = fgColour;

@@ -1,10 +1,11 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
 using System.Diagnostics;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Pooling;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Pooling;
 using osuTK;
@@ -79,10 +80,10 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables.Connections
                 AddInternal(fp = Pool.Get());
 
                 fp.ClearTransforms();
-                fp.Position = pointStartPosition;
+                fp.Position = PotatoMode.UltraActive ? pointEndPosition : pointStartPosition;
                 fp.Rotation = rotation;
                 fp.Alpha = 0;
-                fp.Scale = new Vector2(1.5f * end.Scale);
+                fp.Scale = new Vector2((PotatoMode.UltraActive ? 1f : 1.5f) * end.Scale);
 
                 fp.AnimationStartTime.Value = fadeInTime;
 
@@ -95,9 +96,14 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables.Connections
                     const float duration = 400;
 
                     fp.FadeIn(duration);
-                    fp.ScaleTo(end.Scale, duration, Easing.Out);
-                    fp.MoveTo(pointEndPosition, duration, Easing.Out);
-                    fp.Delay(fadeOutTime - fadeInTime).FadeOut(duration).Expire();
+
+                    if (!PotatoMode.UltraActive)
+                    {
+                        fp.ScaleTo(end.Scale, duration, Easing.Out);
+                        fp.MoveTo(pointEndPosition, duration, Easing.Out);
+                    }
+
+                    fp.Delay(fadeOutTime - fadeInTime).FadeOut(PotatoMode.UltraActive ? 0 : duration).Expire();
 
                     finalTransformEndTime = fp.LifetimeEnd;
                 }

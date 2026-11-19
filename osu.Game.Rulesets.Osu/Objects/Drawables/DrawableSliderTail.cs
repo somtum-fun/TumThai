@@ -7,6 +7,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Utils;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Osu.Configuration;
@@ -96,6 +97,12 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
             base.UpdateHitStateTransforms(state);
 
             Debug.Assert(HitObject.HitWindows != null);
+
+            if (PotatoMode.UltraActive && state != ArmedState.Idle)
+            {
+                this.FadeOut();
+                return;
+            }
 
             switch (state)
             {

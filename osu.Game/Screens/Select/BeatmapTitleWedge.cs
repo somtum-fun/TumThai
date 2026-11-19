@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Development;
 using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -22,6 +23,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Resources.Localisation.Web;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -75,6 +77,8 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private RealmAccess realm { get; set; } = null!;
 
+        private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+
         private FillFlowContainer statisticsFlow = null!;
 
         public BeatmapTitleWedge()
@@ -84,8 +88,9 @@ namespace osu.Game.Screens.Select
         }
 
         [BackgroundDependencyLoader]
-        private void load()
+        private void load(OsuConfigManager config)
         {
+            config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
             Masking = true;
             CornerRadius = corner_radius;
 
@@ -187,6 +192,7 @@ namespace osu.Game.Screens.Select
             working.BindValueChanged(_ => updateDisplay());
             ruleset.BindValueChanged(_ => updateDisplay());
             onlineLookupResult.BindValueChanged(_ => updateDisplay());
+            interfaceTheme.BindValueChanged(_ => updateDisplay());
 
             mods.BindValueChanged(m =>
             {
@@ -200,24 +206,29 @@ namespace osu.Game.Screens.Select
 
             updateDisplay();
 
-            statisticsFlow.AutoSizeDuration = 100;
+            statisticsFlow.AutoSizeDuration = PotatoMode.UltraActive ? 0 : 100;
             statisticsFlow.AutoSizeEasing = Easing.OutQuint;
         }
 
         protected override void PopIn()
         {
-            this.MoveToX(0, SongSelect.ENTER_DURATION, Easing.OutQuint)
-                .FadeIn(SongSelect.ENTER_DURATION / 3, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : SongSelect.ENTER_DURATION;
+            this.MoveToX(0, duration, Easing.OutQuint)
+                .FadeIn(duration / 3, Easing.In);
         }
 
         protected override void PopOut()
         {
-            this.MoveToX(-150, SongSelect.ENTER_DURATION, Easing.OutQuint)
-                .FadeOut(SongSelect.ENTER_DURATION / 3, Easing.In);
+            double duration = PotatoMode.UltraActive ? 0 : SongSelect.ENTER_DURATION;
+            this.MoveToX(-150, duration, Easing.OutQuint)
+                .FadeOut(duration / 3, Easing.In);
         }
 
         private void updateDisplay()
         {
+            if (!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed())
+                return;
+
             var metadata = working.Value.Metadata;
             var beatmapInfo = working.Value.BeatmapInfo;
 
@@ -252,6 +263,23 @@ namespace osu.Game.Screens.Select
         private void updateLengthAndBpmStatistics()
         {
             lengthBpmCancellationSource?.Cancel();
+
+            if (!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed())
+                return;
+
+            if (PotatoMode.UltraActive)
+            {
+                var beatmapInfo = working.Value.BeatmapInfo;
+                double rate = ModUtils.CalculateRateWithMods(mods.Value);
+                double hitLength = Math.Round(beatmapInfo.Length / rate);
+                int bpm = FormatUtils.RoundBPM(beatmapInfo.BPM, rate);
+
+                lengthStatistic.Text = hitLength.ToFormattedDuration();
+                lengthStatistic.TooltipText = BeatmapsetsStrings.ShowStatsTotalLength(hitLength.ToFormattedDuration());
+                bpmStatistic.Text = $"{bpm}";
+                return;
+            }
+
             lengthBpmCancellationSource = new CancellationTokenSource();
 
             var token = lengthBpmCancellationSource.Token;

@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -18,6 +18,7 @@ using osu.Framework.Graphics.Visualisation;
 using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Timing;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Graphics.ES30;
@@ -130,11 +131,14 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
         /// </summary>
         protected virtual double FadeDuration => 300;
 
-        public override bool IsPresent => true;
+        public override bool IsPresent => !PotatoMode.UltraActive && base.IsPresent;
 
         protected override void Update()
         {
             base.Update();
+
+            if (PotatoMode.UltraActive)
+                return;
 
             Invalidate(Invalidation.DrawNode);
 
@@ -170,16 +174,22 @@ namespace osu.Game.Rulesets.Osu.UI.Cursor
         private Vector2? lastPosition;
         private readonly InputResampler resampler = new InputResampler();
 
-        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => true;
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) => !PotatoMode.UltraActive;
 
         protected override bool OnMouseMove(MouseMoveEvent e)
         {
+            if (PotatoMode.UltraActive)
+                return false;
+
             AddTrail(e.ScreenSpaceMousePosition);
             return base.OnMouseMove(e);
         }
 
         protected void AddTrail(Vector2 position)
         {
+            if (PotatoMode.UltraActive)
+                return;
+
             position = ToLocalSpace(position);
 
             if (InterpolateMovements)

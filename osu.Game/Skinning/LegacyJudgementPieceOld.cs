@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -7,6 +7,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Animations;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Utils;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
@@ -37,6 +38,15 @@ namespace osu.Game.Skinning
 
         public virtual void PlayAnimation()
         {
+            if (PotatoMode.UltraActive)
+            {
+                if (result == HitResult.Great)
+                    this.FadeOut();
+                else
+                    this.FadeOutFromOne(200);
+                return;
+            }
+
             var animation = InternalChild as IFramedAnimation;
 
             animation?.GotoFrame(0);

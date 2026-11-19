@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -9,6 +9,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
+using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
@@ -26,6 +27,7 @@ using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
+using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Footer;
@@ -186,7 +188,6 @@ namespace osu.Game.Overlays.Mods
                                                 AutoSizeAxes = Axes.X,
                                                 Margin = new MarginPadding { Horizontal = 70 },
                                                 Padding = new MarginPadding { Bottom = 10 },
-                                                ChildrenEnumerable = createColumns()
                                             }
                                         }
                                     }
@@ -245,6 +246,30 @@ namespace osu.Game.Overlays.Mods
 
             textSearchStartsActive = configManager.GetBindable<bool>(OsuSetting.ModSelectTextSearchStartsActive);
             interfaceTheme = configManager.GetBindable<InterfaceTheme>(OsuSetting.InterfaceTheme);
+
+            if (!shouldUseStableGrid())
+                ensureLazerColumnsLoaded();
+        }
+
+        internal bool UsingStableGrid => shouldUseStableGrid();
+
+        private bool shouldUseStableGrid() => ((!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed()) || PotatoMode.Active) && !showingLazerColumnsInStable;
+
+        private bool lazerColumnsCreated;
+
+        private void ensureLazerColumnsLoaded()
+        {
+            if (lazerColumnsCreated)
+                return;
+
+            lazerColumnsCreated = true;
+            columnFlow.ChildrenEnumerable = createColumns();
+
+            if (AvailableMods.Value.Count > 0)
+            {
+                foreach (var column in columnFlow.Columns.OfType<ModColumn>())
+                    column.AvailableMods = AvailableMods.Value.GetValueOrDefault(column.ModType, Array.Empty<ModState>());
+            }
         }
 
         public override void Hide()
@@ -261,11 +286,18 @@ namespace osu.Game.Overlays.Mods
 
         private void applyInterfaceTheme()
         {
-            // Always use Lazer's mod selection screen across all interface themes
-            stableContent.Alpha = 0;
-            lazerMainContainer.Alpha = 1;
-            Header.Alpha = 1;
-            returnToStableGridButton.Alpha = 0;
+            bool useStable = shouldUseStableGrid();
+
+            if (!useStable)
+                ensureLazerColumnsLoaded();
+
+            stableContent.Alpha = useStable ? 1 : 0;
+            lazerMainContainer.Alpha = useStable ? 0 : 1;
+            Header.Alpha = useStable ? 0 : 1;
+            returnToStableGridButton.Alpha = ((!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed()) || PotatoMode.Active) && showingLazerColumnsInStable ? 1 : 0;
+
+            if (DisplayedFooterContent != null)
+                DisplayedFooterContent.Alpha = useStable ? 0 : 1;
         }
 
         protected override void LoadComplete()
@@ -305,11 +337,14 @@ namespace osu.Game.Overlays.Mods
 
             // Start scrolling from the end, to give the user a sense that
             // there is more horizontal content available.
-            ScheduleAfterChildren(() =>
+            if (!PotatoMode.Active && !shouldUseStableGrid())
             {
-                columnScroll.ScrollToEnd(false);
-                columnScroll.ScrollTo(0);
-            });
+                ScheduleAfterChildren(() =>
+                {
+                    columnScroll.ScrollToEnd(false);
+                    columnScroll.ScrollTo(0);
+                });
+            }
         }
 
         private void preselectMod()
@@ -357,6 +392,13 @@ namespace osu.Game.Overlays.Mods
         /// </summary>
         public void SelectAll()
         {
+            if (!lazerColumnsCreated || PotatoMode.UltraActive || shouldUseStableGrid())
+            {
+                foreach (var mod in AllAvailableMods.Where(m => m.Visible && !m.Active.Value))
+                    mod.Active.Value = true;
+                return;
+            }
+
             foreach (var column in columnFlow.Columns.OfType<ModColumn>())
                 column.SelectAll();
         }
@@ -366,13 +408,20 @@ namespace osu.Game.Overlays.Mods
         /// </summary>
         public void DeselectAll()
         {
+            if (!lazerColumnsCreated || PotatoMode.UltraActive || shouldUseStableGrid())
+            {
+                foreach (var mod in AllAvailableMods.Where(m => m.Active.Value))
+                    mod.Active.Value = false;
+                return;
+            }
+
             foreach (var column in columnFlow.Columns.OfType<ModColumn>())
                 column.DeselectAll();
         }
 
         private IEnumerable<ColumnDimContainer> createColumns()
         {
-            if (ShowPresets)
+            if (ShowPresets && !PotatoMode.Active)
             {
                 yield return new ColumnDimContainer(new ModPresetColumn
                 {
@@ -466,16 +515,17 @@ namespace osu.Game.Overlays.Mods
 
         private void updateCustomisationVisualState()
         {
+            double duration = PotatoMode.UltraActive ? 0 : 400;
             if (customisationPanel.ExpandedState.Value != ModCustomisationPanel.ModCustomisationPanelState.Collapsed)
             {
-                columnScroll.FadeColour(OsuColour.Gray(0.5f), 400, Easing.OutQuint);
-                SearchTextBox.FadeColour(OsuColour.Gray(0.5f), 400, Easing.OutQuint);
+                columnScroll.FadeColour(OsuColour.Gray(0.5f), duration, Easing.OutQuint);
+                SearchTextBox.FadeColour(OsuColour.Gray(0.5f), duration, Easing.OutQuint);
                 setTextBoxFocus(false);
             }
             else
             {
-                columnScroll.FadeColour(Color4.White, 400, Easing.OutQuint);
-                SearchTextBox.FadeColour(Color4.White, 400, Easing.OutQuint);
+                columnScroll.FadeColour(Color4.White, duration, Easing.OutQuint);
+                SearchTextBox.FadeColour(Color4.White, duration, Easing.OutQuint);
                 setTextBoxFocus(textSearchStartsActive.Value);
             }
         }
@@ -536,13 +586,13 @@ namespace osu.Game.Overlays.Mods
 
         protected override void PopIn()
         {
-            const double fade_in_duration = 400;
+            double fadeInDuration = PotatoMode.UltraActive ? 0 : 400;
 
             base.PopIn();
 
             aboveColumnsContent
-                .FadeIn(fade_in_duration, Easing.OutQuint)
-                .MoveToY(0, fade_in_duration, Easing.OutQuint);
+                .FadeIn(fadeInDuration, Easing.OutQuint)
+                .MoveToY(0, fadeInDuration, Easing.OutQuint);
 
             int nonFilteredColumnCount = 0;
 
@@ -552,10 +602,10 @@ namespace osu.Game.Overlays.Mods
 
                 bool allFiltered = column is ModColumn modColumn && modColumn.AvailableMods.All(modState => !modState.Visible);
 
-                double delay = allFiltered ? 0 : nonFilteredColumnCount * 30;
-                double duration = allFiltered ? 0 : fade_in_duration;
+                double delay = allFiltered || PotatoMode.UltraActive ? 0 : nonFilteredColumnCount * 30;
+                double duration = allFiltered ? 0 : fadeInDuration;
                 float startingYPosition = 0;
-                if (!allFiltered)
+                if (!allFiltered && !PotatoMode.UltraActive)
                     startingYPosition = nonFilteredColumnCount % 2 == 0 ? -distance : distance;
 
                 column.TopLevelContent
@@ -567,26 +617,29 @@ namespace osu.Game.Overlays.Mods
                 if (allFiltered)
                     continue;
 
-                int columnNumber = nonFilteredColumnCount;
-                Scheduler.AddDelayed(() =>
+                if (!PotatoMode.UltraActive)
                 {
-                    var channel = columnAppearSample?.GetChannel();
-                    if (channel == null) return;
+                    int columnNumber = nonFilteredColumnCount;
+                    Scheduler.AddDelayed(() =>
+                    {
+                        var channel = columnAppearSample?.GetChannel();
+                        if (channel == null) return;
 
-                    // Still play sound effects for off-screen columns up to a certain point.
-                    if (columnNumber > 5 && !column.Active.Value) return;
+                        // Still play sound effects for off-screen columns up to a certain point.
+                        if (columnNumber > 5 && !column.Active.Value) return;
 
-                    // use X position of the column on screen as a basis for panning the sample
-                    float balance = column.Parent!.BoundingBox.Centre.X / RelativeToAbsoluteFactor.X;
+                        // use X position of the column on screen as a basis for panning the sample
+                        float balance = column.Parent!.BoundingBox.Centre.X / RelativeToAbsoluteFactor.X;
 
-                    // dip frequency and ramp volume of sample over the first 5 displayed columns
-                    float progress = Math.Min(1, columnNumber / 5f);
+                        // dip frequency and ramp volume of sample over the first 5 displayed columns
+                        float progress = Math.Min(1, columnNumber / 5f);
 
-                    channel.Frequency.Value = 1.3 - (progress * 0.3) + RNG.NextDouble(0.1);
-                    channel.Volume.Value = Math.Max(progress, 0.2);
-                    channel.Balance.Value = -1 + balance * 2;
-                    channel.Play();
-                }, delay);
+                        channel.Frequency.Value = 1.3 - (progress * 0.3) + RNG.NextDouble(0.1);
+                        channel.Volume.Value = Math.Max(progress, 0.2);
+                        channel.Balance.Value = -1 + balance * 2;
+                        channel.Play();
+                    }, delay);
+                }
 
                 nonFilteredColumnCount += 1;
             }
@@ -596,13 +649,13 @@ namespace osu.Game.Overlays.Mods
 
         protected override void PopOut()
         {
-            const double fade_out_duration = 500;
+            double fadeOutDuration = PotatoMode.UltraActive ? 0 : 500;
 
             base.PopOut();
 
             aboveColumnsContent
-                .FadeOut(fade_out_duration / 2, Easing.OutQuint)
-                .MoveToY(-distance, fade_out_duration / 2, Easing.OutQuint);
+                .FadeOut(fadeOutDuration / 2, Easing.OutQuint)
+                .MoveToY(PotatoMode.UltraActive ? 0 : -distance, fadeOutDuration / 2, Easing.OutQuint);
 
             int nonFilteredColumnCount = 0;
 
@@ -618,9 +671,9 @@ namespace osu.Game.Overlays.Mods
                     modColumn.FlushPendingSelections();
                 }
 
-                double duration = allFiltered ? 0 : fade_out_duration;
+                double duration = allFiltered ? 0 : fadeOutDuration;
                 float newYPosition = 0;
-                if (!allFiltered)
+                if (!allFiltered && !PotatoMode.UltraActive)
                     newYPosition = nonFilteredColumnCount % 2 == 0 ? -distance : distance;
 
                 column.TopLevelContent
@@ -883,7 +936,7 @@ namespace osu.Game.Overlays.Mods
                 else
                     targetColour = IsHovered ? colours.GrayC : colours.Gray8;
 
-                this.FadeColour(targetColour, 800, Easing.OutQuint);
+                this.FadeColour(targetColour, PotatoMode.UltraActive ? 0 : 800, Easing.OutQuint);
             }
 
             protected override bool OnClick(ClickEvent e)

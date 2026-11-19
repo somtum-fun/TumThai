@@ -27,6 +27,7 @@ using osu.Game.Input.Bindings;
 using osu.Game.Localisation;
 using osu.Game.Online.Placeholders;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osu.Game.Scoring;
 using osu.Game.Screens.Footer;
 using osu.Game.Screens.Play;
@@ -208,7 +209,7 @@ namespace osu.Game.Screens.Ranking
             if (Score != null)
             {
                 // only show flair / animation when arriving after watching a play that isn't autoplay.
-                bool shouldFlair = player != null && !Score.User.IsBot;
+                bool shouldFlair = !PotatoMode.UltraActive && player != null && !Score.User.IsBot;
 
                 ScorePanelList.AddScore(Score, shouldFlair);
                 // this is mostly for medal display.
@@ -440,10 +441,10 @@ namespace osu.Game.Screens.Ranking
             ApplyToBackground(b =>
             {
                 b.BlurAmount.Value = BACKGROUND_BLUR;
-                b.FadeColour(OsuColour.Gray(0.5f), 250);
+                b.FadeColour(OsuColour.Gray(0.5f), PotatoMode.UltraActive ? 0 : 250);
             });
 
-            bottomPanel.FadeTo(1, 250);
+            bottomPanel.FadeTo(1, PotatoMode.UltraActive ? 0 : 250);
 
             popInSample?.Play();
         }
@@ -459,7 +460,7 @@ namespace osu.Game.Screens.Ranking
             Score?.HitEvents.Clear();
 
             if (!skipExitTransition)
-                this.FadeOut(100);
+                this.FadeOut(PotatoMode.UltraActive ? 0 : 100);
 
             rankApplauseSound?.Stop();
             return false;
@@ -502,15 +503,15 @@ namespace osu.Game.Screens.Ranking
                 float origLocation = detachedPanelContainer.ToLocalSpace(screenSpacePos).X;
                 expandedPanel.MoveToX(origLocation)
                              .Then()
-                             .MoveToX(StatisticsPanel.SIDE_PADDING, 400, Easing.OutElasticQuarter);
+                             .MoveToX(StatisticsPanel.SIDE_PADDING, PotatoMode.UltraActive ? 0 : 400, Easing.OutElasticQuarter);
 
                 // Hide contracted panels.
                 foreach (var contracted in ScorePanelList.GetScorePanels().Where(p => p.State == PanelState.Contracted))
-                    contracted.FadeOut(150, Easing.OutQuint);
+                    contracted.FadeOut(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint);
                 ScorePanelList.HandleInput = false;
 
                 // Dim background.
-                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.4f), 400, Easing.OutQuint));
+                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.4f), PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint));
 
                 detachedPanel = expandedPanel;
             }
@@ -526,15 +527,15 @@ namespace osu.Game.Screens.Ranking
                 float origLocation = detachedPanel.Parent!.ToLocalSpace(screenSpacePos).X;
                 detachedPanel.MoveToX(origLocation)
                              .Then()
-                             .MoveToX(0, 250, Easing.OutElasticQuarter);
+                             .MoveToX(0, PotatoMode.UltraActive ? 0 : 250, Easing.OutElasticQuarter);
 
                 // Show contracted panels.
                 foreach (var contracted in ScorePanelList.GetScorePanels().Where(p => p.State == PanelState.Contracted))
-                    contracted.FadeIn(150, Easing.OutQuint);
+                    contracted.FadeIn(PotatoMode.UltraActive ? 0 : 150, Easing.OutQuint);
                 ScorePanelList.HandleInput = true;
 
                 // Un-dim background.
-                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.5f), 250, Easing.OutQuint));
+                ApplyToBackground(b => b.FadeColour(OsuColour.Gray(0.5f), PotatoMode.UltraActive ? 0 : 250, Easing.OutQuint));
 
                 detachedPanel = null;
             }

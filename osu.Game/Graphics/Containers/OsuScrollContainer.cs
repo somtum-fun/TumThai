@@ -3,11 +3,13 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
 using osu.Game.Overlays;
+using osu.Game.Performance;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
@@ -32,9 +34,34 @@ namespace osu.Game.Graphics.Containers
         public const float SCROLL_BAR_WIDTH = 10;
         public const float SCROLL_BAR_PADDING = 3;
 
+        private static bool instantScroll => !DebugUtils.IsNUnitRunning || PotatoMode.Active;
+
         public OsuScrollContainer(Direction scrollDirection = Direction.Vertical)
             : base(scrollDirection)
         {
+            if (instantScroll)
+            {
+                DistanceDecayScroll = 1;
+                DistanceDecayDrag = 1;
+                DistanceDecayJump = 1;
+            }
+        }
+
+        protected override void OnUserScroll(double value, bool animated = true, double? distanceDecay = null)
+            => base.OnUserScroll(value, !instantScroll && animated, distanceDecay);
+
+        public new void ScrollTo(double value, bool animated = true, double? distanceDecay = null)
+            => base.ScrollTo(value, !instantScroll && animated, distanceDecay);
+
+        public new void ScrollToEnd(bool animated = true, bool allowDuringDrag = false)
+            => base.ScrollToEnd(!instantScroll && animated, allowDuringDrag);
+
+        protected override void UpdateAfterChildren()
+        {
+            if (instantScroll && Current != Target)
+                base.ScrollTo(IsDragging ? Target : Clamp(Target), false);
+
+            base.UpdateAfterChildren();
         }
 
         /// <summary>
@@ -45,6 +72,8 @@ namespace osu.Game.Graphics.Containers
         /// <param name="extraScroll">An added amount to scroll beyond the requirement to bring the target into view.</param>
         public void ScrollIntoView(Drawable d, bool animated = true, float extraScroll = 0)
         {
+            animated &= !instantScroll;
+
             double childPos0 = GetChildPosInContent(d);
             double childPos1 = GetChildPosInContent(d, d.DrawSize);
 
@@ -69,7 +98,7 @@ namespace osu.Game.Graphics.Containers
             float fromScrollbarPosition = FromScrollbarPosition(ToLocalSpace(screenSpacePosition)[ScrollDim]);
             float scrollbarCentreOffset = FromScrollbarPosition(Scrollbar.DrawHeight) * 0.5f;
 
-            ScrollTo(Clamp(fromScrollbarPosition - scrollbarCentreOffset), true, DistanceDecayOnAbsoluteScroll);
+            ScrollTo(Clamp(fromScrollbarPosition - scrollbarCentreOffset), !instantScroll, DistanceDecayOnAbsoluteScroll);
         }
 
         #endregion
@@ -123,18 +152,18 @@ namespace osu.Game.Graphics.Containers
                 this.ResizeTo(new Vector2(SCROLL_BAR_WIDTH)
                 {
                     [(int)ScrollDirection] = val
-                }, duration, easing);
+                }, PotatoMode.UltraActive ? 0 : duration, easing);
             }
 
             protected override bool OnHover(HoverEvent e)
             {
-                this.FadeColour(hoverColour, 100);
+                this.FadeColour(hoverColour, PotatoMode.UltraActive ? 0 : 100);
                 return true;
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                this.FadeColour(defaultColour, 100);
+                this.FadeColour(defaultColour, PotatoMode.UltraActive ? 0 : 100);
             }
 
             protected override bool OnMouseDown(MouseDownEvent e)
@@ -142,7 +171,7 @@ namespace osu.Game.Graphics.Containers
                 if (!base.OnMouseDown(e)) return false;
 
                 // note that we are changing the colour of the box here as to not interfere with the hover effect.
-                box.FadeColour(highlightColour, 100);
+                box.FadeColour(highlightColour, PotatoMode.UltraActive ? 0 : 100);
                 return true;
             }
 
@@ -150,7 +179,7 @@ namespace osu.Game.Graphics.Containers
             {
                 if (e.Button != MouseButton.Left) return;
 
-                box.FadeColour(Color4.White, 100);
+                box.FadeColour(Color4.White, PotatoMode.UltraActive ? 0 : 100);
 
                 base.OnMouseUp(e);
             }

@@ -16,6 +16,7 @@ using osu.Game.Audio;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Performance;
 using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
@@ -215,17 +216,22 @@ namespace osu.Game.Graphics.UserInterface
         {
             hoverSample?.Play();
 
+            double duration = PotatoMode.UltraActive ? 0 : 600;
             if (customMenuBackContainer.Alpha > 0)
             {
-                customMenuBackAdditiveContainer.FadeTo(0.25f, 150, Easing.OutQuad);
+                customMenuBackAdditiveContainer.FadeTo(0.25f, PotatoMode.UltraActive ? 0 : 150, Easing.OutQuad);
+            }
+            else if (PotatoMode.UltraActive)
+            {
+                layerLeft.Colour = hover_colour;
             }
             else
             {
-                layerLeft.FadeColour(hover_colour, 600, Easing.OutElastic);
-                layerLeft.MoveToX(64f, 600, Easing.OutElastic);
-                layerRight.MoveToX(137.6f, 600, Easing.OutElastic);
-                arrowIcon.MoveToX(26.67f, 600, Easing.OutElastic);
-                backText.MoveToX(94.67f, 600, Easing.OutElastic);
+                layerLeft.FadeColour(hover_colour, duration, Easing.OutElastic);
+                layerLeft.MoveToX(64f, duration, Easing.OutElastic);
+                layerRight.MoveToX(137.6f, duration, Easing.OutElastic);
+                arrowIcon.MoveToX(26.67f, duration, Easing.OutElastic);
+                backText.MoveToX(94.67f, duration, Easing.OutElastic);
             }
 
             return base.OnHover(e);
@@ -233,17 +239,22 @@ namespace osu.Game.Graphics.UserInterface
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
+            double duration = PotatoMode.UltraActive ? 0 : 600;
             if (customMenuBackContainer.Alpha > 0)
             {
-                customMenuBackAdditiveContainer.FadeOut(200, Easing.OutQuad);
+                customMenuBackAdditiveContainer.FadeOut(PotatoMode.UltraActive ? 0 : 200, Easing.OutQuad);
+            }
+            else if (PotatoMode.UltraActive)
+            {
+                layerLeft.Colour = idle_colour;
             }
             else
             {
-                layerLeft.FadeColour(idle_colour, 600, Easing.OutElastic);
-                layerLeft.MoveToX(35.2f, 600, Easing.OutElastic);
-                layerRight.MoveToX(96f, 600, Easing.OutElastic);
-                arrowIcon.MoveToX(14.67f, 600, Easing.OutElastic);
-                backText.MoveToX(60.5f, 600, Easing.OutElastic);
+                layerLeft.FadeColour(idle_colour, duration, Easing.OutElastic);
+                layerLeft.MoveToX(35.2f, duration, Easing.OutElastic);
+                layerRight.MoveToX(96f, duration, Easing.OutElastic);
+                arrowIcon.MoveToX(14.67f, duration, Easing.OutElastic);
+                backText.MoveToX(60.5f, duration, Easing.OutElastic);
             }
 
             base.OnHoverLost(e);

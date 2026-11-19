@@ -18,6 +18,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Localisation.HUD;
+using osu.Game.Performance;
 using osu.Game.Rulesets.Judgements;
 using osu.Game.Rulesets.Scoring;
 using osuTK;
@@ -405,7 +406,9 @@ namespace osu.Game.Screens.Play.HUD.HitErrorMeters
             if (!judgement.Type.IsScorable() || judgement.Type.IsBonus())
                 return;
 
-            if (judgementsContainer.Count > max_concurrent_judgements)
+            int maxConcurrent = PotatoMode.UltraActive ? 10 : max_concurrent_judgements;
+
+            if (judgementsContainer.Count > maxConcurrent)
             {
                 const double quick_fade_time = 100;
 
@@ -427,9 +430,12 @@ namespace osu.Game.Screens.Play.HUD.HitErrorMeters
                 judgementsContainer.Add(drawableJudgement);
             });
 
-            arrow.MoveToY(
-                getRelativeJudgementPosition(floatingAverage = floatingAverage * 0.9 + judgement.TimeOffset * 0.1)
-                , arrow_move_duration, Easing.OutQuint);
+            float arrowTargetY = getRelativeJudgementPosition(floatingAverage = floatingAverage * 0.9 + judgement.TimeOffset * 0.1);
+
+            if (PotatoMode.UltraActive)
+                arrow.Y = arrowTargetY;
+            else
+                arrow.MoveToY(arrowTargetY, arrow_move_duration, Easing.OutQuint);
         }
 
         private float getRelativeJudgementPosition(double value) => Math.Clamp((float)((value / maxHitWindow) + 1) / 2, 0, 1);
@@ -468,6 +474,14 @@ namespace osu.Game.Screens.Play.HUD.HitErrorMeters
             protected override void PrepareForUse()
             {
                 base.PrepareForUse();
+
+                if (PotatoMode.UltraActive)
+                {
+                    Alpha = 0.6f;
+                    Width = 1;
+                    this.FadeOut(1200).Expire();
+                    return;
+                }
 
                 const int judgement_fade_in_duration = 100;
                 const int judgement_fade_out_duration = 5000;

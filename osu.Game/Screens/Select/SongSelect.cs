@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -44,6 +44,7 @@ using osu.Game.Online.API;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Mods;
+using osu.Game.Performance;
 using osu.Game.Overlays.Volume;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
@@ -380,7 +381,7 @@ namespace osu.Game.Screens.Select
         // Not sure about this, but we'll iterate based on feedback.
         protected virtual ModSelectOverlay CreateModSelectOverlay() => new UserModSelectOverlay
         {
-            ShowPresets = true,
+            ShowPresets = !PotatoMode.Active,
         };
 
         private void requestRecommendedSelection(IEnumerable<GroupedBeatmap> groupedBeatmaps)
@@ -510,6 +511,9 @@ namespace osu.Game.Screens.Select
             updateWedgeVisibility();
         }
 
+        private Vector2 lastColumnDrawSize;
+        private bool? lastColumnIsStable;
+
         protected override void Update()
         {
             base.Update();
@@ -524,7 +528,8 @@ namespace osu.Game.Screens.Select
             {
                 // TumThai!Next: lazer's title wedge takes no space in the stable theme (hidden, it still did while present,
                 // so the leaderboard's controls jumped up over the beatmap info). They sit just below stable's info block.
-                titleWedgeWrapper.Alpha = 0;
+                if (titleWedgeWrapper.Alpha != 0)
+                    titleWedgeWrapper.Alpha = 0;
 
                 float naturalTop = wedgesContainer.ToLocalSpace(detailsArea.ScreenSpaceDrawQuad.TopLeft).Y - detailsArea.Margin.Top;
                 float infoBottom = wedgesContainer.ToLocalSpace(stableHeader.InfoBlockBottom.ScreenSpaceDrawQuad.BottomLeft).Y;
@@ -533,27 +538,38 @@ namespace osu.Game.Screens.Select
                 if (Math.Abs(detailsArea.Margin.Top - top) > 0.5f)
                     detailsArea.Margin = new MarginPadding { Top = top };
 
-                detailsArea.Height = wedgesContainer.ChildSize.Y - 4 - detailsArea.Margin.Top;
+                float targetHeight = wedgesContainer.ChildSize.Y - 4 - detailsArea.Margin.Top;
+                if (Math.Abs(detailsArea.Height - targetHeight) > 0.5f)
+                    detailsArea.Height = targetHeight;
             }
             else
             {
-                titleWedgeWrapper.Alpha = 1;
+                if (titleWedgeWrapper.Alpha != 1)
+                    titleWedgeWrapper.Alpha = 1;
                 if (detailsArea.Margin.Top != 0)
                     detailsArea.Margin = new MarginPadding();
 
-                detailsArea.Height = wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+                float targetHeight = wedgesContainer.ChildSize.Y - titleWedge.LayoutSize.Y - 4;
+                if (Math.Abs(detailsArea.Height - targetHeight) > 0.5f)
+                    detailsArea.Height = targetHeight;
             }
 
-            float widescreenBonusWidth = Math.Max(0, DrawWidth / DrawHeight - 2f);
-
-            mainGridContainer.ColumnDimensions = new[]
+            if (lastColumnDrawSize != DrawSize || lastColumnIsStable != isStable)
             {
-                isStable
-                    ? new Dimension(GridSizeMode.Absolute, 400f)
-                    : new Dimension(GridSizeMode.Relative, 0.5f, maxSize: 700 + widescreenBonusWidth * 100),
-                new Dimension(),
-                new Dimension(GridSizeMode.Relative, 0.5f, minSize: 500, maxSize: 700 + widescreenBonusWidth * 300),
-            };
+                lastColumnDrawSize = DrawSize;
+                lastColumnIsStable = isStable;
+
+                float widescreenBonusWidth = Math.Max(0, DrawWidth / DrawHeight - 2f);
+
+                mainGridContainer.ColumnDimensions = new[]
+                {
+                    isStable
+                        ? new Dimension(GridSizeMode.Absolute, 400f)
+                        : new Dimension(GridSizeMode.Relative, 0.5f, maxSize: 700 + widescreenBonusWidth * 100),
+                    new Dimension(),
+                    new Dimension(GridSizeMode.Relative, 0.5f, minSize: 500, maxSize: 700 + widescreenBonusWidth * 300),
+                };
+            }
 
             if (this.IsCurrentScreen())
                 updateDebounce();
@@ -816,7 +832,7 @@ namespace osu.Game.Screens.Select
         {
             base.OnResuming(e);
 
-            this.FadeIn(fade_duration, Easing.OutQuint);
+            this.FadeIn(PotatoMode.UltraActive ? 0 : fade_duration, Easing.OutQuint);
             onArrivingAtScreen();
 
             ensureGlobalBeatmapValid();
@@ -836,7 +852,7 @@ namespace osu.Game.Screens.Select
         {
             carousel.VisuallyFocusSelected = true;
 
-            this.FadeOut(fade_duration, Easing.OutQuint);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : fade_duration, Easing.OutQuint);
             onLeavingScreen();
 
             base.OnSuspending(e);
@@ -844,7 +860,7 @@ namespace osu.Game.Screens.Select
 
         public override bool OnExiting(ScreenExitEvent e)
         {
-            this.FadeOut(fade_duration, Easing.OutQuint);
+            this.FadeOut(PotatoMode.UltraActive ? 0 : fade_duration, Easing.OutQuint);
             onLeavingScreen();
 
             return base.OnExiting(e);
@@ -927,7 +943,7 @@ namespace osu.Game.Screens.Select
             }
 
             if (logo.Alpha > 0.8f && resuming)
-                Footer?.StartTrackingLogo(logo, 400, Easing.OutQuint);
+                Footer?.StartTrackingLogo(logo, PotatoMode.UltraActive ? 0 : 400, Easing.OutQuint);
             else
             {
                 logo.Hide();
@@ -935,8 +951,9 @@ namespace osu.Game.Screens.Select
                 Footer?.StartTrackingLogo(logo);
             }
 
-            logo.FadeIn(240, Easing.OutQuint);
-            logo.ScaleTo(logo_scale, 240, Easing.OutQuint);
+            double logoFadeDuration = PotatoMode.UltraActive ? 0 : 240;
+            logo.FadeIn(logoFadeDuration, Easing.OutQuint);
+            logo.ScaleTo(logo_scale, logoFadeDuration, Easing.OutQuint);
 
             logo.Action = () =>
             {
@@ -965,8 +982,9 @@ namespace osu.Game.Screens.Select
 
             Footer?.StopTrackingLogo();
 
-            logo.ScaleTo(0.2f, 120, Easing.Out);
-            logo.FadeOut(120, Easing.Out);
+            double exitDuration = PotatoMode.UltraActive ? 0 : 120;
+            logo.ScaleTo(0.2f, exitDuration, Easing.Out);
+            logo.FadeOut(exitDuration, Easing.Out);
         }
 
         private void updateWedgeVisibility()
@@ -1019,7 +1037,7 @@ namespace osu.Game.Screens.Select
 
             // Required to undo results screen dimming the background.
             // Probably needs more thought because this needs to be in every `ApplyToBackground` currently to restore sane defaults.
-            backgroundModeBeatmap.FadeColour(Color4.White, 250);
+            backgroundModeBeatmap.FadeColour(Color4.White, PotatoMode.UltraActive ? 0 : 250);
 
             bool backgroundRevealActive = revealBackgroundDelegate?.State == ScheduledDelegate.RunState.Running || revealBackgroundDelegate?.State == ScheduledDelegate.RunState.Complete;
             backgroundModeBeatmap.BlurAmount.Value = configBackgroundBlur.Value && !backgroundRevealActive ? 20 : 0f;
@@ -1302,7 +1320,7 @@ namespace osu.Game.Screens.Select
             onlineLookupCancellation?.Cancel();
             onlineLookupCancellation = null;
 
-            if (beatmapSetInfo.OnlineID < 0)
+            if (beatmapSetInfo.OnlineID < 0 || PotatoMode.UltraActive)
             {
                 lastLookupResult.Value = BeatmapSetLookupResult.Completed(null);
                 return;
