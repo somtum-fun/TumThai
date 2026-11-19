@@ -9,6 +9,7 @@ using Microsoft.Maui.Devices;
 using osu.Android.Performance;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
+using osu.Framework.Configuration;
 using osu.Framework.Development;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Platform;
@@ -141,6 +142,25 @@ namespace osu.Android
         internal void OnActivityPaused() => highPerformanceSessionManager.OnActivityPaused();
 
         internal void OnActivityResumed() => highPerformanceSessionManager.OnActivityResumed();
+
+        // TumThai: Android's host can't exit (GameHost.CanExit is false), so Exit() at the end of the goodbye did nothing and
+        // left a black screen; Exit and the "restart now" of settings (theme, server, renderer) close the app here instead.
+        public override bool RestartAppWhenExited()
+        {
+            RestartOnExitAction = () => { };
+            return true;
+        }
+
+        protected override void OnLastScreenExited()
+        {
+            // Nothing is disposed on the way out, so what would be saved then is saved now (realm writes are already on disk).
+            LocalConfig.Save();
+            frameworkConfig?.Save();
+            gameActivity.CloseApp(RestartOnExitAction != null);
+        }
+
+        [Resolved]
+        private FrameworkConfigManager? frameworkConfig { get; set; }
 
         protected override UpdateManager CreateUpdateManager() => new MobileUpdateNotifier();
 

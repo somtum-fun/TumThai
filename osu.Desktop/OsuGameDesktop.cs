@@ -132,6 +132,28 @@ namespace osu.Desktop
             if (IsPackageManaged || !IsDeployedBuild)
                 return false;
 
+            // TumThai: the Linux AppImage isn't Velopack's, so there's no Update binary in it to restart through (and the
+            // restart failed): once this process is gone, the AppImage is started again.
+            if (OperatingSystem.IsLinux())
+            {
+                string? appImage = Environment.GetEnvironmentVariable("APPIMAGE");
+
+                if (string.IsNullOrEmpty(appImage) || !File.Exists(appImage))
+                    return false;
+
+                int pid = Environment.ProcessId;
+                RestartOnExitAction = () =>
+                {
+                    var start = new System.Diagnostics.ProcessStartInfo("/bin/sh") { UseShellExecute = false };
+                    start.ArgumentList.Add("-c");
+                    start.ArgumentList.Add("while kill -0 \"$0\" 2>/dev/null; do sleep 0.2; done; exec \"$1\"");
+                    start.ArgumentList.Add(pid.ToString());
+                    start.ArgumentList.Add(appImage);
+                    System.Diagnostics.Process.Start(start);
+                };
+                return true;
+            }
+
             RestartOnExitAction = () => Velopack.UpdateExe.Start(waitPid: (uint)Environment.ProcessId);
             return true;
         }

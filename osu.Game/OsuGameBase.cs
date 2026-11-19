@@ -687,7 +687,7 @@ namespace osu.Game
         /// An action that restarts the application after it has exited.
         /// </summary>
         [CanBeNull]
-        public Action RestartOnExitAction { private get; set; }
+        public Action RestartOnExitAction { protected get; set; }
 
         /// <summary>
         /// Signals that the application should not be restarted after it is exited.

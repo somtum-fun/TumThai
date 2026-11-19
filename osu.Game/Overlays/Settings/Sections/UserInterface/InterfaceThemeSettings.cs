@@ -79,16 +79,21 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
 
                     config.Save();
 
+                    // Where the game can't open itself again (a local build, or Linux outside the AppImage), say so up front.
+                    bool reopens = game?.RestartAppWhenExited() == true;
+
                     dialogOverlay.Push(new ConfirmDialog(
-                        "Switching the interface theme requires restarting the game so all screens and skin caches reload cleanly without overlap. Restart now?",
+                        reopens
+                            ? "Switching the interface theme requires restarting the game so all screens and skin caches reload cleanly without overlap. Restart now?"
+                            : "Switching the interface theme requires restarting the game so all screens and skin caches reload cleanly without overlap. TumThai will close: open it again afterwards. Close now?",
                         () =>
                         {
                             config.Save();
-                            game?.RestartAppWhenExited();
                             game?.AttemptExit();
                         },
                         () =>
                         {
+                            game?.CancelRestartOnExit();
                             suppress = true;
                             themeBindable.Value = change.OldValue;
                             config.Save();

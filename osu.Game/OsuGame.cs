@@ -1914,7 +1914,13 @@ namespace osu.Game
             ScreenChanged((OsuScreen)lastScreen, (OsuScreen)newScreen);
 
             if (newScreen == null)
-                Exit();
+                OnLastScreenExited();
         }
+
+        /// <summary>
+        /// The last screen has exited (the goodbye is over): the game closes. TumThai: a host that can't exit itself
+        /// (Android) closes the app its own way here instead.
+        /// </summary>
+        protected virtual void OnLastScreenExited() => Exit();
     }
 }

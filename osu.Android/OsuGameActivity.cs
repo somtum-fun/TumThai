@@ -150,6 +150,28 @@ namespace osu.Android
             Assembly.Load("osu.Game.Rulesets.Mania");
         }
 
+        /// <summary>
+        /// TumThai: closes the app (Android's game host can't exit by itself), optionally opening it again straight away.
+        /// The restart is a fresh task for the launcher activity: with this process gone, Android starts a new one for it.
+        /// </summary>
+        internal void CloseApp(bool restart)
+        {
+            RunOnUiThread(() =>
+            {
+                Logger.Log(restart ? "Restarting the app" : "Closing the app");
+                Logger.Flush();
+
+                var component = PackageManager?.GetLaunchIntentForPackage(PackageName!)?.Component;
+
+                if (restart && component != null)
+                    StartActivity(Intent.MakeRestartActivityTask(component));
+                else
+                    FinishAndRemoveTask();
+
+                Java.Lang.JavaSystem.Exit(0);
+            });
+        }
+
         protected override void OnResume()
         {
             base.OnResume();
