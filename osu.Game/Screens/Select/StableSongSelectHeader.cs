@@ -23,6 +23,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
+using osu.Game.Overlays;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
@@ -67,6 +68,30 @@ namespace osu.Game.Screens.Select
 
         [Resolved]
         private SkinManager skinManager { get; set; } = null!;
+
+        // TumThai!Next: the notification bell in the top-right corner; Group / Sort make room for it while it shows.
+        [Resolved]
+        private StableNotificationIndicator? notificationIndicator { get; set; }
+
+        private FillFlowContainer groupSortFlow = null!;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            float room = 0;
+
+            if (notificationIndicator?.IsLoaded == true && notificationIndicator.Alpha > 0)
+            {
+                // the bell's width plus its margin, in this header's units, eased with its fade
+                var quad = notificationIndicator.ScreenSpaceDrawQuad.AABBFloat;
+                float width = ToLocalSpace(new Vector2(quad.Right, 0)).X - ToLocalSpace(new Vector2(quad.Left - 6, 0)).X;
+                room = width * notificationIndicator.Alpha;
+            }
+
+            if (groupSortFlow.Margin.Right != 16 + room)
+                groupSortFlow.Margin = new MarginPadding { Right = 16 + room, Top = 8 };
+        }
 
         private IBindable<Skin> currentSkin = null!;
         private Sprite? topSprite;
@@ -236,7 +261,7 @@ namespace osu.Game.Screens.Select
                 // Red angled selection-tab sprites along the top-right lip
                 tabsContainer,
                 // Top-right Group / Sort dropdowns
-                new FillFlowContainer
+                groupSortFlow = new FillFlowContainer
                 {
                     Anchor = Anchor.TopRight,
                     Origin = Anchor.TopRight,

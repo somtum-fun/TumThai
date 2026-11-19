@@ -224,11 +224,14 @@ namespace osu.Game.Screens.Select
             // osu!stable (SongSelection): the mode menu rises from the Mode button, one 80x80 row (x1.6 here) per mode stacked
             // upward from just above the bottom bar: osu!, taiko, catch, mania. TumThai!Next adds one more row above them
             // when custom rulesets are installed, which opens them in a lazer-style list (so the stable menu keeps its size).
-            var modeRows = new Container
+            // Everything in the menu, from the Mode button's column: shrunk (in Update) to the screen's height where it doesn't
+            // fit, e.g. a wide phone, where osu!stable's 4:3-tall menu went off the top.
+            var modeRows = modeMenuContent = new Container
             {
                 Anchor = Anchor.BottomLeft,
                 Origin = Anchor.BottomLeft,
                 RelativeSizeAxes = Axes.Both,
+                X = 224f,
             };
 
             const float row_size = 80f * 1.6f;
@@ -260,7 +263,7 @@ namespace osu.Game.Screens.Select
                 {
                     Anchor = Anchor.BottomLeft,
                     Origin = Anchor.BottomLeft,
-                    Position = new Vector2(224f, -(first_row_bottom + i * row_size)),
+                    Position = new Vector2(0, -(first_row_bottom + i * row_size)),
                 });
             }
 
@@ -276,13 +279,14 @@ namespace osu.Game.Screens.Select
                 customFlow.Add(new CustomRulesetItem(r, ruleset, () => selectRuleset(r)));
 
             float moreBottom = first_row_bottom + legacy.Count * row_size;
+            modeMenuTop = (custom.Count > 0 ? moreBottom + row_size : moreBottom) + 10f;
 
             customRulesetList = new Container
             {
                 Anchor = Anchor.BottomLeft,
                 Origin = Anchor.BottomLeft,
-                // beside the "More modes" row, growing upward; capped to the space above the bottom bar
-                Position = new Vector2(224f + row_size * 3.5f + 16f, -moreBottom),
+                // beside the rows, from the bottom of the osu! row up to the top of the "More modes" row
+                Position = new Vector2(row_size * 3.5f + 16f, -first_row_bottom),
                 AutoSizeAxes = Axes.Both,
                 Masking = true,
                 CornerRadius = 10,
@@ -303,11 +307,13 @@ namespace osu.Game.Screens.Select
                     new OsuScrollContainer
                     {
                         Width = 320,
-                        Height = Math.Min(custom.Count * 52f + 16f, 600f),
+                        Height = Math.Min(custom.Count * 52f + 16f, moreBottom + row_size - first_row_bottom),
                         Child = customFlow,
                     },
                 },
             };
+
+            modeRows.Add(customRulesetList);
 
             if (custom.Count > 0)
             {
@@ -315,7 +321,7 @@ namespace osu.Game.Screens.Select
                 {
                     Anchor = Anchor.BottomLeft,
                     Origin = Anchor.BottomLeft,
-                    Position = new Vector2(224f, -moreBottom),
+                    Position = new Vector2(0, -moreBottom),
                 });
             }
 
@@ -336,9 +342,20 @@ namespace osu.Game.Screens.Select
                         },
                     },
                     modeRows,
-                    customRulesetList,
                 },
             };
+        }
+
+        private Container modeMenuContent = null!;
+        private float modeMenuTop;
+
+        protected override void Update()
+        {
+            base.Update();
+
+            float scale = Math.Min(1f, DrawHeight / modeMenuTop);
+            modeMenuContent.Scale = new Vector2(scale);
+            modeMenuContent.Size = new Vector2(1 / scale);
         }
 
         private void toggleCustomRulesetList()

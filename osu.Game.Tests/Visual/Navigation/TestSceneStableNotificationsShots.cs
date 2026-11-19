@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Reflection;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -98,6 +99,19 @@ namespace osu.Game.Tests.Visual.Navigation
             });
             AddUntilStep("ctrl-n opens notifications", () => Game.Notifications.State.Value == Visibility.Visible);
             AddStep("close notifications", () => Game.Notifications.Hide());
+
+            // The mode menu fits the screen's height (it went off the top on wide phones).
+            AddStep("open the mode menu", () => typeof(StableSongSelectFooter).GetMethod("toggleModeMenu", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                                                               .Invoke(Game.ChildrenOfType<StableSongSelectFooter>().Single(), null));
+            AddWaitStep("settle", 5);
+            AddAssert("every mode row is on screen", () =>
+            {
+                var screen = Game.ScreenSpaceDrawQuad.AABBFloat;
+                return Game.ChildrenOfType<StableSongSelectFooter>().Single().ChildrenOfType<OsuSpriteText>()
+                           .Where(t => t.Text.ToString() is "osu!" or "osu!taiko" or "osu!catch" or "osu!mania" or "More modes")
+                           .All(t => t.ScreenSpaceDrawQuad.AABBFloat.Top >= screen.Top - 1);
+            });
+            shot(outDir, "songselect-modes");
 
             if (Environment.GetEnvironmentVariable("HARNESS_EXIT") == "1")
                 AddStep("exit", () => host.Exit());

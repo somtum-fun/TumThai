@@ -1248,7 +1248,7 @@ namespace osu.Game
 
             // TumThai!Next: the osu!stable theme hides the toolbar (and its notifications button); this shows when there's
             // something to see in notifications. The stable main menu has its own Notifications and osu!direct tabs.
-            loadComponentSingleFile(new StableNotificationIndicator(Notifications, OverlayActivationMode, () => ScreenStack.CurrentScreen is MainMenu), rightFloatingOverlayContent.Add);
+            loadComponentSingleFile(new StableNotificationIndicator(Notifications, OverlayActivationMode, () => ScreenStack.CurrentScreen is MainMenu), rightFloatingOverlayContent.Add, true);
 
             loadComponentSingleFile(legacyImportManager, Add);
 
