@@ -104,6 +104,14 @@ namespace osu.Game.Rulesets.Osu.Skinning.Legacy
                                     leaderboard.Anchor = Anchor.BottomLeft;
                                     leaderboard.Origin = Anchor.BottomLeft;
                                     leaderboard.Position = pos;
+
+                                    // TumThai: on a short screen (a phone in landscape with a big UI scale) the leaderboard ran off the top
+                                    // and over the health bar. It's made shorter there, so it starts below the health bar; it scrolls to
+                                    // keep the player's score in view, as it does when it holds more scores than fit.
+                                    const float top_clearance = 80;
+                                    float room = container.DrawHeight + pos.Y - top_clearance;
+                                    if (room < leaderboard.Height)
+                                        leaderboard.Height = Math.Max(room, DrawableGameplayLeaderboardScore.PANEL_HEIGHT);
                                 }
 
                                 if (hitError != null)
