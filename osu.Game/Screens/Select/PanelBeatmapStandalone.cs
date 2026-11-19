@@ -278,6 +278,9 @@ namespace osu.Game.Screens.Select
             Selected.BindValueChanged(s =>
             {
                 Expanded.Value = s.NewValue;
+
+                if (PotatoMode.Active)
+                    computeStarRating();
             }, true);
         }
 
@@ -413,7 +416,8 @@ namespace osu.Game.Screens.Select
             stableStars.Stars = initialStored.Stars;
 
             // Potato mode: use the stored nomod star rating instead of recalculating per panel while scrolling.
-            if (PotatoMode.Active)
+            // The selected panel still follows the selected mods, so it matches the details wedge.
+            if (PotatoMode.Active && !Selected.Value)
             {
                 starRatingDisplay.Current.Value = initialStored;
                 spreadDisplay.StarDifficulty.Value = initialStored;

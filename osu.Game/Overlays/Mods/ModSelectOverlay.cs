@@ -9,7 +9,6 @@ using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
 using osu.Framework.Bindables;
-using osu.Framework.Development;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
@@ -253,7 +252,9 @@ namespace osu.Game.Overlays.Mods
 
         internal bool UsingStableGrid => shouldUseStableGrid();
 
-        private bool shouldUseStableGrid() => ((!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed()) || PotatoMode.Active) && !showingLazerColumnsInStable;
+        // TumThai!Next always shows lazer's mod selection screen (as since the osu!stable interface theme), potato modes included:
+        // the stable grid isn't laid out for every screen shape (it overlaps itself on a 20:9 phone).
+        private bool shouldUseStableGrid() => false;
 
         private bool lazerColumnsCreated;
 
@@ -294,7 +295,7 @@ namespace osu.Game.Overlays.Mods
             stableContent.Alpha = useStable ? 1 : 0;
             lazerMainContainer.Alpha = useStable ? 0 : 1;
             Header.Alpha = useStable ? 0 : 1;
-            returnToStableGridButton.Alpha = ((!DebugUtils.IsNUnitRunning && interfaceTheme.Value.IsThemed()) || PotatoMode.Active) && showingLazerColumnsInStable ? 1 : 0;
+            returnToStableGridButton.Alpha = 0;
 
             if (DisplayedFooterContent != null)
                 DisplayedFooterContent.Alpha = useStable ? 0 : 1;

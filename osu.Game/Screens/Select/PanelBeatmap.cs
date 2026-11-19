@@ -287,6 +287,9 @@ namespace osu.Game.Screens.Select
 
             ruleset.BindValueChanged(_ => updateKeyCount());
             mods.BindValueChanged(_ => updateKeyCount(), true);
+
+            if (PotatoMode.Active)
+                Selected.BindValueChanged(_ => computeStarRating());
         }
 
         protected override void ApplyInterfaceTheme()
@@ -416,8 +419,8 @@ namespace osu.Game.Screens.Select
             stableStars.Stars = initialStored.Stars;
 
             // Potato mode: carousel rows use the stored nomod star rating instead of recalculating
-            // per panel while scrolling (the wedge still shows mod-adjusted difficulty).
-            if (PotatoMode.Active)
+            // per panel while scrolling. The selected panel still follows the selected mods, so it matches the wedge.
+            if (PotatoMode.Active && !Selected.Value)
             {
                 if (!CurrentInterfaceTheme.IsThemed())
                 {
