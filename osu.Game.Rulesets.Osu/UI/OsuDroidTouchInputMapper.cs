@@ -483,7 +483,9 @@ namespace osu.Game.Rulesets.Osu.UI
                 if (drawable is not DrawableSlider slider || slider.AllJudged)
                     continue;
 
-                if (!slider.HeadCircle.Judged && currentTime < slider.HitObject.StartTime)
+                // Like GameplaySlider.updateTracking: no tracking until the head is judged (hit or missed). Otherwise a
+                // finger resting on the head after its start time would be pressed for it and hit the head without a tap.
+                if (!slider.HeadCircle.Judged)
                     continue;
 
                 if (currentTime > slider.HitObject.EndTime)

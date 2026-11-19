@@ -512,6 +512,62 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         }
 
         [Test]
+        public void TestRestingFingerDoesNotHitSliderHeadAfterStartTime()
+        {
+            var startPos = new Vector2(300, 192);
+
+            loadDroidPlayer(new OsuBeatmap
+            {
+                BeatmapInfo = { Difficulty = new BeatmapDifficulty { CircleSize = 4f, OverallDifficulty = 3f, ApproachRate = 8f } },
+                HitObjects =
+                {
+                    new Slider
+                    {
+                        StartTime = 1200,
+                        Position = startPos,
+                        Path = new SliderPath(PathType.LINEAR, new[] { Vector2.Zero, new Vector2(100, 0) }),
+                    },
+                },
+            });
+
+            Vector2 screenStart = Vector2.Zero;
+            Vector2 emptyCorner = Vector2.Zero;
+
+            AddStep("compute screen positions", () =>
+            {
+                var playfield = ((DrawableOsuRuleset)currentPlayer.DrawableRuleset).Playfield;
+                screenStart = playfield.ToScreenSpace(startPos);
+                emptyCorner = playfield.ScreenSpaceDrawQuad.TopLeft + new Vector2(15, 15);
+            });
+
+            // osu!droid: a slider is only tracked once its head is judged, and a held finger never hits the head by itself.
+            // A finger holding no press (put down while gameplay input was blocked, e.g. paused) must not be pressed for it.
+            seekAndWait(300);
+            AddStep("block gameplay input", () => inputManager.AllowGameplayInputs = false);
+            AddStep("finger 1 rests on the slider's start", () => InputManager.BeginTouch(new Touch(TouchSource.Touch1, screenStart)));
+            AddStep("unblock gameplay input", () => inputManager.AllowGameplayInputs = true);
+
+            seekAndWait(1240);
+            AddWaitStep("a few frames", 3);
+            AddAssert("slider head still not judged after its start time", () =>
+            {
+                var slider = ((DrawableOsuRuleset)currentPlayer.DrawableRuleset).Playfield.HitObjectContainer.AliveObjects.OfType<DrawableSlider>().Single();
+                return !slider.HeadCircle.Judged;
+            });
+
+            AddStep("finger 2 taps empty space", () => InputManager.BeginTouch(new Touch(TouchSource.Touch2, emptyCorner)));
+            AddStep("finger 2 lifts", () => InputManager.EndTouch(new Touch(TouchSource.Touch2, emptyCorner)));
+
+            AddAssert("the tap hits the head and the resting finger tracks", () =>
+            {
+                var slider = ((DrawableOsuRuleset)currentPlayer.DrawableRuleset).Playfield.HitObjectContainer.AliveObjects.OfType<DrawableSlider>().Single();
+                return slider.HeadCircle.IsHit && slider.SliderInputManager.Tracking;
+            });
+        }
+
+        private OsuInputManager inputManager => (OsuInputManager)((DrawableOsuRuleset)currentPlayer.DrawableRuleset).KeyBindingInputManager;
+
+        [Test]
         public void TestDroidWithRelaxMod()
         {
             var pos1 = new Vector2(140, 192);
