@@ -20,7 +20,7 @@ using osu.Game.Screens.Play;
 
 namespace osu.Game.Rulesets.Osu.Mods
 {
-    public class OsuModDroid : Mod, IApplicableToBeatmap, IApplicableToDrawableRuleset<OsuHitObject>, IApplicableToPlayer
+    public class OsuModDroid : Mod, IApplicableToBeatmap, IApplicableToDrawableRuleset<OsuHitObject>, IApplicableToPlayer, IDeviceOnlyMod
     {
         /// <summary>
         /// Offset used by osu!droid (<c>CircleSizeCalculator.DROID_STANDARD_CS_OFFSET</c>) to convert osu!standard CS into osu!droid scale.
@@ -44,8 +44,12 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override LocalisableString Description => "osu!droid circle size, hit windows, and 3-cursor multi-touch controls.";
         public override string ExtendedIconInformation => PreciseTiming.Value ? "PR" : string.Empty;
 
+        // Played on phones and tablets only. Elsewhere it can still be picked to filter leaderboards (IDeviceOnlyMod).
         public override bool UserPlayable => RuntimeInfo.IsMobile;
-        public override bool Ranked => false;
+
+        public LocalisableString NotPlayableHere => "osu!droid can only be played on a phone or tablet. On this device it only filters leaderboards.";
+        // Ranked: its pp is nerfed for the bigger circles and looser timing, as touch play is (OsuPerformanceCalculator).
+        public override bool Ranked => true;
 
         public override Type[] IncompatibleMods => new[]
         {

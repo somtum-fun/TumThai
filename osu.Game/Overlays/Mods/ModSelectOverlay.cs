@@ -377,7 +377,7 @@ namespace osu.Game.Overlays.Mods
             {
                 modState.ValidForSelection.Value = modState.Mod.Type != ModType.System
                                                    && modState.Mod.HasImplementation
-                                                   && (modState.Mod.UserPlayable || modState.Mod is ICreateReplayData)
+                                                   && (modState.Mod.UserPlayable || modState.Mod is ICreateReplayData || modState.Mod is IDeviceOnlyMod)
                                                    && IsValidMod.Invoke(modState.Mod);
             }
         }
