@@ -271,7 +271,9 @@ namespace osu.Game.Screens
             logo.ChangeAnchor(Anchor.TopLeft);
             logo.RelativePositionAxes = Axes.Both;
 
-            logo.Triangles = !PotatoMode.UltraActive;
+            // The logo's colour fill (its triangles never spawn in potato modes, so they cost nothing). Turning it off
+            // left only the white ring around the logo in ultra ultimate potato mode.
+            logo.Triangles = true;
             logo.Ripple = !PotatoMode.UltraActive;
         }
 
