@@ -124,6 +124,17 @@ namespace osu.Game.Screens.Select
                 Mods.Value = mods;
             }
 
+            // TumThai: a mod this device can't play (osu!droid off a phone or tablet) is only there to filter leaderboards.
+            if (Mods.Value.FirstOrDefault(m => !m.UserPlayable && m is IDeviceOnlyMod) is IDeviceOnlyMod deviceOnly)
+            {
+                notifications?.Post(new SimpleNotification
+                {
+                    Text = deviceOnly.NotPlayableHere,
+                    Icon = FontAwesome.Solid.Mobile,
+                });
+                return;
+            }
+
             sampleConfirmSelection?.Play();
 
             this.Push(playerLoader = new PlayerLoader(createPlayer));
