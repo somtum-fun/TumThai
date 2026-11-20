@@ -22,6 +22,7 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Replays;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
+using osu.Game.Users;
 using Realms;
 using System.Threading.Tasks;
 
@@ -197,6 +198,9 @@ namespace osu.Game.Screens.Spectate
                     User = user,
                     Mods = spectatorState.Mods.Select(m => m.ToMod(resolvedRuleset)).ToArray(),
                     Ruleset = resolvedRuleset.RulesetInfo,
+                    // TumThai: an osu!(stable) player's play (relayed by TomYum's spectator server) is a stable replay: its
+                    // Relax frames have no presses, so Relax presses from the cursor as for a stable replay.
+                    IsLegacyScore = isOnStable(userId),
                 },
                 Replay = new Replay { HasReceivedAllFrames = false },
             };
@@ -206,6 +210,11 @@ namespace osu.Game.Screens.Spectate
             gameplayStates[userId] = gameplayState;
             StartGameplay(userId, gameplayState);
         }
+
+        /// <summary>TumThai: the player plays on osu!(stable) (TomYum's spectator server gives them its "osu!(stable)" activity).</summary>
+        private bool isOnStable(int userId) =>
+            metadataClient.GetPresence(userId)?.Activity is UserActivity.InSoloGame { RulesetPlayingVerb: var verb }
+            && verb.StartsWith(@"Playing on osu!(stable)", StringComparison.Ordinal);
 
         /// <summary>
         /// TumThai: the spectated player is on a custom ruleset the server ranks that isn't here (or not the server's version
