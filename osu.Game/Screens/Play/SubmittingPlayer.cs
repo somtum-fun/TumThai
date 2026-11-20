@@ -226,8 +226,9 @@ namespace osu.Game.Screens.Play
                 realmBeatmap?.LastPlayed = DateTimeOffset.Now;
             });
 
-            // TumThai: the spectator server only knows osu!'s rulesets (a custom one would get a hub error back).
-            if (Ruleset.Value.IsLegacyRuleset() || Ruleset.Value.IsSpecialRuleset())
+            // TumThai: the spectator server knows osu!'s rulesets, RX/AP and the custom rulesets it ranks (another custom one
+            // would get a hub error back).
+            if (SomtumCustomRulesets.IsSpectatable(Ruleset.Value))
                 spectatorClient.BeginPlaying(token, GameplayState, Score);
         }
 

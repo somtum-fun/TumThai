@@ -207,9 +207,9 @@ namespace osu.Game.Online.Spectator
                 if (isPlaying)
                     throw new InvalidOperationException($"Cannot invoke {nameof(BeginPlaying)} when already playing");
 
-                // TumThai: RX/AP (osurx, osuap, taikorx, fruitsrx) are streamed too: the spectator server knows them
-                // and saves their replays, as SubmittingPlayer expects.
-                if (!score.ScoreInfo.Ruleset.IsLegacyRuleset() && !score.ScoreInfo.Ruleset.IsSpecialRuleset())
+                // TumThai: RX/AP (osurx, osuap, taikorx, fruitsrx) and the server's custom rulesets are streamed too: the
+                // spectator server knows them and saves their replays, as SubmittingPlayer expects.
+                if (!SomtumCustomRulesets.IsSpectatable(score.ScoreInfo.Ruleset))
                     return;
 
                 // transfer state at point of beginning play
