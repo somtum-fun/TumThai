@@ -695,6 +695,44 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
             AddAssert("circle was not hit by mouse", () => currentPlayer.Score.ScoreInfo.Statistics.GetValueOrDefault(HitResult.Great) == 0);
         }
 
+        [Test]
+        public void TestKeyboardAndPenBlockedInLivePlay()
+        {
+            loadDroidPlayer(new OsuBeatmap
+            {
+                HitObjects =
+                {
+                    new HitCircle { StartTime = 1000, Position = OsuPlayfield.BASE_SIZE / 2 },
+                    new HitCircle { StartTime = 2000, Position = OsuPlayfield.BASE_SIZE / 2 },
+                    new HitCircle { StartTime = 3000, Position = OsuPlayfield.BASE_SIZE / 2 },
+                },
+            });
+
+            Vector2 centre = Vector2.Zero;
+            AddStep("compute centre", () => centre = currentPlayer.DrawableRuleset.Playfield.ScreenSpaceDrawQuad.Centre);
+
+            seekAndWait(1000);
+            AddStep("press the keyboard keys over circle 1", () =>
+            {
+                InputManager.MoveMouseTo(centre);
+                InputManager.Key(Key.Z);
+                InputManager.Key(Key.X);
+            });
+            AddAssert("keys didn't hit", () => currentPlayer.Score.ScoreInfo.Statistics.GetValueOrDefault(HitResult.Great) == 0);
+
+            seekAndWait(2000);
+            AddStep("stylus taps circle 2", () =>
+            {
+                InputManager.BeginTouch(new Touch(TouchSource.PenTouch, centre));
+                InputManager.EndTouch(new Touch(TouchSource.PenTouch, centre));
+            });
+            AddAssert("stylus didn't hit", () => currentPlayer.Score.ScoreInfo.Statistics.GetValueOrDefault(HitResult.Great) == 0);
+
+            seekAndWait(3000);
+            AddStep("finger taps circle 3", () => InputManager.BeginTouch(new Touch(TouchSource.Touch1, centre)));
+            AddAssert("finger hit", () => currentPlayer.Score.ScoreInfo.Statistics.GetValueOrDefault(HitResult.Great) == 1);
+        }
+
         private void seekClock(double time)
         {
             manualClock.CurrentTime = time;
