@@ -7,6 +7,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Caching;
 using osu.Framework.Graphics;
+using osu.Game.Extensions;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play.HUD;
@@ -47,11 +48,12 @@ namespace osu.Game.Screens.Play.Leaderboards
 
             // osu!somtum: follow a pp-sorted online board from song select (local scores mostly have no pp).
             var criteria = leaderboardManager?.CurrentCriteria;
-            sortByPerformance = AllowPerformanceSort
-                                && livePerformance != null
+            // TumThai: a Relax/Autopilot play (its RX/AP ruleset, or the mod, as a spectated osu!(stable) play has it) is always
+            // ordered by pp, spectating too: RX/AP boards go by pp, and stable's and lazer's scores aren't on one scale.
+            sortByPerformance = livePerformance != null
                                 && criteria != null
-                                && criteria.Sorting == LeaderboardSortMode.PerformancePoints
-                                && criteria.Scope != BeatmapLeaderboardScope.Local;
+                                && criteria.Scope != BeatmapLeaderboardScope.Local
+                                && ((AllowPerformanceSort && criteria.Sorting == LeaderboardSortMode.PerformancePoints) || isRelaxOrAutopilot());
 
             if (sortByPerformance)
                 livePerformance!.Start();
@@ -92,6 +94,10 @@ namespace osu.Game.Screens.Play.Leaderboards
             sort();
             Scheduler.AddDelayed(sort, 1000, true);
         }
+
+        private bool isRelaxOrAutopilot() =>
+            gameplayState != null
+            && (gameplayState.Ruleset.RulesetInfo.IsSpecialRuleset() || gameplayState.Mods.Any(m => m.Acronym is @"RX" or @"AP"));
 
         // logic shared with PlaylistsGameplayLeaderboardProvider
         private void sort()
