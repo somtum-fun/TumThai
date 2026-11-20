@@ -147,7 +147,10 @@ namespace osu.Game.Rulesets.Osu
             {
                 base.ReloadMappings(realmKeyBindings);
 
-                if (!AllowGameplayInputs || !AllowNonTouchGameplayInputs)
+                // Touch only (osu!droid): no key or button binding at all, smoke included.
+                if (!AllowNonTouchGameplayInputs)
+                    KeyBindings = Enumerable.Empty<IKeyBinding>().ToList();
+                else if (!AllowGameplayInputs)
                     KeyBindings = KeyBindings.Where(static b => b.GetAction<OsuAction>() == OsuAction.Smoke).ToList();
             }
         }

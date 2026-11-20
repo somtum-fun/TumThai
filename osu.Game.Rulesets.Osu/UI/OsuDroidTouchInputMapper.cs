@@ -205,6 +205,11 @@ namespace osu.Game.Rulesets.Osu.UI
 
         protected override bool OnTouchDown(TouchDownEvent e)
         {
+            // Fingers only: a stylus on the screen arrives as a touch too (TouchSource.PenTouch). Taken and dropped,
+            // so it doesn't reach the game as a mouse either.
+            if (e.Touch.Source == TouchSource.PenTouch)
+                return true;
+
             if (trackedTouches.Count >= MAX_ACTIVE_CURSORS)
                 return true;
 
