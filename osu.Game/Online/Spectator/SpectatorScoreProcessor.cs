@@ -110,7 +110,8 @@ namespace osu.Game.Online.Spectator
             if (scoreInfo != null)
                 return;
 
-            RulesetInfo? rulesetInfo = rulesetStore.GetRuleset(userState.RulesetID.Value);
+            // TumThai: a custom ruleset goes by the server's id.
+            RulesetInfo? rulesetInfo = SomtumCustomRulesets.Resolve(rulesetStore, userState.RulesetID.Value);
             if (rulesetInfo == null)
                 return;
 

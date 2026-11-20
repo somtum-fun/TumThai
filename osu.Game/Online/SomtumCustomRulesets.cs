@@ -14,6 +14,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.Extensions;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
@@ -84,6 +85,20 @@ namespace osu.Game.Online
                 return -1; // the list was changing: as if not ranked, this once
             }
         }
+
+        /// <summary>
+        /// Whether a play in <paramref name="ruleset"/> is streamed to the spectator server: osu!'s rulesets, RX/AP, and a custom
+        /// ruleset the server ranks when its pinned file is the one loaded (the server loads that same file).
+        /// </summary>
+        public static bool IsSpectatable(RulesetInfo ruleset)
+            => ruleset.IsLegacyRuleset() || ruleset.IsSpecialRuleset() || ServerIdOf(ruleset) >= 0;
+
+        /// <summary>The ruleset here for a server ruleset id (osu!'s or a custom one's), or null when it isn't loaded here.</summary>
+        public static RulesetInfo? Resolve(RulesetStore store, int id)
+            => store.AvailableRulesets.FirstOrDefault(r => r.OnlineID == id) ?? Current?.LocalRulesetFor(id);
+
+        /// <summary>The server's entry for custom ruleset <paramref name="id"/>, or null.</summary>
+        public APISomtumCustomRuleset? EntryFor(int id) => available.FirstOrDefault(r => r.ID == id);
 
         /// <summary>The ruleset here for the server's custom ruleset id <paramref name="id"/>, when its pinned file is loaded.</summary>
         public RulesetInfo? LocalRulesetFor(int id)

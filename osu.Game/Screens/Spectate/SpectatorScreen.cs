@@ -11,13 +11,19 @@ using osu.Framework.Extensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Game.Beatmaps;
 using osu.Game.Database;
+using osu.Framework.Logging;
+using osu.Game.Online;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Metadata;
 using osu.Game.Online.Spectator;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Dialog;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Replays;
 using osu.Game.Rulesets;
 using osu.Game.Scoring;
 using Realms;
+using System.Threading.Tasks;
 
 namespace osu.Game.Screens.Spectate
 {
@@ -35,6 +41,15 @@ namespace osu.Game.Screens.Spectate
 
         [Resolved]
         private RulesetStore rulesets { get; set; } = null!;
+
+        [Resolved(CanBeNull = true)]
+        private IDialogOverlay? dialogOverlay { get; set; }
+
+        [Resolved(CanBeNull = true)]
+        private INotificationOverlay? notifications { get; set; }
+
+        /// <summary>TumThai: the custom rulesets already offered here, so each is asked about once.</summary>
+        private readonly HashSet<int> offeredRulesets = new HashSet<int>();
 
         [Resolved]
         private SpectatorClient spectatorClient { get; set; } = null!;
@@ -162,9 +177,13 @@ namespace osu.Game.Screens.Spectate
             var user = userMap[userId];
             var spectatorState = userStates[userId];
 
-            var resolvedRuleset = rulesets.AvailableRulesets.FirstOrDefault(r => r.OnlineID == spectatorState.RulesetID)?.CreateInstance();
+            // TumThai: a custom ruleset goes by the server's id; one that isn't here is offered for download.
+            var resolvedRuleset = SomtumCustomRulesets.Resolve(rulesets, spectatorState.RulesetID!.Value)?.CreateInstance();
             if (resolvedRuleset == null)
+            {
+                offerMissingRuleset(userId, spectatorState.RulesetID.Value);
                 return;
+            }
 
             var resolvedBeatmap = beatmaps.QueryBeatmap(b => b.OnlineID == spectatorState.BeatmapID);
             if (resolvedBeatmap == null)
@@ -186,6 +205,60 @@ namespace osu.Game.Screens.Spectate
 
             gameplayStates[userId] = gameplayState;
             StartGameplay(userId, gameplayState);
+        }
+
+        /// <summary>
+        /// TumThai: the spectated player is on a custom ruleset the server ranks that isn't here (or not the server's version
+        /// of it): asks whether to download it. Once it's loaded (no restart for a new one), watching starts.
+        /// </summary>
+        private void offerMissingRuleset(int userId, int rulesetId)
+        {
+            var custom = SomtumCustomRulesets.Current;
+            var entry = custom?.EntryFor(rulesetId);
+            if (custom == null || entry == null || !offeredRulesets.Add(rulesetId))
+                return;
+
+            string username = userMap.TryGetValue(userId, out var user) ? user.Username : "This player";
+
+            switch (custom.StateOf(entry))
+            {
+                case CustomRulesetState.RestartToLoad:
+                case CustomRulesetState.RestartToUpdate:
+                    notifications?.Post(new SimpleNotification { Text = $"{username} is playing {entry.Name}. Restart TumThai to load it, then watch again." });
+                    return;
+
+                case CustomRulesetState.Broken:
+                case CustomRulesetState.RestartToRemove:
+                    notifications?.Post(new SimpleErrorNotification { Text = $"{username} is playing {entry.Name}, which can't be watched here: see Settings > Custom rulesets." });
+                    return;
+            }
+
+            if (dialogOverlay == null)
+                return;
+
+            bool update = custom.StateOf(entry) == CustomRulesetState.UpdateAvailable;
+            dialogOverlay.Push(new ConfirmDialog(
+                update
+                    ? $"{username} is playing {entry.Name}, and yours isn't the server's version. Download it? (It's used after you restart TumThai.)"
+                    : $"{username} is playing {entry.Name}, a custom ruleset you don't have. Download it to watch?",
+                () => Task.Run(() => custom.InstallAsync(entry)).ContinueWith(t => Schedule(() =>
+                {
+                    if (t.IsFaulted)
+                    {
+                        Logger.Error(t.Exception, $@"Couldn't install the {entry.Name} ruleset");
+                        notifications?.Post(new SimpleErrorNotification { Text = $"Couldn't download {entry.Name}: {t.Exception?.GetBaseException().Message}" });
+                        return;
+                    }
+
+                    if (!t.GetResultSafely())
+                    {
+                        notifications?.Post(new SimpleNotification { Text = $"{entry.Name} is downloaded. Restart TumThai to use it, then watch again." });
+                        return;
+                    }
+
+                    if (userStates.TryGetValue(userId, out var state) && state.State == SpectatedUserState.Playing)
+                        startGameplay(userId);
+                }))));
         }
 
         /// <summary>
