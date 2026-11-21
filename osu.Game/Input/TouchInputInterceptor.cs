@@ -6,6 +6,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
+using osu.Framework.Input;
 using osu.Framework.Input.Events;
 using osu.Framework.Input.StateChanges;
 using osu.Framework.Logging;
@@ -47,7 +48,11 @@ namespace osu.Game.Input
 
                     break;
 
-                case TouchEvent:
+                case TouchEvent touch:
+                    // TumThai: a finger means a touch screen (osu!droid ignores a stylus, so it doesn't count).
+                    if (touch.Touch.Source != TouchSource.PenTouch)
+                        TouchScreen.Detected = true;
+
                     if (!touchInputWasActive)
                         Logger.Log($@"Touch input activated due to received {e.GetType().ReadableName()}", LoggingTarget.Input);
                     touchInputActive.Value = true;

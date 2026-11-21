@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Input;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Legacy;
@@ -44,10 +45,12 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override LocalisableString Description => "osu!droid circle size, hit windows, and 3-cursor multi-touch controls.";
         public override string ExtendedIconInformation => PreciseTiming.Value ? "PR" : string.Empty;
 
-        // Played on phones and tablets only. Elsewhere it can still be picked to filter leaderboards (IDeviceOnlyMod).
-        public override bool UserPlayable => RuntimeInfo.IsMobile;
+        // Played on phones, tablets, and other touch screens (a laptop's, once a finger has touched it). Elsewhere it can still be
+        // picked to filter leaderboards (IDeviceOnlyMod).
+        public override bool UserPlayable => RuntimeInfo.IsMobile || TouchScreen.Detected;
 
-        public LocalisableString NotPlayableHere => "osu!droid can only be played on a phone or tablet. On this device it only filters leaderboards.";
+        public LocalisableString NotPlayableHere =>
+            "osu!droid is played with your fingers on a touch screen. If this device has one, touch the screen once and try again; otherwise it only filters leaderboards.";
         // Ranked: its pp is nerfed for the bigger circles and looser timing, as touch play is (OsuPerformanceCalculator).
         public override bool Ranked => true;
 
