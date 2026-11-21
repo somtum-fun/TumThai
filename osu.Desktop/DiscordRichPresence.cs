@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using DiscordRPC;
 using DiscordRPC.Message;
@@ -72,10 +73,15 @@ namespace osu.Desktop
         private IBindable<APIUser>? user;
 
         /// <summary>
-        /// TumThai: the host of the server played on when it isn't the built-in one (a private server profile), shown in
-        /// the presence so it doesn't read as somtum.fun. Switching servers restarts the game, so this is read once.
+        /// TumThai: the host of the server played on when it isn't somtum.fun (or its development server, blueskychan.dev):
+        /// a private server profile, shown as "{host} via TumThai" with a link to it. Switching servers restarts the game,
+        /// so this is read once.
         /// </summary>
         private string? otherServerHost;
+
+        private static bool isSomtumHost(string host) =>
+            new[] { @"somtum.fun", @"blueskychan.dev", new Uri(new SomtumEndpointConfiguration().WebsiteUrl).Host }
+                .Any(own => host.Equals(own, StringComparison.OrdinalIgnoreCase) || host.EndsWith($@".{own}", StringComparison.OrdinalIgnoreCase));
 
         [BackgroundDependencyLoader]
         private void load(OsuConfigManager config, SessionStatics session)
@@ -84,9 +90,7 @@ namespace osu.Desktop
             userStatus = config.GetBindable<UserStatus>(OsuSetting.UserOnlineStatus);
             userActivity = session.GetBindable<UserActivity?>(Static.UserOnlineActivity);
 
-            if (Uri.TryCreate(api.Endpoints.WebsiteUrl, UriKind.Absolute, out var site)
-                && Uri.TryCreate(new SomtumEndpointConfiguration().WebsiteUrl, UriKind.Absolute, out var builtIn)
-                && !site.Host.Equals(builtIn.Host, StringComparison.OrdinalIgnoreCase))
+            if (Uri.TryCreate(api.Endpoints.WebsiteUrl, UriKind.Absolute, out var site) && !isSomtumHost(site.Host))
                 otherServerHost = site.Host;
 
             client = new DiscordRpcClient(client_id)
@@ -225,17 +229,17 @@ namespace osu.Desktop
 
             // game images:
             // large image tooltip
-            // (a server name identifies no one, so it stays in Limited mode too)
-            string server = otherServerHost != null ? $"on {otherServerHost}" : string.Empty;
+            // TumThai: where they play: "Somtum.fun!" on our servers, "{host} via TumThai" on another (a server name identifies
+            // no one, so it stays in Limited mode too).
+            string server = otherServerHost != null ? $"{otherServerHost} via TumThai" : "Somtum.fun!";
 
             if (privacyMode.Value == DiscordRichPresenceMode.Limited)
                 presence.Assets.LargeImageText = clampLength(server);
             else
             {
                 var statistics = statisticsProvider.GetStatisticsFor(ruleset.Value);
-                presence.Assets.LargeImageText = clampLength($"{user.Value.Username}"
-                                                             + (statistics?.GlobalRank > 0 ? $" (rank #{statistics.GlobalRank:N0})" : string.Empty)
-                                                             + (server.Length > 0 ? $" {server}" : string.Empty));
+                presence.Assets.LargeImageText = clampLength($"{server} · {user.Value.Username}"
+                                                             + (statistics?.GlobalRank > 0 ? $" (rank #{statistics.GlobalRank:N0})" : string.Empty));
             }
 
             // small image
@@ -276,13 +280,17 @@ namespace osu.Desktop
         {
             var buttons = new List<Button>();
 
+            // TumThai: on another server, a link to it first (Discord shows at most two buttons).
+            if (otherServerHost != null)
+                addButton(buttons, $"Play on {otherServerHost}".Length <= 32 ? $"Play on {otherServerHost}" : "Play on this server", $@"https://{otherServerHost}");
+
             // Discord shows at most two buttons.
             if (userActivity.Value?.GetBeatmapID(hideIdentifiableInformation) is int beatmapId && beatmapId > 0)
             {
                 addButton(buttons, "View beatmap", $@"{api.Endpoints.WebsiteUrl}/beatmaps/{beatmapId}?mode={ruleset.Value.ShortName}");
             }
 
-            if (!hideIdentifiableInformation && user?.Value.Id > 1)
+            if (!hideIdentifiableInformation && user?.Value.Id > 1 && buttons.Count < 2)
             {
                 addButton(buttons, "View profile", $@"{api.Endpoints.WebsiteUrl}/users/{user.Value.Id}");
             }
