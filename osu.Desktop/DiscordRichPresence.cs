@@ -31,9 +31,12 @@ namespace osu.Desktop
 {
     internal partial class DiscordRichPresence : Component
     {
-        // osu!somtum's own Discord application (not ppy's), so the presence reads "osu!somtum" and the
+        // osu!somtum's own Discord application (not ppy's), so the presence reads "Somtum.fun!" and the
         // discord-<id> URI scheme registered below does not take over the one real osu!lazer registers.
         private const string client_id = "1509236899632517321";
+
+        // TumThai: the "TumThai" application, used on any other server, so its presence doesn't read "Somtum.fun!".
+        private const string other_server_client_id = "1573724075564474488";
 
         private DiscordRpcClient client = null!;
 
@@ -93,7 +96,7 @@ namespace osu.Desktop
             if (Uri.TryCreate(api.Endpoints.WebsiteUrl, UriKind.Absolute, out var site) && !isSomtumHost(site.Host))
                 otherServerHost = site.Host;
 
-            client = new DiscordRpcClient(client_id)
+            client = new DiscordRpcClient(otherServerHost != null ? other_server_client_id : client_id)
             {
                 // SkipIdenticalPresence allows us to fire SetPresence at any point and leave it to the underlying implementation
                 // to check whether a difference has actually occurred before sending a command to Discord (with a minor caveat that's handled in onReady).
