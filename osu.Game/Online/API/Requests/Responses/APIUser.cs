@@ -202,7 +202,9 @@ namespace osu.Game.Online.API.Requests.Responses
         [JsonProperty(@"playstyle")]
         private string[] playStyle
         {
-            set => PlayStyles = value?.Select(str => Enum.Parse<APIPlayStyle>(str, true)).ToArray();
+            // One this build doesn't know (a server's own) is left out: it mustn't stop the user loading (signing in).
+            set => PlayStyles = value?.Select(str => Enum.TryParse<APIPlayStyle>(str, true, out var style) ? style : (APIPlayStyle?)null)
+                                     .OfType<APIPlayStyle>().ToArray();
         }
 
         public APIPlayStyle[] PlayStyles;

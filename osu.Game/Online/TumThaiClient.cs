@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -41,6 +41,14 @@ namespace osu.Game.Online
         public const string HEADER = @"X-TumThai-Client";
 
         /// <summary>
+        /// What this build understands beyond osu!lazer, for a TomYum server to send it: <c>playstyles</c>, the website's
+        /// extra playstyles (<see cref="osu.Game.Online.API.Requests.Responses.APIPlayStyle"/>). Other clients get osu!lazer's own.
+        /// </summary>
+        public const string FEATURES_HEADER = @"X-TumThai-Features";
+
+        public const string FEATURES = @"playstyles";
+
+        /// <summary>
         /// Whether the server TumThai is connected to is a TomYum server: the built-in one, or a private
         /// server profile not marked as another kind of server. Off, TumThai is a plain lazer client there.
         /// </summary>
@@ -72,7 +80,10 @@ namespace osu.Game.Online
         public static void AddTo(WebRequest request)
         {
             if (Hashes is string value)
+            {
                 request.AddHeader(HEADER, value);
+                request.AddHeader(FEATURES_HEADER, FEATURES);
+            }
         }
 
         private static string compute()
