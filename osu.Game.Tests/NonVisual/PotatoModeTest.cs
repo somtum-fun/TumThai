@@ -1,10 +1,16 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using osu.Framework.Testing;
+using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Overlays.Mods;
 using osu.Game.Performance;
+using osu.Game.Rulesets.Osu;
+using osu.Game.Tests.Beatmaps;
 
 namespace osu.Game.Tests.NonVisual
 {
@@ -44,6 +50,39 @@ namespace osu.Game.Tests.NonVisual
 
             Assert.That(PotatoMode.Active, Is.True);
             Assert.That(PotatoMode.UltraActive, Is.True);
+        }
+
+        [Test]
+        public void TestBeatmapReadableFromThreadPoolInUltraUltimatePotatoMode()
+        {
+            PotatoMode.SetFromConfig(false, true);
+
+            // The results screen reads Beatmap from a thread pool task while the load may still be running.
+            var working = new SlowTestWorkingBeatmap(new TestBeatmap(new OsuRuleset().RulesetInfo));
+            var beatmap = Task.Run(() => working.Beatmap).GetAwaiter().GetResult();
+
+            Assert.That(beatmap, Is.Not.Null);
+        }
+
+        [Test]
+        public void TestBeatmapAttributesDisplayModsStartEmpty()
+        {
+            // The mod select footer doesn't set these in the stable grid or in ultra potato mode.
+            Assert.That(new BeatmapAttributesDisplay().Mods.Value, Is.Empty);
+        }
+
+        private class SlowTestWorkingBeatmap : TestWorkingBeatmap
+        {
+            public SlowTestWorkingBeatmap(IBeatmap beatmap)
+                : base(beatmap)
+            {
+            }
+
+            protected override IBeatmap GetBeatmap()
+            {
+                Thread.Sleep(200);
+                return base.GetBeatmap();
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -33,7 +34,9 @@ namespace osu.Game.Overlays.Mods
 
         public Bindable<IBeatmapInfo?> BeatmapInfo { get; } = new Bindable<IBeatmapInfo?>();
 
-        public Bindable<IReadOnlyList<Mod>> Mods { get; } = new Bindable<IReadOnlyList<Mod>>();
+        // Not null by default: the footer skips setting it in the stable grid and in ultra potato mode, and the change tracker
+        // below doesn't accept null.
+        public Bindable<IReadOnlyList<Mod>> Mods { get; } = new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>());
 
         public BindableBool Collapsed { get; } = new BindableBool(true);
 

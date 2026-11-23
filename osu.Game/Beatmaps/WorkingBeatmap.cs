@@ -17,7 +17,6 @@ using osu.Framework.Extensions;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Logging;
 using osu.Game.Overlays;
-using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.UI;
@@ -256,7 +255,9 @@ namespace osu.Game.Beatmaps
                     b.BeatmapInfo.StarRating = BeatmapInfo.StarRating; // this could be recomputed in the decoding process but it's a bit annoying to do.
 
                     return b;
-                }, loadCancellationSource.Token, PotatoMode.UltraActive ? TaskCreationOptions.None : TaskCreationOptions.LongRunning, TaskScheduler.Default);
+                // Must stay LongRunning: Beatmap is read from thread pool tasks (e.g. the results screen's statistics), and
+                // GetResultSafely only allows waiting on a thread pool thread for LongRunning tasks.
+                }, loadCancellationSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             }
         }
 
