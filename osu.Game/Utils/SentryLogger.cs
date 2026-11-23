@@ -101,7 +101,7 @@ namespace osu.Game.Utils
 
             if (exception != null)
             {
-                if (!shouldSubmitException(exception)) return;
+                if (!ShouldSubmitException(exception)) return;
 
                 // framework does some weird exception redirection which means sentry does not see unhandled exceptions using its automatic methods.
                 // but all unhandled exceptions still arrive via this pathway. we just need to mark them as unhandled for tagging purposes.
@@ -241,7 +241,8 @@ namespace osu.Game.Utils
             unchecked((int)0x80070070), // ERROR_DISK_FULL
         ];
 
-        private bool shouldSubmitException(Exception exception)
+        // TumThai: shared with TumThaiErrorReporter.
+        internal static bool ShouldSubmitException(Exception exception)
         {
             if (IsLocalUserConnectivityException(exception))
                 return false;

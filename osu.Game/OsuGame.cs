@@ -185,6 +185,8 @@ namespace osu.Game
 
         private SentryLogger sentryLogger;
 
+        private TumThaiErrorReporter tumThaiErrorReporter;
+
         public virtual StableStorage GetStorageForStableInstall() => null;
 
         private float toolbarOffset => (Toolbar?.Position.Y ?? 0) + (Toolbar?.DrawHeight ?? 0);
@@ -365,6 +367,7 @@ namespace osu.Game
         {
             base.SetupLogging(gameStorage, cacheStorage);
             sentryLogger = new SentryLogger(this, cacheStorage);
+            tumThaiErrorReporter = new TumThaiErrorReporter(this);
         }
 
         public override void SetHost(GameHost host)
@@ -1042,6 +1045,7 @@ namespace osu.Game
             base.Dispose(isDisposing);
 
             sentryLogger.Dispose();
+            tumThaiErrorReporter?.Dispose();
 
             if (Host?.Window != null)
                 Host.Window.DragDrop -= onWindowDragDrop;
@@ -1476,7 +1480,8 @@ namespace osu.Game
             {
                 LocalisableString message;
 
-                if (entry.Exception != null && IsDeployedBuild)
+                // TumThai: "reported" only when it was: TumThaiErrorReporter on a TomYum server (Sentry has no DSN here).
+                if (entry.Exception != null && tumThaiErrorReporter?.Enabled == true)
                     message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{NotificationsStrings.ErrorAutomaticallyReported}");
                 else
                     message = entry.Message.Truncate(256);
