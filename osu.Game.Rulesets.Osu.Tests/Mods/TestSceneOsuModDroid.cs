@@ -10,6 +10,7 @@ using osu.Framework.Screens;
 using osu.Framework.Timing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Objects;
 using osu.Game.Rulesets.Objects.Types;
@@ -733,6 +734,50 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
             AddAssert("finger hit", () => currentPlayer.Score.ScoreInfo.Statistics.GetValueOrDefault(HitResult.Great) == 1);
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TestDenseSliderMapCompletesWithoutInput(bool ultraPotato)
+        {
+            AddStep("set ultra potato mode", () => osu.Game.Performance.PotatoMode.SetFromConfig(false, ultraPotato));
+
+            // Short, fast sliders back to back, like the sped-up maps where ultra potato mode removed a slider before it was
+            // judged and the map never completed.
+            var osuBeatmap = new OsuBeatmap
+            {
+                BeatmapInfo = { Difficulty = new BeatmapDifficulty { CircleSize = 3f, OverallDifficulty = 9f, ApproachRate = 9.5f, SliderMultiplier = 2 } },
+            };
+            osuBeatmap.ControlPointInfo.Add(0, new TimingControlPoint { BeatLength = 240 });
+
+            for (int i = 0; i < 60; i++)
+            {
+                osuBeatmap.HitObjects.Add(new Slider
+                {
+                    StartTime = 1000 + i * 240,
+                    Position = new Vector2(100 + i % 4 * 80, 120 + i % 3 * 60),
+                    RepeatCount = i % 5 == 0 ? 1 : 0,
+                    Path = new SliderPath(PathType.LINEAR, new[] { Vector2.Zero, new Vector2(i % 2 == 0 ? 90 : 45, 0) }),
+                });
+            }
+
+            AddStep("load", () =>
+            {
+                manualClock.CurrentTime = 0;
+                SelectedMods.Value = new Mod[] { new OsuModDroid(), new OsuModNoFail() };
+                Beatmap.Value = CreateWorkingBeatmap(osuBeatmap);
+                LoadScreen(currentPlayer = new ScoreAccessibleSoloPlayer());
+            });
+            AddUntilStep("wait until player is loaded", () => currentPlayer.IsCurrentScreen());
+            AddUntilStep("wait until gameplay clock running", () => currentPlayer.GameplayClockContainer.IsRunning);
+            AddUntilStep("play to the end", () =>
+            {
+                seekClock(manualClock.CurrentTime + 20);
+                return manualClock.CurrentTime > osuBeatmap.HitObjects.Last().GetEndTime() + 2000;
+            });
+            AddUntilStep("every object judged", () => currentPlayer.ScoreProcessor.JudgedHits, () => Is.EqualTo(currentPlayer.ScoreProcessor.MaximumStatistics.Values.Sum()));
+            AddAssert("play completed", () => currentPlayer.ScoreProcessor.HasCompleted.Value);
+            AddStep("reset potato mode", () => osu.Game.Performance.PotatoMode.SetFromConfig(false));
+        }
+
         private void seekClock(double time)
         {
             manualClock.CurrentTime = time;
@@ -764,6 +809,8 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
             public new GameplayClockContainer GameplayClockContainer => base.GameplayClockContainer;
 
             public new DrawableRuleset DrawableRuleset => base.DrawableRuleset;
+
+            public new osu.Game.Rulesets.Scoring.ScoreProcessor ScoreProcessor => base.ScoreProcessor;
 
             protected override bool PauseOnFocusLost => false;
 

@@ -357,13 +357,16 @@ namespace osu.Game.Rulesets.Osu.Objects.Drawables
         {
             base.UpdateHitStateTransforms(state);
 
+            const float fade_out_time = 240;
+
             if (PotatoMode.UltraActive)
             {
-                this.FadeOut().Expire();
+                // Hidden at once, but alive for as long as normal play keeps it: the slider is judged just after its end
+                // time, and expiring exactly then removed some sliders before they were, so the map never completed.
+                this.FadeOut().Then(fade_out_time).FadeOut();
+                Expire();
                 return;
             }
-
-            const float fade_out_time = 240;
 
             switch (state)
             {
