@@ -173,6 +173,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.ShowFpsDisplay, false);
             SetDefault(OsuSetting.PotatoMode, false);
             SetDefault(OsuSetting.UltraUltimatePotatoMode, false);
+            SetDefault(OsuSetting.UltraPotatoLivePerformance, false);
 
             SetDefault(OsuSetting.ShowStoryboard, true);
             SetDefault(OsuSetting.BeatmapSkins, true);
@@ -579,6 +580,11 @@ namespace osu.Game.Configuration
         /// Ultra-aggressive low-RAM and low-CPU gameplay preset for ultra-weak devices (e.g. 2 GB RAM / old mobile SoCs). Read once at startup (restart-gated).
         /// </summary>
         UltraUltimatePotatoMode,
+
+        /// <summary>
+        /// Whether the live pp (pp counters in skins, the gameplay leaderboard) is still worked out while Ultra Ultimate Potato Mode is on.
+        /// </summary>
+        UltraPotatoLivePerformance,
 
         /// <summary>
         /// Target rate (in Hz) for the input, audio, and multi-threaded update threads.

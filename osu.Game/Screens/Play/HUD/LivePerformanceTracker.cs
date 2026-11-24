@@ -14,6 +14,7 @@ using osu.Framework.Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Performance;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
@@ -55,6 +56,9 @@ namespace osu.Game.Screens.Play.HUD
         [Resolved]
         private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
 
+        [Resolved]
+        private OsuConfigManager? config { get; set; }
+
         private List<TimedDifficultyAttributes>? timedAttributes;
 
         private readonly CancellationTokenSource loadCancellationSource = new CancellationTokenSource();
@@ -70,7 +74,7 @@ namespace osu.Game.Screens.Play.HUD
         /// </summary>
         public void Start()
         {
-            if (PotatoMode.UltraActive)
+            if (!ShouldCalculate(PotatoMode.UltraActive, config?.Get<bool>(OsuSetting.UltraPotatoLivePerformance) ?? false))
                 return;
 
             if (Interlocked.Exchange(ref started, 1) == 1)
@@ -96,6 +100,11 @@ namespace osu.Game.Screens.Play.HUD
                                    onJudgementChanged(lastJudgement);
                            }), TaskContinuationOptions.OnlyOnRanToCompletion);
         }
+
+        /// <summary>
+        /// Ultra Ultimate Potato Mode skips the live pp to save CPU, unless the player turned it back on in the settings.
+        /// </summary>
+        public static bool ShouldCalculate(bool ultraPotatoActive, bool liveInUltraPotato) => !ultraPotatoActive || liveInUltraPotato;
 
         protected override void LoadComplete()
         {

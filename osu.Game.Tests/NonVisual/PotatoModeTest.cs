@@ -10,6 +10,7 @@ using osu.Game.Configuration;
 using osu.Game.Overlays.Mods;
 using osu.Game.Performance;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Screens.Play.HUD;
 using osu.Game.Tests.Beatmaps;
 
 namespace osu.Game.Tests.NonVisual
@@ -31,8 +32,16 @@ namespace osu.Game.Tests.NonVisual
             {
                 Assert.That(config.Get<bool>(OsuSetting.PotatoMode), Is.False);
                 Assert.That(config.Get<bool>(OsuSetting.UltraUltimatePotatoMode), Is.False);
+                Assert.That(config.Get<bool>(OsuSetting.UltraPotatoLivePerformance), Is.False);
             }
         }
+
+        [TestCase(false, false, ExpectedResult = true)]
+        [TestCase(false, true, ExpectedResult = true)]
+        [TestCase(true, false, ExpectedResult = false)]
+        [TestCase(true, true, ExpectedResult = true)]
+        public bool TestLivePerformanceInUltraUltimatePotatoMode(bool ultraActive, bool liveInUltra)
+            => LivePerformanceTracker.ShouldCalculate(ultraActive, liveInUltra);
 
         [Test]
         public void TestStandardPotatoModeState()

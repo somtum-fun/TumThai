@@ -166,6 +166,16 @@ namespace osu.Game.Overlays.Settings.Sections.Graphics
 
             children.Add(new PotatoModeToggleAndRestart());
             children.Add(new UltraUltimatePotatoModeToggleAndRestart());
+            children.Add(new SettingsItemV2(new FormCheckBox
+            {
+                Caption = "Live pp in ultra ultimate potato mode",
+                HintText = "Keeps the pp counter (skins, osu!droid theme) and the leaderboard's live pp working in ultra ultimate potato mode. "
+                           + "Uses some CPU when a map starts. Takes effect from the next play.",
+                Current = osuConfig.GetBindable<bool>(OsuSetting.UltraPotatoLivePerformance),
+            })
+            {
+                Keywords = new[] { @"pp", @"performance", @"counter", @"potato", @"ultra", @"live", @"droid", @"skin" },
+            });
 
             Children = children;
 
