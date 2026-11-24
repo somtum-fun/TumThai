@@ -179,12 +179,16 @@ namespace osu.Game.Screens.Ranking.Statistics
             spinner.Hide();
             content.FadeIn(200);
 
-            var displayAttributes = breakdown.Performance.GetAttributesForDisplay();
-            var perfectDisplayAttributes = breakdown.PerfectPerformance.GetAttributesForDisplay();
+            var displayAttributes = breakdown.Performance.GetAttributesForDisplay().ToList();
+            var perfectDisplayAttributes = breakdown.PerfectPerformance.GetAttributesForDisplay().ToList();
+
+            // osu!somtum: ultra ultimate potato mode skips the perfect play's pp (BeatmapDifficultyCache), so it may hold only an
+            // empty total. Show the achieved pp then, with no maximum and no per-attribute bars.
+            bool perfectKnown = HasPerfectPerformance(breakdown);
 
             setTotalValues(
                 displayAttributes.First(a => a.PropertyName == nameof(PerformanceAttributes.Total)),
-                perfectDisplayAttributes.First(a => a.PropertyName == nameof(PerformanceAttributes.Total))
+                perfectKnown ? perfectDisplayAttributes.FirstOrDefault(a => a.PropertyName == nameof(PerformanceAttributes.Total)) : null
             );
 
             var rowDimensions = new List<Dimension>();
@@ -194,7 +198,11 @@ namespace osu.Game.Screens.Ranking.Statistics
             {
                 if (attr.PropertyName == nameof(PerformanceAttributes.Total)) continue;
 
-                var row = createAttributeRow(attr, perfectDisplayAttributes.First(a => a.PropertyName == attr.PropertyName));
+                var perfectAttr = perfectDisplayAttributes.FirstOrDefault(a => a.PropertyName == attr.PropertyName);
+                if (!perfectKnown || perfectAttr == null)
+                    continue;
+
+                var row = createAttributeRow(attr, perfectAttr);
 
                 if (row != null)
                 {
@@ -207,10 +215,21 @@ namespace osu.Game.Screens.Ranking.Statistics
             chart.Content = rows.ToArray();
         }
 
-        private void setTotalValues(PerformanceDisplayAttribute attribute, PerformanceDisplayAttribute perfectAttribute)
+        /// <summary>
+        /// Whether <paramref name="breakdown"/>'s perfect pp was really worked out: not when it's a bare total of 0 next to a ruleset's own
+        /// attributes (ultra ultimate potato mode).
+        /// </summary>
+        public static bool HasPerfectPerformance(PerformanceBreakdown breakdown)
+            => breakdown.PerfectPerformance.GetType() != typeof(PerformanceAttributes)
+               || breakdown.Performance.GetType() == typeof(PerformanceAttributes)
+               || breakdown.PerfectPerformance.Total > 0;
+
+        private void setTotalValues(PerformanceDisplayAttribute attribute, PerformanceDisplayAttribute? perfectAttribute)
         {
             achievedPerformance.Text = Math.Round(attribute.Value, MidpointRounding.AwayFromZero).ToLocalisableString();
-            maximumPerformance.Text = Math.Round(perfectAttribute.Value, MidpointRounding.AwayFromZero).ToLocalisableString();
+            maximumPerformance.Text = perfectAttribute != null
+                ? Math.Round(perfectAttribute.Value, MidpointRounding.AwayFromZero).ToLocalisableString()
+                : @"-";
         }
 
         private Drawable[]? createAttributeRow(PerformanceDisplayAttribute attribute, PerformanceDisplayAttribute perfectAttribute)

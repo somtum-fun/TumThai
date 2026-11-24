@@ -9,8 +9,11 @@ using osu.Game.Beatmaps;
 using osu.Game.Configuration;
 using osu.Game.Overlays.Mods;
 using osu.Game.Performance;
+using osu.Game.Rulesets.Difficulty;
 using osu.Game.Rulesets.Osu;
+using osu.Game.Rulesets.Osu.Difficulty;
 using osu.Game.Screens.Play.HUD;
+using osu.Game.Screens.Ranking.Statistics;
 using osu.Game.Tests.Beatmaps;
 
 namespace osu.Game.Tests.NonVisual
@@ -34,6 +37,19 @@ namespace osu.Game.Tests.NonVisual
                 Assert.That(config.Get<bool>(OsuSetting.UltraUltimatePotatoMode), Is.False);
                 Assert.That(config.Get<bool>(OsuSetting.UltraPotatoLivePerformance), Is.False);
             }
+        }
+
+        [Test]
+        public void TestPerfectPerformanceSkippedInUltraUltimatePotatoMode()
+        {
+            // BeatmapDifficultyCache hands back a bare PerformanceAttributes for the perfect play in ultra ultimate potato mode.
+            var skipped = new PerformanceBreakdown(new OsuPerformanceAttributes { Total = 120, Aim = 60 }, new PerformanceAttributes());
+            var full = new PerformanceBreakdown(new OsuPerformanceAttributes { Total = 120, Aim = 60 }, new OsuPerformanceAttributes { Total = 300, Aim = 150 });
+            var bare = new PerformanceBreakdown(new PerformanceAttributes { Total = 10 }, new PerformanceAttributes { Total = 20 });
+
+            Assert.That(PerformanceBreakdownChart.HasPerfectPerformance(skipped), Is.False);
+            Assert.That(PerformanceBreakdownChart.HasPerfectPerformance(full), Is.True);
+            Assert.That(PerformanceBreakdownChart.HasPerfectPerformance(bare), Is.True);
         }
 
         [TestCase(false, false, ExpectedResult = true)]
