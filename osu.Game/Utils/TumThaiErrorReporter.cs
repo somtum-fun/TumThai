@@ -38,6 +38,9 @@ namespace osu.Game.Utils
         public const string CLIENT = @"tumthai";
 
         private const int max_reports_per_session = 20;
+
+        // Caught errors are noisier; they get their own cap so they can't use up the unhandled ones'.
+        private const int max_handled_reports_per_session = 20;
         private const int max_stack_trace = 8 * 1024;
 
         // The server takes 64 KB bodies and keeps 16 KB of log.
@@ -56,6 +59,7 @@ namespace osu.Game.Utils
         private readonly OsuGame game;
         private readonly Storage? storage;
         private readonly HashSet<string> sent = new HashSet<string>();
+        private readonly HashSet<string> sentHandled = new HashSet<string>();
         private readonly Queue<string> logTail = new Queue<string>();
         private readonly bool allowed;
         private int crashed;
@@ -104,13 +108,19 @@ namespace osu.Game.Utils
 
             string type = exception.GetType().FullName ?? exception.GetType().Name;
 
-            lock (sent)
+            // "error": an exception nothing caught, which the game let pass (or an unobserved task's). "handled": one
+            // the game's own code caught and logged, and carried on.
+            bool unhandled = entry.Message == @"An unhandled error has occurred." || entry.Message == @"An unobserved error has occurred.";
+            var seen = unhandled ? sent : sentHandled;
+            int cap = unhandled ? max_reports_per_session : max_handled_reports_per_session;
+
+            lock (seen)
             {
-                if (sent.Count >= max_reports_per_session || !sent.Add($"{type}\n{entry.Message}\n{exception.StackTrace?.Split('\n')[0]}"))
+                if (seen.Count >= cap || !seen.Add($"{type}\n{entry.Message}\n{exception.StackTrace?.Split('\n')[0]}"))
                     return;
             }
 
-            var report = createReport(@"error", exception, entry.Message, null);
+            var report = createReport(unhandled ? @"error" : @"handled", exception, entry.Message, null);
             string? token = game.Dependencies.Get<IAPIProvider>().AccessToken;
 
             Task.Run(async () =>
