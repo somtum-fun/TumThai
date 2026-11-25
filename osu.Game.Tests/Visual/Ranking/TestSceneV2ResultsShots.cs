@@ -48,8 +48,9 @@ namespace osu.Game.Tests.Visual.Ranking
             AddStep("show results", () =>
             {
                 var score = TestResources.CreateTestScoreInfo();
-                score.Rank = ScoreRank.X;
-                score.Accuracy = 1;
+                // HARNESS_V2_RANK: the grade to show (default SS).
+                score.Rank = Enum.TryParse(Environment.GetEnvironmentVariable("HARNESS_V2_RANK"), out ScoreRank rank) ? rank : ScoreRank.X;
+                score.Accuracy = score.Rank >= ScoreRank.X ? 1 : 0.95;
                 score.MaxCombo = score.GetMaximumAchievableCombo();
                 score.Statistics[HitResult.Miss] = 0;
                 Child = new ResultsHost(new ShotResultsScreen(score));

@@ -184,18 +184,14 @@ namespace osu.Game.Screens.Ranking
             }
         }
 
-        [Resolved]
-        private SkinManager skins { get; set; } = null!;
-
         [BackgroundDependencyLoader]
         private void load(TextureStore textures, ISkinSource skin)
         {
             string rankLetter = DrawableRank.GetRankLetter(rank);
-            var texture = textures.Get($"V2/Ranks/rank-{rankLetter}")
-                          ?? textures.Get($"Textures/V2/Ranks/rank-{rankLetter}")
-                          ?? textures.Get($"Torii/Ranks/rank-{rankLetter}")
-                          ?? skin.GetTexture($"ranking-{rankLetter}")
-                          ?? skins.DefaultClassicSkin.GetTexture($"ranking-{rankLetter}");
+            // TumThai: a skin can bring its own big letter (ranking-v2-<rank>); otherwise it's drawn, the same size for
+            // every grade. The stable ranking-<rank> images aren't used: many are a small letter in a lot of empty space.
+            var texture = skin.GetTexture($"ranking-v2-{rankLetter}")
+                          ?? textures.Get($"V2/Ranks/rank-{rankLetter}");
 
             if (texture != null)
             {
