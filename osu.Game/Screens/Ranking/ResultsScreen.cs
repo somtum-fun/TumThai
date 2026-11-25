@@ -105,6 +105,7 @@ namespace osu.Game.Screens.Ranking
         private V2ResultsFooter v2Footer = null!;
         private bool v2PanelLoading;
         private bool v2IntroShown;
+        private V2RankingTable? rankingTable;
         private bool? lastV2Background;
         private bool hasEntered;
         private Box bottomBarBackground = null!;
@@ -225,7 +226,8 @@ namespace osu.Game.Screens.Ranking
                         Alpha = 0,
                         Children = new Drawable[]
                         {
-                            v2PanelContainer = new Container { RelativeSizeAxes = Axes.Both },
+                            // depth: the panel at the back, then the ranking table, the footer, an intro in front
+                            v2PanelContainer = new Container { RelativeSizeAxes = Axes.Both, Depth = 2 },
                             v2FooterContainer = new Container
                             {
                                 Anchor = Anchor.BottomLeft,
@@ -240,11 +242,7 @@ namespace osu.Game.Screens.Ranking
                                         if (!OnBackButton())
                                             this.Exit();
                                     },
-                                    RankingAction = () =>
-                                    {
-                                        foreach (var panel in v2Panels)
-                                            panel.ToggleLeaderboard();
-                                    },
+                                    RankingAction = toggleRankingTable,
                                     DetailsAction = () =>
                                     {
                                         foreach (var panel in v2Panels)
@@ -343,6 +341,18 @@ namespace osu.Game.Screens.Ranking
             StatisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
 
             fetchScores(null);
+        }
+
+        /// <summary>TumThai: the beatmap's full ranking (tabs, mods filter, table) over the modern layouts.</summary>
+        private void toggleRankingTable()
+        {
+            if (Score == null)
+                return;
+
+            if (rankingTable == null)
+                v2Layer.Add(rankingTable = new V2RankingTable(Score) { Depth = 1 });
+
+            rankingTable.ToggleVisibility();
         }
 
         private IEnumerable<V2ResultsPanel> v2Panels => v2PanelContainer.Children.OfType<V2ResultsPanel>();
@@ -624,6 +634,12 @@ namespace osu.Game.Screens.Ranking
 
         public override bool OnBackButton()
         {
+            if (rankingTable?.State.Value == Visibility.Visible)
+            {
+                rankingTable.Hide();
+                return true;
+            }
+
             if (useV2Layout && v2Panels.Any(p => p.CloseLeaderboard() || p.CloseDetails()))
                 return true;
 

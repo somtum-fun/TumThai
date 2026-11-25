@@ -3,6 +3,8 @@
 
 using System;
 using System.IO;
+using osu.Framework.Testing;
+using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions;
@@ -65,6 +67,18 @@ namespace osu.Game.Tests.Visual.Ranking
             int n = 0;
             foreach (string t in times.Split(','))
                 shot(outDir, $"{++n}-at-{t.Trim()}ms", double.Parse(t.Trim(), System.Globalization.CultureInfo.InvariantCulture));
+
+            // HARNESS_V2_RANKING=1: then open the ranking table (the footer's Ranking button) and shoot it.
+            if (Environment.GetEnvironmentVariable("HARNESS_V2_RANKING") == "1")
+            {
+                AddStep("open ranking", () =>
+                {
+                    try { this.ChildrenOfType<V2ResultsFooter>().First().RankingButton.TriggerClick(); }
+                    catch (Exception e) { Console.WriteLine("HARNESS ranking failed: " + e); throw; }
+                });
+                AddWaitStep("settle", 10);
+                shot(outDir, "ranking", 0);
+            }
 
             if (Environment.GetEnvironmentVariable("HARNESS_EXIT") == "1")
                 AddStep("exit", () => host.Exit());
