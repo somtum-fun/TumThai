@@ -350,7 +350,12 @@ namespace osu.Game.Screens.Ranking
         /// <summary>
         /// TumThai: the V2 layout is for a solo play's own results (it needs the beatmap); other results screens keep theirs.
         /// </summary>
-        private bool useV2Layout => resultsStyle.Value == ResultsScreenStyle.V2 && this is SoloResultsScreen && Score?.BeatmapInfo != null;
+        private bool useV2Layout => resultsStyle.Value is ResultsScreenStyle.V2 or ResultsScreenStyle.Spotlight && this is SoloResultsScreen && Score?.BeatmapInfo != null;
+
+        /// <summary>The panel of the chosen modern layout for <paramref name="score"/>.</summary>
+        private Drawable createV2Panel(ScoreInfo score, bool withFlair = false) => resultsStyle.Value == ResultsScreenStyle.Spotlight
+            ? new SpotlightResultsPanel(score, withFlair)
+            : new V2ResultsPanel(score, withFlair);
 
         private void updateInterfaceThemeView()
         {
@@ -364,10 +369,14 @@ namespace osu.Game.Screens.Ranking
             v2Layer.Alpha = v2 ? 1f : 0f;
             FooterContent.Value = useStableLayout || v2 ? ScreenFooterContent.None : ScreenFooterContent.Legacy(showBackButton: AllowUserExit);
 
-            if (v2 && !v2Panels.Any() && !v2PanelLoading && Score != null)
+            // A different modern layout picked while showing: start over with it.
+            if (v2 && v2PanelContainer.Count > 0 && !(v2PanelContainer[0] is SpotlightResultsPanel == (resultsStyle.Value == ResultsScreenStyle.Spotlight)))
+                v2PanelContainer.Clear();
+
+            if (v2 && v2PanelContainer.Count == 0 && !v2PanelLoading && Score != null)
             {
                 v2PanelLoading = true;
-                LoadComponentAsync(new V2ResultsPanel(Score, shouldFlair), panel =>
+                LoadComponentAsync(createV2Panel(Score, shouldFlair), panel =>
                 {
                     v2PanelContainer.Add(panel);
                     v2PanelLoading = false;
@@ -401,7 +410,7 @@ namespace osu.Game.Screens.Ranking
                 V2DetailsVisible.Value = false;
                 SelectedScore.Value = score;
                 v2PanelContainer.Clear();
-                v2PanelContainer.Add(new V2ResultsPanel(score));
+                v2PanelContainer.Add(createV2Panel(score));
             });
         }
 

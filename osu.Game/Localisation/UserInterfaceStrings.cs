@@ -255,6 +255,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ResultsStyleStable => new TranslatableString(getKey(@"results_style_stable"), @"osu!stable");
 
         /// <summary>
+        /// "Spotlight (map in the ring)"
+        /// </summary>
+        public static LocalisableString ResultsStyleSpotlight => new TranslatableString(getKey(@"results_style_spotlight"), @"Spotlight (map in the ring)");
+
+        /// <summary>
         /// "osu!droid"
         /// </summary>
         public static LocalisableString ThemeOsuDroid => new TranslatableString(getKey(@"theme_osu_droid"), @"osu!droid"); // TumThai

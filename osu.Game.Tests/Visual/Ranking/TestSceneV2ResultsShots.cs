@@ -44,7 +44,9 @@ namespace osu.Game.Tests.Visual.Ranking
 
             Directory.CreateDirectory(outDir);
 
-            AddStep("use V2 results", () => config.SetValue(OsuSetting.ResultsScreenStyle, ResultsScreenStyle.V2));
+            // HARNESS_V2_STYLE: the layout (default V2).
+            AddStep("use V2 results", () => config.SetValue(OsuSetting.ResultsScreenStyle,
+                Enum.TryParse(Environment.GetEnvironmentVariable("HARNESS_V2_STYLE"), out ResultsScreenStyle style) ? style : ResultsScreenStyle.V2));
             AddStep("show results", () =>
             {
                 var score = TestResources.CreateTestScoreInfo();

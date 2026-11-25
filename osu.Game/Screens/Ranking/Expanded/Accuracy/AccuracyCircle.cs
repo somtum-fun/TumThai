@@ -94,6 +94,12 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
         /// </summary>
         public bool UseV2Style { get; init; }
 
+        /// <summary>
+        /// TumThai: false leaves the middle of the ring empty (the spotlight layout shows the beatmap there and the
+        /// grade elsewhere).
+        /// </summary>
+        public bool ShowRankInCentre { get; init; } = true;
+
         private readonly ScoreInfo score;
 
         [Resolved]
@@ -212,10 +218,17 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                         new RankBadge(accuracyX, accuracyX, getRank(ScoreRank.X)) { UseV2Style = UseV2Style },
                     }
                 },
-                rankText = new RankText(score.Rank)
+                new Container
                 {
-                    UseV2Style = UseV2Style,
-                }
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    AutoSizeAxes = Axes.Both,
+                    Alpha = ShowRankInCentre ? 1 : 0,
+                    Child = rankText = new RankText(score.Rank)
+                    {
+                        UseV2Style = UseV2Style,
+                    },
+                },
             };
 
             if (isFailedSDueToMisses)

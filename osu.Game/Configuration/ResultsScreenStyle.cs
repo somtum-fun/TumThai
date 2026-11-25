@@ -24,5 +24,9 @@ namespace osu.Game.Configuration
 
         [LocalisableDescription(typeof(UserInterfaceStrings), nameof(UserInterfaceStrings.ResultsStyleStable))]
         Stable,
+
+        /// <summary>The leaderboard, the beatmap inside the accuracy ring, and the numbers beside it.</summary>
+        [LocalisableDescription(typeof(UserInterfaceStrings), nameof(UserInterfaceStrings.ResultsStyleSpotlight))]
+        Spotlight,
     }
 }

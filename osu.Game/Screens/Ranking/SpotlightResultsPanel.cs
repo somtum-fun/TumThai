@@ -1,0 +1,418 @@
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// See the LICENCE file in the repository root for full licence text.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using osu.Framework.Allocation;
+using osu.Framework.Extensions;
+using osu.Framework.Extensions.Color4Extensions;
+using osu.Framework.Graphics;
+using osu.Framework.Graphics.Colour;
+using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Localisation;
+using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Drawables;
+using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.Sprites;
+using osu.Game.Online.Leaderboards;
+using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Scoring;
+using osu.Game.Scoring;
+using osu.Game.Screens.Play.HUD;
+using osu.Game.Screens.Ranking.Expanded.Accuracy;
+using osu.Game.Users.Drawables;
+using osuTK;
+using osuTK.Graphics;
+
+namespace osu.Game.Screens.Ranking
+{
+    /// <summary>
+    /// TumThai: the "Spotlight" results layout: the beatmap's leaderboard down the left with this play's place, the
+    /// accuracy ring around the beatmap's cover in the middle, and the grade, score and numbers on the right.
+    /// Laid out on a 1149x655 design and scaled to the screen.
+    /// </summary>
+    public partial class SpotlightResultsPanel : CompositeDrawable
+    {
+        private const float design_width = 1149;
+        private const float design_height = 655;
+        private const float right_panel_x = 637;
+
+        private readonly ScoreInfo score;
+        private readonly bool withFlair;
+
+        private FillFlowContainer leaderboard = null!;
+        private int shownLeaderboardCount = -1;
+
+        [Resolved]
+        private ResultsScreen? resultsScreen { get; set; }
+
+        [Resolved]
+        private OsuColour colours { get; set; } = null!;
+
+        public SpotlightResultsPanel(ScoreInfo score, bool withFlair = false)
+        {
+            this.score = score;
+            this.withFlair = withFlair;
+            RelativeSizeAxes = Axes.Both;
+        }
+
+        [BackgroundDependencyLoader]
+        private void load(BeatmapManager beatmaps, BeatmapDifficultyCache difficultyCache)
+        {
+            var working = beatmaps.GetWorkingBeatmap(score.BeatmapInfo);
+            StarRatingDisplay stars;
+
+            InternalChild = new DrawSizePreservingFillContainer
+            {
+                TargetDrawSize = new Vector2(design_width, design_height),
+                Strategy = DrawSizePreservationStrategy.Minimum,
+                Child = new Container
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Size = new Vector2(design_width, design_height),
+                    Children = new Drawable[]
+                    {
+                        // left: darkened backdrop for the leaderboard and ring
+                        new Box
+                        {
+                            Size = new Vector2(right_panel_x, design_height),
+                            Colour = ColourInfo.GradientHorizontal(Color4.Black.Opacity(0.7f), Color4.Black.Opacity(0.35f)),
+                        },
+                        // right: the numbers panel
+                        new Box
+                        {
+                            X = right_panel_x,
+                            Size = new Vector2(design_width - right_panel_x, design_height),
+                            Colour = Color4Extensions.FromHex(@"2b3a45").Opacity(0.95f),
+                        },
+                        new Box
+                        {
+                            X = right_panel_x,
+                            Y = 388,
+                            Size = new Vector2(design_width - right_panel_x, 155),
+                            Colour = Color4Extensions.FromHex(@"23303a"),
+                        },
+                        new Box
+                        {
+                            X = right_panel_x,
+                            Y = 543,
+                            Size = new Vector2(design_width - right_panel_x, design_height - 543),
+                            Colour = Color4Extensions.FromHex(@"1c262e"),
+                        },
+                        leaderboard = new FillFlowContainer
+                        {
+                            Position = new Vector2(24, 70),
+                            Width = 150,
+                            AutoSizeAxes = Axes.Y,
+                            Direction = FillDirection.Vertical,
+                            Spacing = new Vector2(0, 4),
+                        },
+                        // middle: the cover inside the accuracy ring
+                        new Container
+                        {
+                            Position = new Vector2(427, 322),
+                            Origin = Anchor.Centre,
+                            Size = new Vector2(520),
+                            Children = new Drawable[]
+                            {
+                                new CircularContainer
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    RelativeSizeAxes = Axes.Both,
+                                    Size = new Vector2(0.81f),
+                                    Masking = true,
+                                    BorderThickness = 6,
+                                    BorderColour = Color4.Black,
+                                    Children = new Drawable[]
+                                    {
+                                        new BeatmapBackgroundSprite(working)
+                                        {
+                                            Anchor = Anchor.Centre,
+                                            Origin = Anchor.Centre,
+                                            RelativeSizeAxes = Axes.Both,
+                                            FillMode = FillMode.Fill,
+                                        },
+                                        new Box
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Colour = ColourInfo.GradientVertical(Color4.Black.Opacity(0), Color4.Black.Opacity(0.75f)),
+                                        },
+                                        new FillFlowContainer
+                                        {
+                                            Anchor = Anchor.BottomCentre,
+                                            Origin = Anchor.BottomCentre,
+                                            Y = -48,
+                                            AutoSizeAxes = Axes.Both,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0, 2),
+                                            Children = new Drawable[]
+                                            {
+                                                centred(new TruncatingSpriteText
+                                                {
+                                                    Text = new RomanisableString(score.BeatmapInfo!.Metadata.TitleUnicode, score.BeatmapInfo.Metadata.Title),
+                                                    Font = OsuFont.Torus.With(size: 17, weight: FontWeight.SemiBold),
+                                                    MaxWidth = 300,
+                                                }),
+                                                centred(new TruncatingSpriteText
+                                                {
+                                                    Text = new RomanisableString(score.BeatmapInfo.Metadata.ArtistUnicode, score.BeatmapInfo.Metadata.Artist),
+                                                    Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                                    Colour = Color4Extensions.FromHex(@"ffd98f"),
+                                                    MaxWidth = 300,
+                                                }),
+                                                centred(new TruncatingSpriteText
+                                                {
+                                                    Margin = new MarginPadding { Top = 8 },
+                                                    Text = $"[{score.BeatmapInfo.DifficultyName}] mapped by {score.BeatmapInfo.Metadata.Author.Username}",
+                                                    Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                                    MaxWidth = 300,
+                                                }),
+                                            },
+                                        },
+                                    },
+                                },
+                                new AccuracyCircle(score, withFlair)
+                                {
+                                    UseV2Style = true,
+                                    ShowRankInCentre = false,
+                                    RelativeSizeAxes = Axes.Both,
+                                },
+                                stars = new StarRatingDisplay(new StarDifficulty(score.BeatmapInfo.StarRating, 0), StarRatingDisplaySize.Regular)
+                                {
+                                    Anchor = Anchor.TopCentre,
+                                    Origin = Anchor.TopCentre,
+                                    Y = 72,
+                                },
+                            },
+                        },
+                        // right: grade, score, mods, numbers, player
+                        new V2RankEmblem(score.Rank)
+                        {
+                            AutoAppear = true,
+                            Position = new Vector2(776, 195),
+                            Origin = Anchor.Centre,
+                            Scale = new Vector2(0.5f),
+                        },
+                        new OsuSpriteText
+                        {
+                            Position = new Vector2(712, 268),
+                            Text = score.TotalScore.ToString(@"N0"),
+                            Font = OsuFont.Torus.With(size: 72, weight: FontWeight.Light, fixedWidth: true),
+                            Spacing = new Vector2(-4, 0),
+                            Colour = ColourInfo.GradientVertical(Color4.White, Color4Extensions.FromHex(@"d8f3ff")),
+                        },
+                        new ModFlowDisplay
+                        {
+                            Position = new Vector2(714, 345),
+                            AutoSizeAxes = Axes.Both,
+                            Scale = new Vector2(0.55f),
+                            Current = { Value = score.Mods },
+                        },
+                        new FillFlowContainer
+                        {
+                            Position = new Vector2(715, 393),
+                            Width = 370,
+                            AutoSizeAxes = Axes.Y,
+                            Spacing = new Vector2(4),
+                            ChildrenEnumerable = mainTiles().Concat(judgementTiles()),
+                        },
+                        new UpdateableAvatar(score.User, showUserPanelOnHover: true)
+                        {
+                            Position = new Vector2(717, 512),
+                            Size = new Vector2(24),
+                            CornerRadius = 5,
+                            Masking = true,
+                        },
+                        new OsuSpriteText
+                        {
+                            Position = new Vector2(747, 515),
+                            Text = score.User.Username,
+                            Font = OsuFont.Torus.With(size: 16, weight: FontWeight.SemiBold),
+                        },
+                        new OsuSpriteText
+                        {
+                            Position = new Vector2(900, 510),
+                            Text = @"Achieved on",
+                            Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                            Colour = Color4.White.Opacity(0.7f),
+                        },
+                        new OsuSpriteText
+                        {
+                            Position = new Vector2(900, 522),
+                            Text = score.Date.ToLocalTime().ToString(@"d MMMM yyyy, h:mmtt"),
+                            Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                        },
+                    },
+                },
+            };
+
+            difficultyCache.GetDifficultyAsync(score.BeatmapInfo, score.Ruleset, score.Mods)
+                           .ContinueWith(t => Schedule(() =>
+                           {
+                               if (t.IsCompletedSuccessfully && t.GetResultSafely() is StarDifficulty d)
+                                   stars.Current.Value = d;
+                           }));
+        }
+
+        private static Drawable centred(Drawable d)
+        {
+            d.Anchor = Anchor.TopCentre;
+            d.Origin = Anchor.TopCentre;
+            return d;
+        }
+
+        private IEnumerable<Drawable> mainTiles()
+        {
+            yield return tile(122, @"ACCURACY", score.DisplayAccuracy.ToString(), 20, null);
+            yield return tile(122, @"MAX COMBO", $"{score.MaxCombo}x", 20, null);
+            yield return tile(118, @"PP", score.PP is double pp ? $"{pp:N0}" : @"-", 20, null);
+        }
+
+        private IEnumerable<Drawable> judgementTiles()
+        {
+            var shown = score.GetStatisticsForDisplay().Where(s => s.Result.IsBasic()).ToList();
+            float width = (370 - 4 * (shown.Count - 1)) / Math.Max(1, shown.Count);
+
+            foreach (var s in shown)
+                yield return tile(width, s.DisplayName.ToString().ToUpperInvariant(), s.Count.ToString(), 14, colours.ForHitResult(s.Result));
+        }
+
+        private static Drawable tile(float width, string header, string value, float valueSize, Color4? accent) => new Container
+        {
+            Size = new Vector2(width, valueSize > 16 ? 42 : 33),
+            CornerRadius = 5,
+            Masking = true,
+            Children = new Drawable[]
+            {
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = Color4Extensions.FromHex(@"111a20").Opacity(0.85f),
+                },
+                new OsuSpriteText
+                {
+                    Position = new Vector2(7, 4),
+                    Text = header,
+                    Font = OsuFont.Torus.With(size: 8, weight: FontWeight.Bold),
+                },
+                accent is Color4 a
+                    ? new Box
+                    {
+                        Anchor = Anchor.TopRight,
+                        Origin = Anchor.TopRight,
+                        Position = new Vector2(-7, 7),
+                        Size = new Vector2(12, 2.5f),
+                        Colour = a,
+                    }
+                    : Empty(),
+                new OsuSpriteText
+                {
+                    Anchor = Anchor.BottomLeft,
+                    Origin = Anchor.BottomLeft,
+                    Position = new Vector2(7, -3),
+                    Text = value,
+                    Font = OsuFont.Torus.With(size: valueSize, weight: FontWeight.Regular),
+                },
+            },
+        };
+
+        protected override void Update()
+        {
+            base.Update();
+
+            // Clear of the results footer (laid out for a 1280-wide screen, scaled with the width).
+            Padding = new MarginPadding { Bottom = DrawWidth * V2ResultsFooter.DESIGN_HEIGHT / 1280 };
+
+            // The leaderboard arrives after the screen does: rebuild when it changes.
+            var scores = resultsScreen?.GetOverviewScores().ToList() ?? new List<ScoreInfo> { score };
+            if (scores.Count != shownLeaderboardCount)
+            {
+                shownLeaderboardCount = scores.Count;
+                rebuildLeaderboard(scores);
+            }
+        }
+
+        private void rebuildLeaderboard(List<ScoreInfo> scores)
+        {
+            var ordered = scores.OrderByDescending(s => s.TotalScore).ToList();
+            int self = Math.Max(0, ordered.FindIndex(s => ReferenceEquals(s, score) || s.Equals(score)));
+
+            // Up to 8 above and 8 below this play.
+            int first = Math.Max(0, self - 8);
+            leaderboard.Clear();
+
+            for (int i = first; i < Math.Min(ordered.Count, self + 9); i++)
+            {
+                var s = ordered[i];
+                int place = s.Position ?? i + 1;
+                leaderboard.Add(i == self ? selfRow(place) : row(s, place));
+            }
+        }
+
+        private static Drawable row(ScoreInfo s, int place) => new Container
+        {
+            RelativeSizeAxes = Axes.X,
+            Height = 22,
+            Children = new Drawable[]
+            {
+                new UpdateableAvatar(s.User, isInteractive: false)
+                {
+                    Size = new Vector2(20),
+                    CornerRadius = 10,
+                    Masking = true,
+                },
+                new OsuSpriteText
+                {
+                    X = 26,
+                    Text = s.User.Username,
+                    Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                    Colour = Color4.White.Opacity(0.8f),
+                },
+                new OsuSpriteText
+                {
+                    X = 26,
+                    Y = 9,
+                    Text = ordinal(place),
+                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                },
+            },
+        };
+
+        private static Drawable selfRow(int place) => new Container
+        {
+            Width = 130,
+            Height = 38,
+            Margin = new MarginPadding { Vertical = 6 },
+            CornerRadius = 4,
+            Masking = true,
+            Children = new Drawable[]
+            {
+                new Box
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = ColourInfo.GradientHorizontal(Color4Extensions.FromHex(@"a8f7c7"), Color4Extensions.FromHex(@"7ef1ff")),
+                },
+                new OsuSpriteText
+                {
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                    X = 14,
+                    Text = ordinal(place),
+                    Font = OsuFont.Torus.With(size: 22, weight: FontWeight.Regular),
+                    Colour = Color4Extensions.FromHex(@"1c262e"),
+                },
+            },
+        };
+
+        private static string ordinal(int n)
+        {
+            string suffix = (n % 100) is 11 or 12 or 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" };
+            return $"{n:N0}{suffix}";
+        }
+    }
+}
