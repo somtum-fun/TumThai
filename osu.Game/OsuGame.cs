@@ -370,7 +370,7 @@ namespace osu.Game
         {
             base.SetupLogging(gameStorage, cacheStorage);
             sentryLogger = new SentryLogger(this, cacheStorage);
-            tumThaiErrorReporter = new TumThaiErrorReporter(this);
+            tumThaiErrorReporter = new TumThaiErrorReporter(this, gameStorage);
         }
 
         public override void SetHost(GameHost host)
@@ -1042,6 +1042,12 @@ namespace osu.Game
                 action(instance);
         }
 
+        protected override void OnCrashing(Exception exception)
+        {
+            base.OnCrashing(exception);
+            tumThaiErrorReporter?.ReportCrash(exception);
+        }
+
         protected override void Dispose(bool isDisposing)
         {
             // Without this, tests may deadlock due to cancellation token not becoming cancelled before disposal.
@@ -1082,6 +1088,9 @@ namespace osu.Game
             // in the cursor being shown for a few frames during the intro.
             // This prevents the cursor from showing until we have a screen with CursorVisible = true
             GlobalCursorDisplay.ShowCursor = menuScreen?.CursorVisible ?? false;
+
+            // TumThai: crashes a previous launch couldn't send (the server is known by now).
+            tumThaiErrorReporter?.SendPendingCrashes();
 
             // todo: all archive managers should be able to be looped here.
             SkinManager.PostNotification = n => Notifications.Post(n);
