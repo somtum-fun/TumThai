@@ -292,6 +292,23 @@ namespace osu.Game.Online.Chat
             return new LinkDetails(LinkAction.OpenUserProfile, new APIUser { Username = argument });
         }
 
+        /// <summary>
+        /// TumThai: the text with its links, or as plain text when a link regex runs out of time (they get 5 ms, which a
+        /// busy first frame can miss). Throwing there counted as an unhandled error, and the second one closes the game.
+        /// </summary>
+        private static MessageFormatterResult formatOrPlain(string toFormat)
+        {
+            try
+            {
+                return format(toFormat);
+            }
+            catch (RegexMatchTimeoutException e)
+            {
+                Logger.Log($"Message formatting timed out ({e.Pattern.Length}-char pattern); showing it as plain text.");
+                return new MessageFormatterResult(toFormat);
+            }
+        }
+
         private static MessageFormatterResult format(string toFormat, int startIndex = 0, int space = 3)
         {
             var result = new MessageFormatterResult(toFormat);
@@ -325,7 +342,7 @@ namespace osu.Game.Online.Chat
 
         public static Message FormatMessage(Message inputMessage)
         {
-            var result = format(inputMessage.Content);
+            var result = formatOrPlain(inputMessage.Content);
 
             inputMessage.DisplayContent = result.Text;
 
@@ -337,7 +354,7 @@ namespace osu.Game.Online.Chat
 
         public static MessageFormatterResult FormatText(string text)
         {
-            var result = format(text);
+            var result = formatOrPlain(text);
 
             result.Links.Sort();
 
