@@ -16,7 +16,6 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Database;
 using osu.Game.Graphics;
-using osu.Game.Online;
 using osu.Game.Online.API.Requests;
 using osu.Game.Tournament.IO;
 using osu.Game.Tournament.IPC;
@@ -43,14 +42,6 @@ namespace osu.Game.Tournament
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent)
         {
             return dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
-        }
-
-        public override EndpointConfiguration CreateEndpoints()
-        {
-            if (UseDevelopmentServer)
-                return base.CreateEndpoints();
-
-            return new ProductionEndpointConfiguration();
         }
 
         public override void SetHost(GameHost host)
