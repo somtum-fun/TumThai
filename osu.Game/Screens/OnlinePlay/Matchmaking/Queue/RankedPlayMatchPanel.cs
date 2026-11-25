@@ -43,6 +43,7 @@ namespace osu.Game.Screens.OnlinePlay.Matchmaking.Queue
         private Drawable rightResultLight = null!;
         private OsuSpriteText leftLifeText = null!;
         private OsuSpriteText rightLifeText = null!;
+        private OsuSpriteText statusText = null!;
 
         public RankedPlayMatchPanel(RankedPlayRoomState state)
         {
@@ -337,7 +338,7 @@ namespace osu.Game.Screens.OnlinePlay.Matchmaking.Queue
                                             RelativeSizeAxes = Axes.Both,
                                             Colour = colours.YellowDarker
                                         },
-                                        new OsuSpriteText
+                                        statusText = new OsuSpriteText
                                         {
                                             Anchor = Anchor.Centre,
                                             Origin = Anchor.Centre,
@@ -363,6 +364,8 @@ namespace osu.Game.Screens.OnlinePlay.Matchmaking.Queue
             {
                 leftResultLight.Colour = colours.Yellow;
                 rightResultLight.Colour = colours.Yellow;
+                // TumThai: no winner (e.g. both players left before a round was won) isn't shown as "Completed".
+                statusText.Text = "Draw";
             }
             else if (leftWin)
             {
