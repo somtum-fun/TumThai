@@ -55,6 +55,7 @@ namespace osu.Game.Tests.Visual.Ranking
                 score.Accuracy = score.Rank >= ScoreRank.X ? 1 : 0.95;
                 score.MaxCombo = score.GetMaximumAchievableCombo();
                 score.Statistics[HitResult.Miss] = 0;
+                score.BeatmapInfo!.StarRating = 6.93;
                 Child = new ResultsHost(new ShotResultsScreen(score));
                 shownAt = Time.Current;
             });

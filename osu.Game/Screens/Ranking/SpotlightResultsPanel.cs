@@ -11,6 +11,7 @@ using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
@@ -63,7 +64,6 @@ namespace osu.Game.Screens.Ranking
         private void load(BeatmapManager beatmaps, BeatmapDifficultyCache difficultyCache)
         {
             var working = beatmaps.GetWorkingBeatmap(score.BeatmapInfo);
-            StarRatingDisplay stars;
 
             InternalChild = new DrawSizePreservingFillContainer
             {
@@ -182,11 +182,25 @@ namespace osu.Game.Screens.Ranking
                                     ShowRankInCentre = false,
                                     RelativeSizeAxes = Axes.Both,
                                 },
-                                stars = new StarRatingDisplay(new StarDifficulty(score.BeatmapInfo.StarRating, 0), StarRatingDisplaySize.Regular)
+                                // the star rating on a curved band along the top of the cover, in its difficulty colour
+                                starArc = new CircularProgress
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    RelativeSizeAxes = Axes.Both,
+                                    Size = new Vector2(0.79f),
+                                    InnerRadius = 0.11f,
+                                    RoundedCaps = true,
+                                    Progress = 0.16,
+                                    Rotation = -0.08f * 360,
+                                },
+                                starText = new OsuSpriteText
                                 {
                                     Anchor = Anchor.TopCentre,
                                     Origin = Anchor.TopCentre,
-                                    Y = 72,
+                                    Y = 57,
+                                    Font = OsuFont.Torus.With(size: 15, weight: FontWeight.Bold),
+                                    Colour = Color4Extensions.FromHex(@"2a1820"),
                                 },
                             },
                         },
@@ -251,13 +265,25 @@ namespace osu.Game.Screens.Ranking
                 },
             };
 
+            showStars(score.BeatmapInfo.StarRating);
+
             difficultyCache.GetDifficultyAsync(score.BeatmapInfo, score.Ruleset, score.Mods)
                            .ContinueWith(t => Schedule(() =>
                            {
                                if (t.IsCompletedSuccessfully && t.GetResultSafely() is StarDifficulty d)
-                                   stars.Current.Value = d;
+                                   showStars(d.Stars);
                            }));
         }
+
+        private void showStars(double stars)
+        {
+            starArc.Colour = colours.ForStarDifficulty(stars);
+            starText.Colour = colours.ForStarDifficultyText(stars);
+            starText.Text = $"★ {stars:0.00}";
+        }
+
+        private CircularProgress starArc = null!;
+        private OsuSpriteText starText = null!;
 
         private static Drawable centred(Drawable d)
         {
@@ -268,8 +294,9 @@ namespace osu.Game.Screens.Ranking
 
         private IEnumerable<Drawable> mainTiles()
         {
-            yield return tile(122, @"ACCURACY", score.DisplayAccuracy.ToString(), 20, null);
-            yield return tile(122, @"MAX COMBO", $"{score.MaxCombo}x", 20, null);
+            yield return tile(122, @"ACCURACY", score.DisplayAccuracy.ToString(), 20, null, score.Accuracy);
+            int maxCombo = score.GetMaximumAchievableCombo();
+            yield return tile(122, @"MAX COMBO", $"{score.MaxCombo}x", 20, null, maxCombo > 0 ? (double)score.MaxCombo / maxCombo : null);
             yield return tile(118, @"PP", score.PP is double pp ? $"{pp:N0}" : @"-", 20, null);
         }
 
@@ -282,7 +309,7 @@ namespace osu.Game.Screens.Ranking
                 yield return tile(width, s.DisplayName.ToString().ToUpperInvariant(), s.Count.ToString(), 14, colours.ForHitResult(s.Result));
         }
 
-        private static Drawable tile(float width, string header, string value, float valueSize, Color4? accent) => new Container
+        private static Drawable tile(float width, string header, string value, float valueSize, Color4? accent, double? progress = null) => new Container
         {
             Size = new Vector2(width, valueSize > 16 ? 42 : 33),
             CornerRadius = 5,
@@ -300,6 +327,20 @@ namespace osu.Game.Screens.Ranking
                     Text = header,
                     Font = OsuFont.Torus.With(size: 8, weight: FontWeight.Bold),
                 },
+                progress is double fraction
+                    ? new Container
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        X = -9,
+                        Size = new Vector2(15),
+                        Children = new Drawable[]
+                        {
+                            new CircularProgress { RelativeSizeAxes = Axes.Both, InnerRadius = 0.22f, Progress = 1, Colour = Color4.White.Opacity(0.15f) },
+                            new CircularProgress { RelativeSizeAxes = Axes.Both, InnerRadius = 0.22f, RoundedCaps = true, Progress = Math.Clamp(fraction, 0, 1), Colour = Color4Extensions.FromHex(@"88ffcc") },
+                        },
+                    }
+                    : Empty(),
                 accent is Color4 a
                     ? new Box
                     {
@@ -385,17 +426,26 @@ namespace osu.Game.Screens.Ranking
 
         private static Drawable selfRow(int place) => new Container
         {
-            Width = 130,
+            Width = 150,
             Height = 38,
             Margin = new MarginPadding { Vertical = 6 },
-            CornerRadius = 4,
-            Masking = true,
             Children = new Drawable[]
             {
                 new Box
                 {
                     RelativeSizeAxes = Axes.Both,
+                    Width = 0.85f,
                     Colour = ColourInfo.GradientHorizontal(Color4Extensions.FromHex(@"a8f7c7"), Color4Extensions.FromHex(@"7ef1ff")),
+                },
+                // the arrow end, pointing at the ring
+                new Triangle
+                {
+                    Anchor = Anchor.CentreRight,
+                    Origin = Anchor.Centre,
+                    X = -10,
+                    Size = new Vector2(38, 20),
+                    Rotation = 90,
+                    Colour = Color4Extensions.FromHex(@"7ef1ff"),
                 },
                 new OsuSpriteText
                 {
