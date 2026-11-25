@@ -15,6 +15,7 @@ using osu.Framework.Screens;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online;
@@ -88,6 +89,30 @@ namespace osu.Game.Tests.Visual.Ranking
             {
                 skins?.CurrentSkinInfo.Value = v ? skins.DefaultClassicSkin.SkinInfo : skins.CurrentSkinInfo.Default;
             });
+        }
+
+        [Resolved]
+        private OsuConfigManager config { get; set; }
+
+        [Test]
+        public void TestV2Layout()
+        {
+            // TumThai: the V2 results screen, with its intro (a full combo, so "FULL COMBO!" then the grade).
+            AddStep("use V2 results", () => config.SetValue(OsuSetting.ResultsScreenStyle, ResultsScreenStyle.V2));
+            AddStep("load results", () =>
+            {
+                var score = TestResources.CreateTestScoreInfo();
+                score.Rank = ScoreRank.X;
+                score.Accuracy = 1;
+                score.MaxCombo = score.GetMaximumAchievableCombo();
+                score.Statistics[HitResult.Miss] = 0;
+                Child = resultsContainer = new TestResultsContainer(createResultsScreen(score));
+            });
+            AddUntilStep("intro shown", () => this.ChildrenOfType<V2ResultsIntro>().Any());
+            AddUntilStep("V2 panel shown", () => this.ChildrenOfType<V2ResultsPanel>().Any(p => p.IsPresent));
+            AddUntilStep("intro done", () => !this.ChildrenOfType<V2ResultsIntro>().Any());
+            AddStep("back to lazer results", () => config.SetValue(OsuSetting.ResultsScreenStyle, ResultsScreenStyle.Lazer));
+            AddUntilStep("lazer panels shown", () => this.ChildrenOfType<ScorePanel>().Any(p => p.IsPresent));
         }
 
         [Test]

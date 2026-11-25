@@ -305,6 +305,7 @@ namespace osu.Game.Configuration
             SetDefault(OsuSetting.AndroidSustainedPerformanceMigrated, false);
             // TumThai: the default look; the osu!droid theme is Android-only.
             SetDefault(OsuSetting.InterfaceTheme, InterfaceTheme.TumThai);
+            SetDefault(OsuSetting.ResultsScreenStyle, ResultsScreenStyle.Auto); // TumThai
         }
 
         protected override bool CheckLookupContainsPrivateInformation(OsuSetting lookup)
@@ -630,6 +631,7 @@ namespace osu.Game.Configuration
         /// TumThai: the look of the interface (HUD, song select listing and results screen).
         /// </summary>
         InterfaceTheme,
+        ResultsScreenStyle,
 
         CustomWebsiteUrl,
         CustomClientId,

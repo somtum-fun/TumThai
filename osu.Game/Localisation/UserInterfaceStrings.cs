@@ -224,6 +224,36 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString ThemeOsuStable => new TranslatableString(getKey(@"theme_osu_stable"), @"osu!stable"); // TumThai
 
+        // TumThai: the results screen setting.
+        /// <summary>
+        /// "Results"
+        /// </summary>
+        public static LocalisableString ResultsHeader => new TranslatableString(getKey(@"results_header"), @"Results");
+        /// <summary>
+        /// "Results screen"
+        /// </summary>
+        public static LocalisableString ResultsScreenStyle => new TranslatableString(getKey(@"results_screen_style"), @"Results screen");
+        /// <summary>
+        /// "How a play's results look. Automatic follows the interface theme."
+        /// </summary>
+        public static LocalisableString ResultsScreenStyleDescription => new TranslatableString(getKey(@"results_screen_style_description"), @"How a play's results look. Automatic follows the interface theme.");
+        /// <summary>
+        /// "Automatic"
+        /// </summary>
+        public static LocalisableString ResultsStyleAuto => new TranslatableString(getKey(@"results_style_auto"), @"Automatic");
+        /// <summary>
+        /// "osu!lazer"
+        /// </summary>
+        public static LocalisableString ResultsStyleLazer => new TranslatableString(getKey(@"results_style_lazer"), @"osu!lazer");
+        /// <summary>
+        /// "Modern (score ring)"
+        /// </summary>
+        public static LocalisableString ResultsStyleV2 => new TranslatableString(getKey(@"results_style_v2"), @"Modern (score ring)");
+        /// <summary>
+        /// "osu!stable"
+        /// </summary>
+        public static LocalisableString ResultsStyleStable => new TranslatableString(getKey(@"results_style_stable"), @"osu!stable");
+
         /// <summary>
         /// "osu!droid"
         /// </summary>

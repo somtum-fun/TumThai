@@ -26,7 +26,8 @@ namespace osu.Game.Overlays.Settings.Sections
                 new GeneralSettings(),
                 new InterfaceThemeSettings(),
                 new MainMenuSettings(),
-                new SongSelectSettings()
+                new SongSelectSettings(),
+                new ResultsSettings(), // TumThai
             };
         }
     }

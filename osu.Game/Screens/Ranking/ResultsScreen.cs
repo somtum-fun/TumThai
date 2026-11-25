@@ -92,6 +92,21 @@ namespace osu.Game.Screens.Ranking
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Aquamarine);
 
         private readonly Bindable<InterfaceTheme> interfaceTheme = new Bindable<InterfaceTheme>();
+
+        // TumThai: the V2 results screen (ported from torii, MIT), picked in settings (ResultsScreenStyle).
+        public readonly BindableBool IsPersonalBest = new BindableBool();
+        public readonly Bindable<ScoreInfo?> ComparisonScore = new Bindable<ScoreInfo?>();
+        public readonly BindableBool V2DetailsVisible = new BindableBool();
+        public readonly BindableBool V2LeaderboardVisible = new BindableBool();
+        private readonly Bindable<ResultsScreenStyle> resultsStyle = new Bindable<ResultsScreenStyle>();
+        private Container v2Layer = null!;
+        private Container v2PanelContainer = null!;
+        private Container v2FooterContainer = null!;
+        private V2ResultsFooter v2Footer = null!;
+        private bool v2PanelLoading;
+        private bool v2IntroShown;
+        private bool? lastV2Background;
+        private bool hasEntered;
         private Box bottomBarBackground = null!;
         private GridContainer lazerResultsGrid = null!;
         private StableResultsContent stableResultsContent = null!;
@@ -110,6 +125,7 @@ namespace osu.Game.Screens.Ranking
             FillFlowContainer buttons;
 
             config.BindWith(OsuSetting.InterfaceTheme, interfaceTheme);
+            config.BindWith(OsuSetting.ResultsScreenStyle, resultsStyle);
 
             popInSample = audio.Samples.Get(@"UI/overlay-pop-in");
 
@@ -203,15 +219,57 @@ namespace osu.Game.Screens.Ranking
                             updateInterfaceThemeView();
                         },
                     },
+                    v2Layer = new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Alpha = 0,
+                        Children = new Drawable[]
+                        {
+                            v2PanelContainer = new Container { RelativeSizeAxes = Axes.Both },
+                            v2FooterContainer = new Container
+                            {
+                                Anchor = Anchor.BottomLeft,
+                                Origin = Anchor.BottomLeft,
+                                RelativeSizeAxes = Axes.X,
+                                Child = v2Footer = new V2ResultsFooter
+                                {
+                                    Score = Score,
+                                    AllowWatchingReplay = AllowWatchingReplay,
+                                    BackAction = () =>
+                                    {
+                                        if (!OnBackButton())
+                                            this.Exit();
+                                    },
+                                    RankingAction = () =>
+                                    {
+                                        foreach (var panel in v2Panels)
+                                            panel.ToggleLeaderboard();
+                                    },
+                                    DetailsAction = () =>
+                                    {
+                                        foreach (var panel in v2Panels)
+                                            panel.ToggleDetails();
+                                    },
+                                    RetryAction = player != null && AllowRetry
+                                        ? () =>
+                                        {
+                                            if (!this.IsCurrentScreen()) return;
+
+                                            skipExitTransition = true;
+                                            player?.Restart(true);
+                                        }
+                                        : null,
+                                },
+                            },
+                        },
+                    },
                 }
             };
 
             if (Score != null)
             {
                 // only show flair / animation when arriving after watching a play that isn't autoplay.
-                bool shouldFlair = !PotatoMode.UltraActive && player != null && !Score.User.IsBot;
-
-                ScorePanelList.AddScore(Score, shouldFlair);
+                ScorePanelList.AddScore(Score, shouldFlair && !useV2Layout);
                 // this is mostly for medal display.
                 // we don't want the medal animation to trample on the results screen animation, so we (ab)use `OverlayActivationMode`
                 // to give the results screen enough time to play the animation out before the medals can be shown.
@@ -266,29 +324,93 @@ namespace osu.Game.Screens.Ranking
         {
             base.LoadComplete();
 
+            v2Footer.DetailsVisible.BindTo(V2DetailsVisible);
+            v2Footer.LeaderboardVisible.BindTo(V2LeaderboardVisible);
+
             interfaceTheme.BindValueChanged(t =>
             {
                 bottomBarBackground.Colour = t.NewValue.Effective().ResultsBottomBar();
                 showingStableScoreboard = false;
                 updateInterfaceThemeView();
             }, true);
+            resultsStyle.BindValueChanged(_ =>
+            {
+                showingStableScoreboard = false;
+                updateInterfaceThemeView();
+            });
+            SelectedScore.BindValueChanged(_ => updateInterfaceThemeView());
 
             StatisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
 
             fetchScores(null);
         }
 
+        private IEnumerable<V2ResultsPanel> v2Panels => v2PanelContainer.Children.OfType<V2ResultsPanel>();
+
+        /// <summary>
+        /// TumThai: the V2 layout is for a solo play's own results (it needs the beatmap); other results screens keep theirs.
+        /// </summary>
+        private bool useV2Layout => resultsStyle.Value == ResultsScreenStyle.V2 && this is SoloResultsScreen && Score?.BeatmapInfo != null;
+
         private void updateInterfaceThemeView()
         {
-            bool useStableLayout = interfaceTheme.Value.IsThemed() && !showingStableScoreboard && SelectedScore.Value != null;
+            bool v2 = useV2Layout;
+            bool stableStyle = resultsStyle.Value == ResultsScreenStyle.Stable
+                               || (resultsStyle.Value == ResultsScreenStyle.Auto && interfaceTheme.Value.IsThemed());
+            bool useStableLayout = !v2 && stableStyle && !showingStableScoreboard && SelectedScore.Value != null;
+
             stableResultsContent.Alpha = useStableLayout ? 1f : 0f;
-            lazerResultsGrid.Alpha = useStableLayout ? 0f : 1f;
-            FooterContent.Value = useStableLayout ? ScreenFooterContent.None : ScreenFooterContent.Legacy(showBackButton: AllowUserExit);
+            lazerResultsGrid.Alpha = useStableLayout || v2 ? 0f : 1f;
+            v2Layer.Alpha = v2 ? 1f : 0f;
+            FooterContent.Value = useStableLayout || v2 ? ScreenFooterContent.None : ScreenFooterContent.Legacy(showBackButton: AllowUserExit);
+
+            if (v2 && !v2Panels.Any() && !v2PanelLoading && Score != null)
+            {
+                v2PanelLoading = true;
+                LoadComponentAsync(new V2ResultsPanel(Score, shouldFlair), panel =>
+                {
+                    v2PanelContainer.Add(panel);
+                    v2PanelLoading = false;
+                });
+
+                // Right after a play: "FULL COMBO!" / the grade, big, before the results (once).
+                if (shouldFlair && !v2IntroShown)
+                {
+                    v2IntroShown = true;
+                    v2Layer.Add(new V2ResultsIntro(Score));
+                }
+            }
+
+            // The V2 layout shows the background unblurred (set on entering; here only once the screen is showing).
+            if (hasEntered && this.IsCurrentScreen() && lastV2Background != v2)
+            {
+                lastV2Background = v2;
+                ApplyToBackground(b => b.BlurAmount.Value = v2 ? 0 : BACKGROUND_BLUR);
+            }
+        }
+
+        private bool shouldFlair => !PotatoMode.UltraActive && player != null && Score?.User.IsBot == false;
+
+        public IEnumerable<ScoreInfo> GetOverviewScores() => ScorePanelList.GetScorePanels().Select(p => p.Score);
+
+        public void SelectOverviewScore(ScoreInfo score)
+        {
+            Schedule(() =>
+            {
+                V2LeaderboardVisible.Value = false;
+                V2DetailsVisible.Value = false;
+                SelectedScore.Value = score;
+                v2PanelContainer.Clear();
+                v2PanelContainer.Add(new V2ResultsPanel(score));
+            });
         }
 
         protected override void Update()
         {
             base.Update();
+
+            // The V2 footer is laid out for a 1280-wide screen and scales with the width.
+            v2FooterContainer.Height = DrawWidth * V2ResultsFooter.DESIGN_HEIGHT / 1280;
 
             if (ScorePanelList.IsScrolledToStart)
                 fetchScores(-1);
@@ -440,9 +562,12 @@ namespace osu.Game.Screens.Ranking
 
             ApplyToBackground(b =>
             {
-                b.BlurAmount.Value = BACKGROUND_BLUR;
+                b.BlurAmount.Value = useV2Layout ? 0 : BACKGROUND_BLUR;
                 b.FadeColour(OsuColour.Gray(0.5f), PotatoMode.UltraActive ? 0 : 250);
             });
+
+            hasEntered = true;
+            lastV2Background = useV2Layout;
 
             bottomPanel.FadeTo(1, PotatoMode.UltraActive ? 0 : 250);
 
@@ -468,6 +593,9 @@ namespace osu.Game.Screens.Ranking
 
         public override bool OnBackButton()
         {
+            if (useV2Layout && v2Panels.Any(p => p.CloseLeaderboard() || p.CloseDetails()))
+                return true;
+
             if (StatisticsPanel.State.Value == Visibility.Visible)
             {
                 StatisticsPanel.Hide();

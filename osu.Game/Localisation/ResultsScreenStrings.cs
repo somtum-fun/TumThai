@@ -84,6 +84,72 @@ Unstable Rate: {2:0.00}", earlyAverage, lateAverage, unstableRate);
         /// </summary>
         public static LocalisableString ModScoreMultiplierCaption => new TranslatableString(getKey(@"mod_score_multiplier_caption"), @"Multiplier");
 
+        // TumThai: the V2 results screen (from torii, MIT).
+        /// <summary>
+        /// "Watch Replay"
+        /// </summary>
+        public static LocalisableString WatchReplay => new TranslatableString(getKey(@"watch_replay"), @"Watch Replay");
+
+        /// <summary>
+        /// "More info"
+        /// </summary>
+        public static LocalisableString MoreInfo => new TranslatableString(getKey(@"more_info"), @"More info");
+
+        /// <summary>
+        /// "Score overview"
+        /// </summary>
+        public static LocalisableString ScoreOverview => new TranslatableString(getKey(@"score_overview"), @"Score overview");
+
+        /// <summary>
+        /// "Play again"
+        /// </summary>
+        public static LocalisableString PlayAgain => new TranslatableString(getKey(@"play_again"), @"Play again");
+
+        /// <summary>
+        /// "Downloading replay…"
+        /// </summary>
+        public static LocalisableString DownloadingReplay => new TranslatableString(getKey(@"downloading_replay"), @"Downloading replay…");
+
+        /// <summary>
+        /// "Screenshot"
+        /// </summary>
+        public static LocalisableString Screenshot => new TranslatableString(getKey(@"screenshot"), @"Screenshot");
+
+        /// <summary>
+        /// "Replay unavailable"
+        /// </summary>
+        public static LocalisableString ReplayUnavailable => new TranslatableString(getKey(@"replay_unavailable"), @"Replay unavailable");
+
+        /// <summary>
+        /// "MODS"
+        /// </summary>
+        public static LocalisableString Mods => new TranslatableString(getKey(@"mods"), @"MODS");
+
+        /// <summary>
+        /// "by {0}"
+        /// </summary>
+        public static LocalisableString MappedBy(string mapper) => new TranslatableString(getKey(@"mapped_by"), @"by {0}", mapper);
+
+        /// <summary>
+        /// "FEATURED ARTIST"
+        /// </summary>
+        public static LocalisableString FeaturedArtist => new TranslatableString(getKey(@"featured_artist"), @"FEATURED ARTIST");
+
+        /// <summary>
+        /// "Combo"
+        /// </summary>
+        public static LocalisableString Combo => new TranslatableString(getKey(@"combo"), @"Combo");
+
+        /// <summary>
+        /// "Achieved on {0}"
+        /// </summary>
+        public static LocalisableString AchievedOn(string date) => new TranslatableString(getKey(@"achieved_on"), @"Achieved on {0}", date);
+
+        /// <summary>
+        /// "Leaderboard / More info"
+        /// </summary>
+        public static LocalisableString LeaderboardAndDetails => new TranslatableString(getKey(@"leaderboard_and_details"), @"Leaderboard / More info");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }
