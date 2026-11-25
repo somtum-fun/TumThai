@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Framework.Audio.Sample;
@@ -37,9 +38,24 @@ namespace osu.Game.Screens.Ranking
         /// <summary>Invoked once the intro is gone (played out or skipped).</summary>
         public Action? Finished;
 
+        /// <summary>Invoked as the intro starts to step aside: the moment to bring the results in.</summary>
+        public Action? Revealing;
+
+        private bool revealed;
+
+        private void reveal()
+        {
+            if (revealed) return;
+
+            revealed = true;
+            Revealing?.Invoke();
+        }
+
         private Container comboBanner = null!;
         private FillFlowContainer comboLetters = null!;
         private Drawable rankText = null!;
+        private Container rays = null!;
+        private Drawable[] stars = null!;
         private Sample? rankSample;
         private bool done;
 
@@ -79,7 +95,7 @@ namespace osu.Game.Screens.Ranking
                         AutoSizeAxes = Axes.Both,
                         Direction = FillDirection.Horizontal,
                         Spacing = new Vector2(36, 0),
-                        Children = new Drawable[]
+                        Children = new[]
                         {
                             star(),
                             comboLetters = new FillFlowContainer
@@ -88,7 +104,8 @@ namespace osu.Game.Screens.Ranking
                                 Origin = Anchor.CentreLeft,
                                 AutoSizeAxes = Axes.Both,
                                 Direction = FillDirection.Horizontal,
-                                Spacing = new Vector2(26, 0),
+                                // starts spread out and closes in (the storyboard's first frames)
+                                Spacing = new Vector2(70, 0),
                             },
                             star(),
                         },
@@ -101,7 +118,6 @@ namespace osu.Game.Screens.Ranking
                         Origin = Anchor.Centre,
                         Texture = rankTexture,
                         Size = new Vector2(480, 360),
-                        Colour = DrawableRank.GetRankLetterColour(score.Rank),
                         Alpha = 0,
                     }
                     : new OsuSpriteText
@@ -110,10 +126,37 @@ namespace osu.Game.Screens.Ranking
                         Origin = Anchor.Centre,
                         Text = DrawableRank.GetRankLetter(score.Rank),
                         Font = OsuFont.Torus.With(size: 260, weight: FontWeight.Bold),
-                        Colour = DrawableRank.GetRankLetterColour(score.Rank),
                         Alpha = 0,
                     },
+                rays = new Container
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Alpha = 0,
+                },
             };
+
+            // The burst around the grade: eight short rays, pointing out.
+            for (int i = 0; i < 8; i++)
+            {
+                rays.Add(new Container
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Rotation = i * 45,
+                    Child = new Circle
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.BottomCentre,
+                        Size = new Vector2(10, 46),
+                        Y = -200,
+                    },
+                });
+            }
+
+            stars = ((FillFlowContainer)comboBanner.Child).Children.Where(c => c is SpriteIcon).ToArray();
+            foreach (var s in stars)
+                s.Alpha = 0;
 
             foreach (char c in comboWord)
             {
@@ -148,6 +191,10 @@ namespace osu.Game.Screens.Ranking
             if (isFullCombo)
             {
                 comboBanner.FadeIn(150);
+                comboLetters.TransformSpacingTo(new Vector2(26, 0), 800, Easing.OutQuint);
+
+                foreach (var s in stars)
+                    s.Delay(450).ScaleTo(0.4f).FadeIn(200).ScaleTo(1, 500, Easing.OutBack).RotateTo(-20).RotateTo(0, 600, Easing.OutQuint);
 
                 int i = 0;
 
@@ -164,14 +211,25 @@ namespace osu.Game.Screens.Ranking
             using (BeginDelayedSequence(rankAt))
             {
                 Schedule(() => rankSample?.Play());
+                // white first, with the burst; then the grade's own colour (the storyboard's middle frames)
+                rankText.Colour = Color4.White;
                 rankText.ScaleTo(2.2f).FadeIn(120).ScaleTo(1, 450, Easing.OutQuint);
+                rankText.Delay(450).FadeColour(ColourInfo.GradientVertical(Color4.White, OsuColour.ForRank(score.Rank)), 400, Easing.OutQuint);
+
+                rays.FadeIn(80).Then().Delay(250).FadeOut(350);
+                foreach (var ray in rays.Children.OfType<Container>())
+                    ray.Child.MoveToY(-170).MoveToY(-260, 600, Easing.OutQuint);
+
+                // the grade settles back as the results come in
+                rankText.Delay(rank_hold - 150).ScaleTo(0.6f, 450, Easing.InQuint);
             }
 
-            this.Delay(rankAt + rank_hold).FadeOut(350, Easing.OutQuint).OnComplete(_ => finish());
+            this.Delay(rankAt + rank_hold).Schedule(reveal).FadeOut(350, Easing.OutQuint).OnComplete(_ => finish());
         }
 
         protected override bool OnClick(ClickEvent e)
         {
+            reveal();
             this.FadeOut(150).OnComplete(_ => finish());
             return true;
         }
@@ -181,6 +239,7 @@ namespace osu.Game.Screens.Ranking
             if (done) return;
 
             done = true;
+            reveal();
             Finished?.Invoke();
             Expire();
         }

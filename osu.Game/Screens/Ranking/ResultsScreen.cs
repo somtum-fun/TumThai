@@ -376,18 +376,40 @@ namespace osu.Game.Screens.Ranking
             if (v2 && v2PanelContainer.Count == 0 && !v2PanelLoading && Score != null)
             {
                 v2PanelLoading = true;
-                LoadComponentAsync(createV2Panel(Score, shouldFlair), panel =>
-                {
-                    v2PanelContainer.Add(panel);
-                    v2PanelLoading = false;
-                });
 
-                // Right after a play: "FULL COMBO!" / the grade, big, before the results (once).
+                // Right after a play: "FULL COMBO!" / the grade, big, before the results (once). The results come in,
+                // and start their own animation, as it steps aside.
+                bool introGone = true;
+                Drawable? loaded = null;
+
+                void addPanel()
+                {
+                    if (loaded == null || !introGone) return;
+
+                    v2PanelContainer.Add(loaded);
+                    v2PanelLoading = false;
+                    loaded = null;
+                }
+
                 if (shouldFlair && !v2IntroShown)
                 {
                     v2IntroShown = true;
-                    v2Layer.Add(new V2ResultsIntro(Score));
+                    introGone = false;
+                    v2Layer.Add(new V2ResultsIntro(Score)
+                    {
+                        Revealing = () =>
+                        {
+                            introGone = true;
+                            addPanel();
+                        },
+                    });
                 }
+
+                LoadComponentAsync(createV2Panel(Score, shouldFlair), panel =>
+                {
+                    loaded = panel;
+                    addPanel();
+                });
             }
 
             // The V2 layout shows the background unblurred (set on entering; here only once the screen is showing).

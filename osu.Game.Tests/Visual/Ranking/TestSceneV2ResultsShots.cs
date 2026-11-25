@@ -59,9 +59,11 @@ namespace osu.Game.Tests.Visual.Ranking
                 shownAt = Time.Current;
             });
 
-            shot(outDir, "1-full-combo", 900);
-            shot(outDir, "2-grade", 1900);
-            shot(outDir, "3-results", 4500);
+            // HARNESS_V2_TIMES: when to shoot, in ms after the results show (default 900,1900,4500).
+            string times = Environment.GetEnvironmentVariable("HARNESS_V2_TIMES") ?? "900,1900,4500";
+            int n = 0;
+            foreach (string t in times.Split(','))
+                shot(outDir, $"{++n}-at-{t.Trim()}ms", double.Parse(t.Trim(), System.Globalization.CultureInfo.InvariantCulture));
 
             if (Environment.GetEnvironmentVariable("HARNESS_EXIT") == "1")
                 AddStep("exit", () => host.Exit());
