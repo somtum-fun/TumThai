@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.Textures;
 using osu.Framework.Input.Events;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
@@ -38,7 +39,7 @@ namespace osu.Game.Screens.Ranking
 
         private Container comboBanner = null!;
         private FillFlowContainer comboLetters = null!;
-        private OsuSpriteText rankText = null!;
+        private Drawable rankText = null!;
         private Sample? rankSample;
         private bool done;
 
@@ -52,8 +53,11 @@ namespace osu.Game.Screens.Ranking
         private bool isFullCombo => isPerfect || (score.Passed && score.GetMaximumAchievableCombo() > 0 && score.MaxCombo == score.GetMaximumAchievableCombo());
 
         [BackgroundDependencyLoader]
-        private void load(AudioManager audio)
+        private void load(AudioManager audio, TextureStore textures)
         {
+            // The grade as a picture when there is one (sharp at any size; a font this big is stretched and blurs).
+            var rankTexture = textures.Get($"V2/Ranks/rank-{DrawableRank.GetRankLetter(score.Rank)}");
+
             string comboWord = isPerfect ? "PERFECT!" : "FULL COMBO!";
 
             InternalChildren = new Drawable[]
@@ -90,15 +94,25 @@ namespace osu.Game.Screens.Ranking
                         },
                     },
                 },
-                rankText = new OsuSpriteText
-                {
-                    Anchor = Anchor.Centre,
-                    Origin = Anchor.Centre,
-                    Text = DrawableRank.GetRankLetter(score.Rank),
-                    Font = OsuFont.Torus.With(size: 260, weight: FontWeight.Bold),
-                    Colour = DrawableRank.GetRankLetterColour(score.Rank),
-                    Alpha = 0,
-                },
+                rankText = rankTexture != null
+                    ? new Sprite
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Texture = rankTexture,
+                        Size = new Vector2(480, 360),
+                        Colour = DrawableRank.GetRankLetterColour(score.Rank),
+                        Alpha = 0,
+                    }
+                    : new OsuSpriteText
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Text = DrawableRank.GetRankLetter(score.Rank),
+                        Font = OsuFont.Torus.With(size: 260, weight: FontWeight.Bold),
+                        Colour = DrawableRank.GetRankLetterColour(score.Rank),
+                        Alpha = 0,
+                    },
             };
 
             foreach (char c in comboWord)
