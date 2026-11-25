@@ -21,7 +21,7 @@ using osu.Game.Tests.Beatmaps;
 namespace osu.Game.Rulesets.Osu.Tests
 {
     /// <summary>
-    /// osu!somtum: the in-game pp counter for Relax and Autopilot plays, as <c>PerformancePointsCounter</c> works it out:
+    /// somtum.fun: the in-game pp counter for Relax and Autopilot plays, as <c>PerformancePointsCounter</c> works it out:
     /// after each judgement, the hits so far with the difficulty attributes at that judgement's time. A slider is judged
     /// at its head (lazer), before the attributes include it, so the hits can run one ahead of the attributes.
     /// </summary>

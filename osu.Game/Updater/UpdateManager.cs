@@ -67,7 +67,7 @@ namespace osu.Game.Updater
                                                               ? Configuration.ReleaseStream.Tachyon
                                                               : Configuration.ReleaseStream.Lazer));
 
-                // TumThai: silenced — the osu!somtum build is intentionally unofficial, and the server
+                // TumThai: silenced — the somtum.fun build is intentionally unofficial, and the server
                 // enforces its own build allowlist for online features. The log line below still fires.
             }
             else

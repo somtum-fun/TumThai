@@ -48,18 +48,18 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         private readonly Bindable<BeatmapLeaderboardScope> scope = new Bindable<BeatmapLeaderboardScope>(BeatmapLeaderboardScope.Global);
         private readonly IBindable<APIUser> user = new Bindable<APIUser>();
 
-        // osu!somtum: the vanilla, Relax or Autopilot leaderboard.
+        // somtum.fun: the vanilla, Relax or Autopilot leaderboard.
         private readonly Bindable<LeaderboardVariant> variant = new Bindable<LeaderboardVariant>(LeaderboardVariant.Vanilla);
         private readonly LeaderboardVariantSelector variantSelector;
 
-        // osu!somtum: by pp or by score. Defaults to pp on Relax/Autopilot, score on Vanilla.
+        // somtum.fun: by pp or by score. Defaults to pp on Relax/Autopilot, score on Vanilla.
         private readonly Bindable<LeaderboardSortMode> sort = new Bindable<LeaderboardSortMode>(LeaderboardSortMode.Score);
         private readonly LeaderboardSortSelector sortSelector;
 
         // Relax and Autopilot boards, and boards sorted by pp, come ordered by the server; keep that order.
         private bool keepServerOrder;
 
-        // osu!somtum: whether the last request asked for the board by pp.
+        // somtum.fun: whether the last request asked for the board by pp.
         private bool requestedByPerformance;
 
         private readonly Box background;
@@ -123,7 +123,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 // TumThai: a custom ruleset's plays have Pla-ra pp (its board stays sorted by score).
                 bool showPerformance = apiBeatmap.Status.GrantsPerformancePoints();
 
-                // osu!somtum: show pp in place of score when sorted by pp.
+                // somtum.fun: show pp in place of score when sorted by pp.
                 bool sortedByPerformance = showPerformance && requestedByPerformance;
 
                 scoreTable.DisplayScores(scores, showPerformance, sortedByPerformance);
@@ -268,7 +268,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             ruleset.BindValueChanged(_ => getScores());
             variant.BindValueChanged(_ =>
             {
-                // osu!somtum: a new variant starts on its default sort.
+                // somtum.fun: a new variant starts on its default sort.
                 if (!resetSort())
                     getScores();
             });
@@ -315,7 +315,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         }
 
         /// <summary>
-        /// osu!somtum: sets the sort to the current variant's default.
+        /// somtum.fun: sets the sort to the current variant's default.
         /// </summary>
         /// <returns>Whether the sort changed (which refetches the scores).</returns>
         private bool resetSort()
@@ -403,7 +403,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
             if (variant.Value != LeaderboardVariant.Vanilla && rulesets.GetRuleset(requestRuleset.OnlineID) is RulesetInfo baseRuleset)
                 requestRuleset = baseRuleset.ApplyVariant(variant.Value);
 
-            // osu!somtum: only ask for a sort on maps that give pp; otherwise the server's own order is used.
+            // somtum.fun: only ask for a sort on maps that give pp; otherwise the server's own order is used.
             LeaderboardSortMode? requestSort = Beatmap.Value.Status.GrantsPerformancePoints() ? sort.Value : null;
 
             requestedByPerformance = requestSort == LeaderboardSortMode.PerformancePoints;

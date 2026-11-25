@@ -6,7 +6,7 @@ using System;
 namespace osu.Game.Online
 {
     /// <summary>
-    /// The one place that decides which server this client talks to, for both the built-in osu!somtum
+    /// The one place that decides which server this client talks to, for both the built-in somtum.fun
     /// endpoints and a custom server configured via <see cref="Configuration.OsuSetting.CustomApiUrl"/>.
     /// Changing servers should only ever mean editing the constants below.
     /// </summary>

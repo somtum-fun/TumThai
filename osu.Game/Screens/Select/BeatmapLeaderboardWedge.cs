@@ -327,7 +327,7 @@ namespace osu.Game.Screens.Select
             }, initialFetchComplete && fetchScope != BeatmapLeaderboardScope.Local ? 300 : 0);
         }
 
-        // osu!somtum: set from the criteria of the scores being shown.
+        // somtum.fun: set from the criteria of the scores being shown.
         private bool showPerformance;
         private bool calculateMissingPerformance;
 
@@ -343,7 +343,7 @@ namespace osu.Game.Screens.Select
             if (leaderboardManager.CurrentCriteria?.Beatmap?.Equals(beatmap.Value.BeatmapInfo) != true)
                 return;
 
-            // osu!somtum: show pp instead of score when the shown scores are sorted by pp.
+            // somtum.fun: show pp instead of score when the shown scores are sorted by pp.
             // Uses the fetched criteria rather than `Sorting.Value`, since refetches are debounced.
             // Online boards only when the map gives pp (Relax/Autopilot default to pp on every map), and missing pp is
             // never calculated here: local scores are sorted by their stored pp, so calculated values would not match the order.

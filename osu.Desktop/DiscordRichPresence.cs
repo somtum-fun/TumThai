@@ -31,7 +31,7 @@ namespace osu.Desktop
 {
     internal partial class DiscordRichPresence : Component
     {
-        // osu!somtum's own Discord application (not ppy's), so the presence reads "Somtum.fun!" and the
+        // somtum.fun's own Discord application (not ppy's), so the presence reads "Somtum.fun!" and the
         // discord-<id> URI scheme registered below does not take over the one real osu!lazer registers.
         private const string client_id = "1509236899632517321";
 

@@ -12,7 +12,7 @@ namespace osu.Game.Online.Leaderboards
         [LocalisableDescription(typeof(BeatmapLeaderboardWedgeStrings), nameof(BeatmapLeaderboardWedgeStrings.Score))]
         Score,
 
-        // osu!somtum: online boards can be ordered by pp too.
+        // somtum.fun: online boards can be ordered by pp too.
         [Description("Performance points")]
         PerformancePoints,
 

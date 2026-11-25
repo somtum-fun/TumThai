@@ -32,7 +32,7 @@ namespace osu.Game.Online.API.Requests
         private readonly string? mode;
         private readonly LeaderboardVariant variant;
 
-        // osu!somtum: sort is by pp or by score; null for the board's own order (pp for Relax/Autopilot, score otherwise).
+        // somtum.fun: sort is by pp or by score; null for the board's own order (pp for Relax/Autopilot, score otherwise).
         // TumThai: mode is the board's name when it isn't the ruleset's short name (a custom ruleset's slug on the server).
         public GetScoresRequest(IBeatmapInfo beatmapInfo, IRulesetInfo ruleset, BeatmapLeaderboardScope scope = BeatmapLeaderboardScope.Global, IEnumerable<IMod>? mods = null,
                                 LeaderboardSortMode? sort = null, string? mode = null, LeaderboardVariant variant = LeaderboardVariant.Vanilla)

@@ -101,7 +101,7 @@ namespace osu.Game.Online
             {
                 RefetchStatistics(ruleset);
 
-                // osu!somtum: Relax/Autopilot statistics too, so the first RX/AP play has some to compare with.
+                // somtum.fun: Relax/Autopilot statistics too, so the first RX/AP play has some to compare with.
                 foreach (var variant in ruleset.SupportedVariants().Where(v => v != LeaderboardVariant.Vanilla))
                     RefetchStatistics(ruleset.ApplyVariant(variant));
             }

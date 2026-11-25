@@ -8,7 +8,7 @@ using osu.Game.Scoring;
 namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki
 {
     /// <summary>
-    /// osu!somtum: ppy's pp, except for Akatsuki's difficulty (Relax and Autopilot plays, from
+    /// somtum.fun: ppy's pp, except for Akatsuki's difficulty (Relax and Autopilot plays, from
     /// <see cref="SomtumOsuDifficultyCalculator"/>), which gets Akatsuki's pp.
     /// </summary>
     public class SomtumOsuPerformanceCalculator : OsuPerformanceCalculator

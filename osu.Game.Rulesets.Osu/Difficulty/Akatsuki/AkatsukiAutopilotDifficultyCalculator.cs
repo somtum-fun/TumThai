@@ -1,7 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-// osu!somtum: ppy's 2024.1115.0 osu! difficulty algorithm, kept for Akatsuki Autopilot pp (akatsuki-pp-rs).
+// somtum.fun: ppy's 2024.1115.0 osu! difficulty algorithm, kept for Akatsuki Autopilot pp (akatsuki-pp-rs).
 // The Autopilot changes only apply when OsuModAutopilot is in the mods; without it this is plain 2024.1115.0.
 
 using System;
@@ -103,7 +103,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki
             int sliderCount = beatmap.HitObjects.Count(h => h is Slider);
             int spinnerCount = beatmap.HitObjects.Count(h => h is Spinner);
 
-            // osu!somtum: OsuHitWindows has since been changed to floor(...) - 0.5; this is the 2024.1115.0 great window.
+            // somtum.fun: OsuHitWindows has since been changed to floor(...) - 0.5; this is the 2024.1115.0 great window.
             double hitWindowGreat = IBeatmapDifficultyInfo.DifficultyRange(beatmap.Difficulty.OverallDifficulty, 80, 50, 20) / clockRate;
 
             return new AkatsukiAutopilotDifficultyAttributes

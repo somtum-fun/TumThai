@@ -13,7 +13,7 @@ using osuTK.Graphics;
 namespace osu.Game.Overlays.BeatmapSet
 {
     /// <summary>
-    /// osu!somtum: orders the beatmap page's scoreboard by pp or by score.
+    /// somtum.fun: orders the beatmap page's scoreboard by pp or by score.
     /// </summary>
     public partial class LeaderboardSortSelector : GradientLineTabControl<LeaderboardSortMode>
     {

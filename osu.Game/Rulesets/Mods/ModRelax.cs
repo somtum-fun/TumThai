@@ -15,7 +15,7 @@ namespace osu.Game.Rulesets.Mods
         public override ModType Type => ModType.Automation;
         public override Type[] IncompatibleMods => new[] { typeof(ModAutoplay) };
 
-        // osu!somtum: Relax plays are ranked here, on their own leaderboards with their own pp.
+        // somtum.fun: Relax plays are ranked here, on their own leaderboards with their own pp.
         public override bool Ranked => true;
     }
 }

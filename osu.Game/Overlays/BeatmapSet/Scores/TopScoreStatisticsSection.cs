@@ -46,7 +46,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
         [Resolved]
         private ScoreManager scoreManager { get; set; }
 
-        // osu!somtum: when sorted by pp, pp takes the big total score slot and total score takes the small pp slot.
+        // somtum.fun: when sorted by pp, pp takes the big total score slot and total score takes the small pp slot.
         private readonly bool sortedByPerformance;
 
         public TopScoreStatisticsSection(bool sortedByPerformance = false)
@@ -145,7 +145,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
                 accuracyColumn.Text = value.DisplayAccuracy;
                 maxComboColumn.Text = value.MaxCombo.ToLocalisableString(@"0\x");
 
-                // osu!somtum: the pp column is always shown when it holds the main value.
+                // somtum.fun: the pp column is always shown when it holds the main value.
                 // TumThai: a custom ruleset's play has no pp.
                 bool customRuleset = !value.Ruleset.IsLegacyRuleset() && !value.Ruleset.IsSpecialRuleset();
                 ppColumn.Alpha = !customRuleset && (sortedByPerformance || value.BeatmapInfo!.Status.GrantsPerformancePoints()) ? 1 : 0;

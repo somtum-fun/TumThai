@@ -13,7 +13,7 @@ using osuTK.Graphics;
 namespace osu.Game.Overlays.BeatmapSet
 {
     /// <summary>
-    /// osu!somtum: switches the beatmap page's scoreboard between the vanilla, Relax and Autopilot leaderboards.
+    /// somtum.fun: switches the beatmap page's scoreboard between the vanilla, Relax and Autopilot leaderboards.
     /// </summary>
     public partial class LeaderboardVariantSelector : GradientLineTabControl<LeaderboardVariant>
     {

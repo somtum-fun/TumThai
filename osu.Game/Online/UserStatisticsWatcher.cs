@@ -85,7 +85,7 @@ namespace osu.Game.Online
             if (!watchedScores.Remove(scoreId, out var scoreInfo))
                 return;
 
-            // osu!somtum: an RX/AP play counts in that variant's statistics (osurx, ...), not vanilla's.
+            // somtum.fun: an RX/AP play counts in that variant's statistics (osurx, ...), not vanilla's.
             publishUpdateAfterRefetch(scoreInfo, scoreInfo.Ruleset.ForMods(scoreInfo.Mods));
         }
 

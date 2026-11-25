@@ -288,7 +288,7 @@ namespace osu.Game.Screens.Select
                         return;
                     }
 
-                    // osu!somtum: calculation moved to a shared helper (BeatmapLeaderboardScore.Performance.cs).
+                    // somtum.fun: calculation moved to a shared helper (BeatmapLeaderboardScore.Performance.cs).
                     Task.Run(async () =>
                     {
                         double? pp = await CalculatePerformanceAsync(score, difficultyCache, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);

@@ -160,7 +160,7 @@ namespace osu.Game.Screens.Select
                     }
                     else
                     {
-                        // osu!somtum: online boards are ordered by the server, by pp or by score (Relax/Autopilot: pp only).
+                        // somtum.fun: online boards are ordered by the server, by pp or by score (Relax/Autopilot: pp only).
                         sortDropdown.Current.UnbindFrom(configLeaderboardSortMode);
                         sortDropdown.Items = onlineSortModes(variantDropdown.Current.Value);
                         sortDropdown.Current.Value = defaultOnlineSort(variantDropdown.Current.Value);
