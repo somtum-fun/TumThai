@@ -14,7 +14,7 @@ using osu.Game.Rulesets.Osu.Mods;
 namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki
 {
     /// <summary>
-    /// osu!somtum: ppy's difficulty, except Relax and Autopilot plays, which get Akatsuki's (as the
+    /// somtum.fun: ppy's difficulty, except Relax and Autopilot plays, which get Akatsuki's (as the
     /// server works out their pp), so star ratings and the in-game pp counter match their leaderboards.
     /// </summary>
     public class SomtumOsuDifficultyCalculator : OsuDifficultyCalculator

@@ -1,7 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-// osu!somtum: Akatsuki's Relax pp (akatsuki-pp-rs osu_2019 @ 591de0d), ported 1:1.
+// somtum.fun: Akatsuki's Relax pp (akatsuki-pp-rs osu_2019 @ 591de0d), ported 1:1.
 
 using System;
 using System.Collections.Generic;
@@ -64,7 +64,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Relax
 
                 nObjects = (uint)attributes.ObjectCount;
 
-                // osu!somtum: no more hits than the attributes have objects, as the server clamps them (the in-game
+                // somtum.fun: no more hits than the attributes have objects, as the server clamps them (the in-game
                 // counter can be a slider ahead of its attributes, and the accuracy part is raised to the 24th power).
                 nMisses = Math.Min(nMisses, nObjects);
                 n100 = Math.Min(n100, nObjects);

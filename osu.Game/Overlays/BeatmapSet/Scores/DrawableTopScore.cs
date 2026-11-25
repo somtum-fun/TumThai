@@ -19,7 +19,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
     {
         private readonly Box background;
 
-        // osu!somtum: sortedByPerformance shows pp in the big score slot.
+        // somtum.fun: sortedByPerformance shows pp in the big score slot.
         public DrawableTopScore(ScoreInfo score, int? position = 1, bool sortedByPerformance = false)
         {
             RelativeSizeAxes = Axes.X;

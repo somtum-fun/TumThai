@@ -66,12 +66,12 @@ namespace osu.Game.Screens.Select
         public Action<ScoreInfo>? ShowReplay { get; init; }
 
         /// <summary>
-        /// osu!somtum: show the score's pp instead of its total score (used when the leaderboard is sorted by pp).
+        /// somtum.fun: show the score's pp instead of its total score (used when the leaderboard is sorted by pp).
         /// </summary>
         public bool ShowPerformance { get; init; }
 
         /// <summary>
-        /// osu!somtum: when showing pp for a score with none stored, calculate it locally (local scores only).
+        /// somtum.fun: when showing pp for a score with none stored, calculate it locally (local scores only).
         /// Otherwise "-" is shown.
         /// </summary>
         public bool CalculateMissingPerformance { get; init; }
@@ -484,7 +484,7 @@ namespace osu.Game.Screens.Select
                                                     Spacing = new Vector2(0f, -2f),
                                                     Children = new Drawable[]
                                                     {
-                                                        // osu!somtum: pp in place of the total score when sorted by pp.
+                                                        // somtum.fun: pp in place of the total score when sorted by pp.
                                                         ShowPerformance
                                                             ? performanceText = new SpriteTextWithTooltip
                                                             {
@@ -723,7 +723,7 @@ namespace osu.Game.Screens.Select
             updatePerformanceDisplay();
         }
 
-        // osu!somtum: fills the pp text shown when sorted by pp.
+        // somtum.fun: fills the pp text shown when sorted by pp.
         private void updatePerformanceDisplay()
         {
             if (performanceText == null)

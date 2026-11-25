@@ -28,7 +28,7 @@ using osu.Game.Skinning;
 namespace osu.Game.Screens.Play.HUD
 {
     /// <summary>
-    /// osu!somtum: works out the live pp of the current play, so the pp counter and the gameplay leaderboard share one calculation.
+    /// somtum.fun: works out the live pp of the current play, so the pp counter and the gameplay leaderboard share one calculation.
     /// Nothing is calculated until <see cref="Start"/> is called by something that needs it.
     /// </summary>
     public partial class LivePerformanceTracker : Component

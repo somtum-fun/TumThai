@@ -10,7 +10,7 @@ using osu.Game.Scoring;
 
 namespace osu.Game.Screens.Select
 {
-    // osu!somtum: pp helpers shared by the tooltip and the pp display on pp-sorted leaderboards.
+    // somtum.fun: pp helpers shared by the tooltip and the pp display on pp-sorted leaderboards.
     public partial class BeatmapLeaderboardScore
     {
         /// <summary>

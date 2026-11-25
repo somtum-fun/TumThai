@@ -1,7 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-// osu!somtum: ppy's 2024.1115.0 osu! difficulty attributes, kept for Akatsuki Autopilot pp (akatsuki-pp-rs).
+// somtum.fun: ppy's 2024.1115.0 osu! difficulty attributes, kept for Akatsuki Autopilot pp (akatsuki-pp-rs).
 // The shared values live on OsuDifficultyAttributes so the existing UI keeps working; the ones the
 // 2024.1115.0 performance calculator needs and the current attributes dropped are added here.
 

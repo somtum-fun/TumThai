@@ -35,7 +35,7 @@ namespace osu.Game.Screens.Play
         private readonly Func<IBeatmap, IReadOnlyList<Mod>, Score> createScore;
 
         [Cached(typeof(IGameplayLeaderboardProvider))]
-        private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider { AllowPerformanceSort = true }; // osu!somtum
+        private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider { AllowPerformanceSort = true }; // somtum.fun
 
         protected override UserActivity? InitialActivity =>
             // score may be null if LoadedBeatmapSuccessfully is false.

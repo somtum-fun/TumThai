@@ -106,7 +106,7 @@ namespace osu.Game.Screens.Select
         }
 
         /// <summary>
-        /// osu!somtum: the variant a play with these mods counts in: Autopilot with AP, Relax with RX, else vanilla.
+        /// somtum.fun: the variant a play with these mods counts in: Autopilot with AP, Relax with RX, else vanilla.
         /// </summary>
         public static LeaderboardVariant VariantFor(IEnumerable<IMod> mods)
         {
@@ -119,7 +119,7 @@ namespace osu.Game.Screens.Select
         }
 
         /// <summary>
-        /// osu!somtum: the ruleset whose leaderboard and statistics a play with these mods belongs to
+        /// somtum.fun: the ruleset whose leaderboard and statistics a play with these mods belongs to
         /// (e.g. <c>osurx</c> for osu! with RX); the base ruleset for vanilla plays and unsupported combinations.
         /// </summary>
         public static RulesetInfo ForMods(this RulesetInfo baseRuleset, IEnumerable<IMod> mods)

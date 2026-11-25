@@ -19,7 +19,7 @@ using osu.Game.Tests.Beatmaps;
 namespace osu.Game.Rulesets.Osu.Tests
 {
     /// <summary>
-    /// osu!somtum: checks the Akatsuki Autopilot calculators against the values the live server's pp sidecar
+    /// somtum.fun: checks the Akatsuki Autopilot calculators against the values the live server's pp sidecar
     /// (akatsuki-pp-rs 591de0d) gave for the same plays.
     /// </summary>
     [TestFixture]

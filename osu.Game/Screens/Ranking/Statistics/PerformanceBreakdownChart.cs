@@ -182,7 +182,7 @@ namespace osu.Game.Screens.Ranking.Statistics
             var displayAttributes = breakdown.Performance.GetAttributesForDisplay().ToList();
             var perfectDisplayAttributes = breakdown.PerfectPerformance.GetAttributesForDisplay().ToList();
 
-            // osu!somtum: ultra ultimate potato mode skips the perfect play's pp (BeatmapDifficultyCache), so it may hold only an
+            // somtum.fun: ultra ultimate potato mode skips the perfect play's pp (BeatmapDifficultyCache), so it may hold only an
             // empty total. Show the achieved pp then, with no maximum and no per-attribute bars.
             bool perfectKnown = HasPerfectPerformance(breakdown);
 

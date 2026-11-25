@@ -296,7 +296,7 @@ namespace osu.Game.Screens.Play
 
             dependencies.CacheAs(GameplayState = new GameplayState(playableBeatmap, ruleset, gameplayMods, Score, ScoreProcessor, HealthProcessor, Beatmap.Value.Storyboard, PlayingState));
 
-            // osu!somtum: one live pp calculation, shared by the pp counter and the gameplay leaderboard.
+            // somtum.fun: one live pp calculation, shared by the pp counter and the gameplay leaderboard.
             var livePerformance = new LivePerformanceTracker();
             AddInternal(livePerformance);
             dependencies.CacheAs(livePerformance);

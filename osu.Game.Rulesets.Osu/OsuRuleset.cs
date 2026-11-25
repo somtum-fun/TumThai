@@ -265,7 +265,7 @@ namespace osu.Game.Rulesets.Osu
 
         public override Drawable CreateIcon() => new SpriteIcon { Icon = OsuIcon.RulesetOsu };
 
-        // osu!somtum: Akatsuki's difficulty and pp for Relax and Autopilot.
+        // somtum.fun: Akatsuki's difficulty and pp for Relax and Autopilot.
         public override DifficultyCalculator CreateDifficultyCalculator(IWorkingBeatmap beatmap) => new SomtumOsuDifficultyCalculator(RulesetInfo, beatmap);
 
         public override PerformanceCalculator CreatePerformanceCalculator() => new SomtumOsuPerformanceCalculator();

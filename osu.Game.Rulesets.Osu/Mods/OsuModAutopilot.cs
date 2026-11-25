@@ -24,7 +24,7 @@ namespace osu.Game.Rulesets.Osu.Mods
         public override ModType Type => ModType.Automation;
         public override LocalisableString Description => @"Automatic cursor movement - just follow the rhythm.";
 
-        // osu!somtum: Autopilot plays are ranked here, on their own leaderboards with their own pp.
+        // somtum.fun: Autopilot plays are ranked here, on their own leaderboards with their own pp.
         public override bool Ranked => true;
 
         public override Type[] IncompatibleMods => new[]

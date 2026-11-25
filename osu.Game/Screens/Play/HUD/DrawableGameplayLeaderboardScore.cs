@@ -63,7 +63,7 @@ namespace osu.Game.Screens.Play.HUD
         public BindableDouble PerformancePoints { get; } = new BindableDouble();
 
         /// <summary>
-        /// osu!somtum: whether pp is shown in place of the total score.
+        /// somtum.fun: whether pp is shown in place of the total score.
         /// </summary>
         public readonly bool DisplayPerformance;
 
@@ -333,7 +333,7 @@ namespace osu.Game.Screens.Play.HUD
 
         private void updateScore()
         {
-            // osu!somtum: pp-sorted boards show pp instead of score.
+            // somtum.fun: pp-sorted boards show pp instead of score.
             if (DisplayPerformance)
             {
                 scoreText.Text = $@"{(int)Math.Round(PerformancePoints.Value, MidpointRounding.AwayFromZero):N0}pp";

@@ -15,7 +15,7 @@ namespace osu.Game.Screens.Play.HUD
     {
         public bool UsesFixedAnchor { get; set; }
 
-        // osu!somtum: the live pp is worked out by a LivePerformanceTracker shared with the gameplay leaderboard.
+        // somtum.fun: the live pp is worked out by a LivePerformanceTracker shared with the gameplay leaderboard.
         // Player provides one; when there is none (e.g. tests), the counter makes its own.
         [Resolved(CanBeNull = true)]
         private LivePerformanceTracker sharedTracker { get; set; }

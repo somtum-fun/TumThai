@@ -65,7 +65,7 @@ namespace osu.Game.Overlays.BeatmapSet.Scores
 
         private bool showPerformancePoints;
 
-        // osu!somtum: the score column shows pp instead, and the separate pp column is dropped.
+        // somtum.fun: the score column shows pp instead, and the separate pp column is dropped.
         private bool sortedByPerformance;
 
         public void DisplayScores(IReadOnlyList<ScoreInfo> scores, bool showPerformanceColumn, bool sortedByPerformance = false)

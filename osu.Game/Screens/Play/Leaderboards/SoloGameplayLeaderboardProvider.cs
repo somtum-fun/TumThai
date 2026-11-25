@@ -29,7 +29,7 @@ namespace osu.Game.Screens.Play.Leaderboards
         private LivePerformanceTracker? livePerformance { get; set; }
 
         /// <summary>
-        /// osu!somtum: whether this board may order by pp (when song select's board was sorted by pp).
+        /// somtum.fun: whether this board may order by pp (when song select's board was sorted by pp).
         /// Set for solo plays and replays, but not for spectating.
         /// </summary>
         public bool AllowPerformanceSort { get; init; }
@@ -46,7 +46,7 @@ namespace osu.Game.Screens.Play.Leaderboards
 
             isPartial = globalScores == null || globalScores.IsPartial;
 
-            // osu!somtum: follow a pp-sorted online board from song select (local scores mostly have no pp).
+            // somtum.fun: follow a pp-sorted online board from song select (local scores mostly have no pp).
             var criteria = leaderboardManager?.CurrentCriteria;
             // TumThai: a Relax/Autopilot play (its RX/AP ruleset, or the mod, as a spectated osu!(stable) play has it) is always
             // ordered by pp, spectating too: RX/AP boards go by pp, and stable's and lazer's scores aren't on one scale.
@@ -105,7 +105,7 @@ namespace osu.Game.Screens.Play.Leaderboards
             if (sorting.IsValid)
                 return;
 
-            // osu!somtum: on a pp board, order by pp first.
+            // somtum.fun: on a pp board, order by pp first.
             var orderedByScore = (sortByPerformance
                                      ? scores.OrderByDescending(i => i.PerformancePoints.Value).ThenByDescending(i => i.TotalScore.Value)
                                      : scores.OrderByDescending(i => i.TotalScore.Value))

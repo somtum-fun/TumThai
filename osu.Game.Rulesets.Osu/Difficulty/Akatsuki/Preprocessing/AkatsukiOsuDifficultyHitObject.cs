@@ -1,7 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-// osu!somtum: ppy's 2024.1115.0 osu! difficulty algorithm, kept for Akatsuki Autopilot pp (akatsuki-pp-rs).
+// somtum.fun: ppy's 2024.1115.0 osu! difficulty algorithm, kept for Akatsuki Autopilot pp (akatsuki-pp-rs).
 
 using System;
 using System.Collections.Generic;
@@ -91,10 +91,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Preprocessing
             // Capped to 25ms to prevent difficulty calculation breaking from simultaneous objects.
             StrainTime = Math.Max(DeltaTime, MIN_DELTA_TIME);
 
-            // osu!somtum: the hit windows have since changed to floor(...) - 0.5; keep the 2024.1115.0 (and akatsuki-pp-rs) window.
+            // somtum.fun: the hit windows have since changed to floor(...) - 0.5; keep the 2024.1115.0 (and akatsuki-pp-rs) window.
             GreatHitWindow = 2 * IBeatmapDifficultyInfo.DifficultyRange(overallDifficulty, 80, 50, 20) / clockRate;
 
-            // osu!somtum: the current hit objects round the preempt and keep the default fade-in on sliders under Hidden;
+            // somtum.fun: the current hit objects round the preempt and keep the default fade-in on sliders under Hidden;
             // 2024.1115.0 (and akatsuki-pp-rs) used the unrounded preempt and the Hidden fade-in for every object.
             timePreempt = IBeatmapDifficultyInfo.DifficultyRange(approachRate, OsuHitObject.PREEMPT_MAX, OsuHitObject.PREEMPT_MID, OsuHitObject.PREEMPT_MIN);
 
@@ -210,7 +210,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Akatsuki.Preprocessing
         }
 
         /// <summary>
-        /// osu!somtum: 2024.1115.0 stored these on <see cref="Slider"/> (LazyEndPosition, LazyTravelDistance, LazyTravelTime); the current
+        /// somtum.fun: 2024.1115.0 stored these on <see cref="Slider"/> (LazyEndPosition, LazyTravelDistance, LazyTravelTime); the current
         /// <see cref="Slider"/> no longer has them, so they are kept here per slider instance.
         /// </summary>
         private class LazySliderData

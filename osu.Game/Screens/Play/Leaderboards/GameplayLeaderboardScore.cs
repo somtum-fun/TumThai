@@ -52,12 +52,12 @@ namespace osu.Game.Screens.Play.Leaderboards
         public BindableBool HasQuit { get; } = new BindableBool();
 
         /// <summary>
-        /// osu!somtum: the pp of the score (live for the tracked score, stored for others).
+        /// somtum.fun: the pp of the score (live for the tracked score, stored for others).
         /// </summary>
         public BindableDouble PerformancePoints { get; } = new BindableDouble();
 
         /// <summary>
-        /// osu!somtum: whether to show <see cref="PerformancePoints"/> in place of the total score.
+        /// somtum.fun: whether to show <see cref="PerformancePoints"/> in place of the total score.
         /// </summary>
         public bool DisplayPerformance { get; init; }
 
@@ -110,7 +110,7 @@ namespace osu.Game.Screens.Play.Leaderboards
             Combo.BindTarget = comboMode == ComboDisplayMode.Current ? scoreProcessor.Combo : scoreProcessor.HighestCombo;
             GetDisplayScore = scoreProcessor.GetDisplayScore;
 
-            // osu!somtum: live pp of the play, if something calculates it.
+            // somtum.fun: live pp of the play, if something calculates it.
             if (livePerformance != null)
                 ((IBindable<double>)PerformancePoints).BindTo(livePerformance);
         }
@@ -135,7 +135,7 @@ namespace osu.Game.Screens.Play.Leaderboards
             TotalScoreTiebreaker = scoreInfo.OnlineID > 0 ? scoreInfo.OnlineID : scoreInfo.Date.ToUnixTimeSeconds();
             GetDisplayScore = scoreInfo.GetDisplayScore;
             InitialPosition = scoreInfo.Position;
-            PerformancePoints.Value = scoreInfo.PP ?? 0; // osu!somtum
+            PerformancePoints.Value = scoreInfo.PP ?? 0; // somtum.fun
         }
 
         public GameplayLeaderboardScore(MultiplayerScore score, bool tracked, ComboDisplayMode comboMode)

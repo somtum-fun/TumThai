@@ -27,7 +27,7 @@ namespace osu.Game.Screens.Play
         private SomtumCustomRulesets customRulesets { get; set; }
 
         [Cached(typeof(IGameplayLeaderboardProvider))]
-        private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider { AllowPerformanceSort = true }; // osu!somtum
+        private readonly SoloGameplayLeaderboardProvider leaderboardProvider = new SoloGameplayLeaderboardProvider { AllowPerformanceSort = true }; // somtum.fun
 
         public SoloPlayer([CanBeNull] PlayerConfiguration configuration = null)
             : base(configuration)
