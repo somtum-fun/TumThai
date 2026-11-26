@@ -431,7 +431,11 @@ namespace osu.Game.Screens.Ranking
 
         private void rebuildLeaderboard(List<ScoreInfo> scores)
         {
-            var ordered = scores.OrderByDescending(s => s.TotalScore).ToList();
+            // In the server's order (its places), not by total score: the board can rank differently (mods, classic and
+            // stable scores). A play without a place yet (just set, not on the board) goes in by its score.
+            var placed = scores.Where(s => s.Position != null).ToList();
+            double rankKey(ScoreInfo s) => s.Position ?? placed.Count(p => p.TotalScore >= s.TotalScore) + 0.5;
+            var ordered = scores.OrderBy(rankKey).ThenByDescending(s => s.TotalScore).ToList();
             int self = Math.Max(0, ordered.FindIndex(s => ReferenceEquals(s, score) || s.Equals(score)));
 
             // Up to 8 above and 8 below this play.
