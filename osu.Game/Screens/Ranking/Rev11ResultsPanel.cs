@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
@@ -11,6 +13,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Localisation;
+using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Graphics;
@@ -50,6 +53,18 @@ namespace osu.Game.Screens.Ranking
             this.withFlair = withFlair;
             RelativeSizeAxes = Axes.Both;
         }
+
+        [Resolved]
+        private ResultsScreen? resultsScreen { get; set; }
+
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
+
+        private OsuSpriteText placeText = null!;
+        private OsuSpriteText ppText = null!;
+        private readonly CancellationTokenSource ppCancellation = new CancellationTokenSource();
+        private bool placeFromBoard;
+        private bool ppFromServer;
 
         [BackgroundDependencyLoader]
         private void load()
@@ -200,7 +215,7 @@ namespace osu.Game.Screens.Ranking
                         // accuracy / combo / pp
                         appear(tile(new Vector2(130, 492), new Vector2(236, 78), @"ACCURACY", score.DisplayAccuracy.ToString(), null)),
                         appear(tile(new Vector2(372, 492), new Vector2(236, 78), @"COMBO", $"{score.MaxCombo}x", null, $"/{score.GetMaximumAchievableCombo()}")),
-                        appear(tile(new Vector2(614, 492), new Vector2(236, 78), @"PP", score.PP is double pp ? $"{pp:N0}" : @"-", null)),
+                        appear(tile(new Vector2(614, 492), new Vector2(236, 78), @"PP", score.PP is double pp ? $"{pp:N0}" : @"-", null).With(t => ppText = t.ChildrenOfType<OsuSpriteText>().ElementAt(1))),
                         // the judgements in their colours
                         appear(new FillFlowContainer
                         {
@@ -268,7 +283,7 @@ namespace osu.Game.Screens.Ranking
                             Children = new Drawable[]
                             {
                                 band(550, 58, 0.75f),
-                                new OsuSpriteText
+                                placeText = new OsuSpriteText
                                 {
                                     Position = new Vector2(84, 0),
                                     Anchor = Anchor.CentreLeft,
@@ -322,6 +337,10 @@ namespace osu.Game.Screens.Ranking
         {
             base.LoadComplete();
 
+            // A play just finished has no pp yet (the server works it out after): work it out here, as lazer's panel does.
+            if (score.PP == null)
+                calculatePerformance();
+
             if (withFlair)
             {
                 using (BeginDelayedSequence(AccuracyCircle.ACCURACY_TRANSFORM_DELAY))
@@ -336,6 +355,62 @@ namespace osu.Game.Screens.Ranking
                     at += 60;
                 }
             }
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            // The place (and the server's pp) come with the leaderboard the results screen loads after a play.
+            if ((placeFromBoard && ppFromServer) || resultsScreen == null)
+                return;
+
+            var board = resultsScreen.GetOverviewScores().ToList();
+            var online = score.OnlineID > 0 ? board.FirstOrDefault(s => !ReferenceEquals(s, score) && s.OnlineID == score.OnlineID) : null;
+
+            if (!placeFromBoard)
+            {
+                int? place = online?.Position ?? score.Position ?? Rev11Places.PlaceAmong(score, board);
+                if (place is int p)
+                    placeText.Text = $"#{p:N0}";
+                placeFromBoard = online?.Position != null || score.Position != null;
+            }
+
+            if (!ppFromServer && online?.PP is double serverPp)
+            {
+                ppCancellation.Cancel();
+                ppText.Text = $"{serverPp:N0}";
+                ppFromServer = true;
+            }
+        }
+
+        private void calculatePerformance()
+        {
+            var token = ppCancellation.Token;
+
+            Task.Run(async () =>
+            {
+                var attributes = await difficultyCache.GetDifficultyAsync(score.BeatmapInfo!, score.Ruleset, score.Mods, token).ConfigureAwait(false);
+                if (attributes?.DifficultyAttributes == null)
+                    return;
+
+                var calculator = Somtum.Plara.PlaraCalculators.CreatePerformanceCalculator(score.Ruleset.CreateInstance());
+                if (calculator == null)
+                    return;
+
+                var result = await calculator.CalculateAsync(score, attributes.Value.DifficultyAttributes, token).ConfigureAwait(false);
+                Schedule(() =>
+                {
+                    if (!ppFromServer && !token.IsCancellationRequested)
+                        ppText.Text = $"{result.Total:N0}";
+                });
+            }, token);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            ppCancellation.Cancel();
+            base.Dispose(isDisposing);
         }
 
         private Drawable appear(Drawable d)
@@ -486,5 +561,27 @@ namespace osu.Game.Screens.Ranking
 
         private static Color4 Interpolation(Color4 a, Color4 b, float t) => new Color4(
             a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t, a.B + (b.B - a.B) * t, 1);
+    }
+}
+
+namespace osu.Game.Screens.Ranking
+{
+    /// <summary>TumThai: a play's place on the board the results screen loaded, when the server didn't give one: in the
+    /// server's order (its places), right after the score above it, as the Spotlight board places it.</summary>
+    public static class Rev11Places
+    {
+        public static int? PlaceAmong(ScoreInfo score, IReadOnlyList<ScoreInfo> board)
+        {
+            var placed = board.Where(s => s.Position != null && !ReferenceEquals(s, score)).ToList();
+            if (placed.Count == 0)
+                return null;
+
+            // the best placed score it beats or ties takes its place; else it comes after the last one above it
+            var beaten = placed.Where(s => s.TotalScore <= score.TotalScore).OrderBy(s => s.Position).FirstOrDefault();
+            if (beaten != null)
+                return beaten.Position;
+
+            return placed.Max(s => s.Position)!.Value + 1;
+        }
     }
 }
