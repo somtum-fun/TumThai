@@ -70,8 +70,22 @@ namespace osu.Game.Skinning
         }
 
         public Texture? GetTexture(string componentName, WrapMode wrapModeS, WrapMode wrapModeT)
-            => (userSkinSource is SkinManager sm ? sm.CurrentSkin.Value?.GetTexture(componentName, wrapModeS, wrapModeT) : userSkinSource?.GetTexture(componentName, wrapModeS, wrapModeT))
-               ?? hudSource.GetTexture(componentName, wrapModeS, wrapModeT);
+        {
+            var user = userTexture(componentName, wrapModeS, wrapModeT);
+            if (user != null)
+                return user;
+
+            // The health bar is one set, as in osu!stable: a skin with its own bar gets none of the default bar's pieces.
+            // (Borrowing the default scorebar-marker turned a skin's hidden ki marker into the default glowing dot.)
+            if (componentName.StartsWith(@"scorebar-", StringComparison.Ordinal)
+                && (userTexture(@"scorebar-colour", wrapModeS, wrapModeT) != null || userTexture(@"scorebar-bg", wrapModeS, wrapModeT) != null))
+                return null;
+
+            return hudSource.GetTexture(componentName, wrapModeS, wrapModeT);
+        }
+
+        private Texture? userTexture(string componentName, WrapMode wrapModeS, WrapMode wrapModeT)
+            => userSkinSource is SkinManager sm ? sm.CurrentSkin.Value?.GetTexture(componentName, wrapModeS, wrapModeT) : userSkinSource?.GetTexture(componentName, wrapModeS, wrapModeT);
 
         public ISample? GetSample(ISampleInfo sampleInfo)
             => (userSkinSource is SkinManager sm
