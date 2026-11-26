@@ -106,6 +106,7 @@ namespace osu.Game.Screens.Ranking
         private bool v2PanelLoading;
         private bool v2IntroShown;
         private V2RankingTable? rankingTable;
+        private V2ResultsPanel? rev11Details;
         private bool? lastV2Background;
         private bool hasEntered;
         private Box bottomBarBackground = null!;
@@ -246,6 +247,12 @@ namespace osu.Game.Screens.Ranking
                                     RankingAction = toggleRankingTable,
                                     DetailsAction = () =>
                                     {
+                                        if (resultsStyle.Value == ResultsScreenStyle.Rev11)
+                                        {
+                                            toggleRev11Details();
+                                            return;
+                                        }
+
                                         foreach (var panel in v2Panels)
                                             panel.ToggleDetails();
                                     },
@@ -342,6 +349,38 @@ namespace osu.Game.Screens.Ranking
             StatisticsPanel.State.BindValueChanged(onStatisticsStateChanged, true);
 
             fetchScores(null);
+        }
+
+        /// <summary>
+        /// TumThai: the Rev 11 style's More Info: the advanced metrics (graphs, timing distribution, heatmap) in place of the
+        /// score overview, and back.
+        /// </summary>
+        private void toggleRev11Details()
+        {
+            if (Score == null)
+                return;
+
+            var overview = v2PanelContainer.Children.OfType<Rev11ResultsPanel>().FirstOrDefault();
+
+            if (rev11Details == null)
+            {
+                rev11Details = new V2ResultsPanel(Score) { Alpha = 0 };
+                v2PanelContainer.Add(rev11Details);
+                rev11Details.OnLoadComplete += _ =>
+                {
+                    rev11Details?.ShowDetails();
+                    rev11Details?.FadeIn(200, Easing.OutQuint);
+                };
+                overview?.FadeOut(200, Easing.OutQuint);
+            }
+            else
+            {
+                var details = rev11Details;
+                rev11Details = null;
+                details.CloseDetails();
+                details.FadeOut(200, Easing.OutQuint).Expire();
+                overview?.FadeIn(200, Easing.OutQuint);
+            }
         }
 
         /// <summary>TumThai: the beatmap's full ranking (tabs, mods filter, table) over the modern layouts.</summary>
@@ -639,6 +678,12 @@ namespace osu.Game.Screens.Ranking
 
         public override bool OnBackButton()
         {
+            if (rev11Details != null)
+            {
+                toggleRev11Details();
+                return true;
+            }
+
             if (rankingTable?.State.Value == Visibility.Visible)
             {
                 rankingTable.Hide();

@@ -80,6 +80,14 @@ namespace osu.Game.Tests.Visual.Ranking
                 shot(outDir, "ranking", 0);
             }
 
+            // HARNESS_V2_DETAILS=1: then open More Info and shoot it.
+            if (Environment.GetEnvironmentVariable("HARNESS_V2_DETAILS") == "1")
+            {
+                AddStep("open more info", () => this.ChildrenOfType<V2ResultsFooter>().First().DetailsButton.TriggerClick());
+                AddWaitStep("settle", 15);
+                shot(outDir, "details", 0);
+            }
+
             if (Environment.GetEnvironmentVariable("HARNESS_EXIT") == "1")
                 AddStep("exit", () => host.Exit());
         }
