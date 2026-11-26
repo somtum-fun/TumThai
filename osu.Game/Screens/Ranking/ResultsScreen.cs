@@ -106,7 +106,7 @@ namespace osu.Game.Screens.Ranking
         private bool v2PanelLoading;
         private bool v2IntroShown;
         private V2RankingTable? rankingTable;
-        private V2ResultsPanel? rev11Details;
+        private Rev11AdvancedPanel? rev11Details;
         private bool? lastV2Background;
         private bool hasEntered;
         private Box bottomBarBackground = null!;
@@ -364,22 +364,19 @@ namespace osu.Game.Screens.Ranking
 
             if (rev11Details == null)
             {
-                rev11Details = new V2ResultsPanel(Score) { Alpha = 0 };
+                rev11Details = new Rev11AdvancedPanel(Score) { Alpha = 0, BackAction = toggleRev11Details };
                 v2PanelContainer.Add(rev11Details);
-                rev11Details.OnLoadComplete += _ =>
-                {
-                    rev11Details?.ShowDetails();
-                    rev11Details?.FadeIn(200, Easing.OutQuint);
-                };
+                rev11Details.FadeIn(250, Easing.OutQuint);
                 overview?.FadeOut(200, Easing.OutQuint);
+                V2DetailsVisible.Value = true;
             }
             else
             {
                 var details = rev11Details;
                 rev11Details = null;
-                details.CloseDetails();
                 details.FadeOut(200, Easing.OutQuint).Expire();
                 overview?.FadeIn(200, Easing.OutQuint);
+                V2DetailsVisible.Value = false;
             }
         }
 

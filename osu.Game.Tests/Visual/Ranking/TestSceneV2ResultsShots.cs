@@ -58,6 +58,8 @@ namespace osu.Game.Tests.Visual.Ranking
                 score.MaxCombo = score.GetMaximumAchievableCombo();
                 score.Statistics[HitResult.Miss] = 0;
                 score.BeatmapInfo!.StarRating = 6.93;
+                // hit events for the graphs (as after a play)
+                score.HitEvents = TestSceneHitEventTimingDistributionGraph.CreateDistributedHitEvents(0, 35).ToList();
                 Child = new ResultsHost(new ShotResultsScreen(score));
                 shownAt = Time.Current;
             });
