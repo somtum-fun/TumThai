@@ -247,7 +247,8 @@ namespace osu.Game.Screens.Ranking
                                     RankingAction = toggleRankingTable,
                                     DetailsAction = () =>
                                     {
-                                        if (resultsStyle.Value == ResultsScreenStyle.Rev11)
+                                        // the layouts without torii's own details view (Rev 11, Spotlight) open the advanced page
+                                        if (!v2Panels.Any())
                                         {
                                             toggleRev11Details();
                                             return;
@@ -360,7 +361,7 @@ namespace osu.Game.Screens.Ranking
             if (Score == null)
                 return;
 
-            var overview = v2PanelContainer.Children.OfType<Rev11ResultsPanel>().FirstOrDefault();
+            var overview = v2PanelContainer.Children.FirstOrDefault(c => c is not Rev11AdvancedPanel);
 
             if (rev11Details == null)
             {
@@ -421,7 +422,10 @@ namespace osu.Game.Screens.Ranking
 
             // A different modern layout picked while showing: start over with it.
             if (v2 && v2PanelContainer.Count > 0 && v2PanelContainer[0].GetType() != createV2Panel(Score!).GetType())
+            {
                 v2PanelContainer.Clear();
+                rev11Details = null;
+            }
 
             if (v2 && v2PanelContainer.Count == 0 && !v2PanelLoading && Score != null)
             {
@@ -483,6 +487,7 @@ namespace osu.Game.Screens.Ranking
                 V2DetailsVisible.Value = false;
                 SelectedScore.Value = score;
                 v2PanelContainer.Clear();
+                rev11Details = null;
                 v2PanelContainer.Add(createV2Panel(score));
             });
         }
