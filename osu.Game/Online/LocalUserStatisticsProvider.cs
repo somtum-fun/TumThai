@@ -116,7 +116,8 @@ namespace osu.Game.Online
             {
                 var standing = new GetSomtumCustomRulesetStandingRequest(custom.Slug);
                 standing.Success += s => UpdateStatistics(s, ruleset, callback);
-                api.Queue(standing);
+                // TumThai: side by side, not through the API's one-at-a-time queue (8+ of these at sign-in took ~6 s in a row).
+                api.PerformAsync(standing);
                 return;
             }
 
@@ -125,7 +126,8 @@ namespace osu.Game.Online
 
             var request = new GetUserRequest(api.LocalUser.Value.Id, ruleset);
             request.Success += u => UpdateStatistics(u.Statistics, ruleset, callback);
-            api.Queue(request);
+            // TumThai: side by side (one per mode, RX/AP too), not one after another; the callbacks still run on the update thread.
+            api.PerformAsync(request);
         }
 
         protected void UpdateStatistics(UserStatistics newStatistics, RulesetInfo ruleset, Action<UserStatisticsUpdate>? callback = null)
