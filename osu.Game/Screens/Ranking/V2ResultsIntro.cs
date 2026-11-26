@@ -57,6 +57,9 @@ namespace osu.Game.Screens.Ranking
         private Container rays = null!;
         private Drawable[] stars = null!;
         private Sample? rankSample;
+        private Sample? swooshSample;
+        private Sample? tickSample;
+        private Sample? starSample;
         private bool done;
 
         public V2ResultsIntro(ScoreInfo score)
@@ -169,6 +172,9 @@ namespace osu.Game.Screens.Ranking
             }
 
             rankSample = audio.Samples.Get(rankImpactSample(score.Rank));
+            swooshSample = audio.Samples.Get(@"Results/swoosh-up");
+            tickSample = audio.Samples.Get(@"Results/score-tick");
+            starSample = audio.Samples.Get(@"Results/badge-dink-max");
         }
 
         private Drawable star() => new SpriteIcon
@@ -192,6 +198,17 @@ namespace osu.Game.Screens.Ranking
             {
                 comboBanner.FadeIn(150);
                 comboLetters.TransformSpacingTo(new Vector2(26, 0), 800, Easing.OutQuint);
+
+                // sounds: a swoosh as it opens, a tick rising in pitch per letter, a ding as the stars turn in
+                swooshSample?.Play();
+
+                for (int n = 0; n < comboLetters.Count; n++)
+                {
+                    double pitch = 1 + n * 0.05;
+                    Scheduler.AddDelayed(() => playAt(tickSample, pitch), 150 + n * letter_stagger);
+                }
+
+                Scheduler.AddDelayed(() => starSample?.Play(), 450);
 
                 foreach (var s in stars)
                     s.Delay(450).ScaleTo(0.4f).FadeIn(200).ScaleTo(1, 500, Easing.OutBack).RotateTo(-20).RotateTo(0, 600, Easing.OutQuint);
@@ -242,6 +259,15 @@ namespace osu.Game.Screens.Ranking
             reveal();
             Finished?.Invoke();
             Expire();
+        }
+
+        private static void playAt(Sample? sample, double pitch)
+        {
+            var channel = sample?.GetChannel();
+            if (channel == null) return;
+
+            channel.Frequency.Value = pitch;
+            channel.Play();
         }
 
         private static string rankImpactSample(ScoreRank rank)

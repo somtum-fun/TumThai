@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Audio.Sample;
+using osu.Framework.Audio;
 using osu.Framework.Extensions;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
@@ -61,8 +63,10 @@ namespace osu.Game.Screens.Ranking
         }
 
         [BackgroundDependencyLoader]
-        private void load(BeatmapManager beatmaps, BeatmapDifficultyCache difficultyCache)
+        private void load(BeatmapManager beatmaps, BeatmapDifficultyCache difficultyCache, AudioManager audio)
         {
+            tickSample = audio.Samples.Get(@"Results/score-tick-lesser");
+
             var working = beatmaps.GetWorkingBeatmap(score.BeatmapInfo);
 
             InternalChild = new DrawSizePreservingFillContainer
@@ -212,22 +216,22 @@ namespace osu.Game.Screens.Ranking
                             Origin = Anchor.Centre,
                             Scale = new Vector2(0.5f),
                         },
-                        new OsuSpriteText
+                        scoreText = new OsuSpriteText
                         {
                             Position = new Vector2(712, 268),
-                            Text = score.TotalScore.ToString(@"N0"),
+                            Text = (withFlair ? 0 : score.TotalScore).ToString(@"N0"),
                             Font = OsuFont.Torus.With(size: 72, weight: FontWeight.Light, fixedWidth: true),
                             Spacing = new Vector2(-4, 0),
                             Colour = ColourInfo.GradientVertical(Color4.White, Color4Extensions.FromHex(@"d8f3ff")),
                         },
-                        new ModFlowDisplay
+                        mods = new ModFlowDisplay
                         {
                             Position = new Vector2(714, 345),
                             AutoSizeAxes = Axes.Both,
                             Scale = new Vector2(0.55f),
                             Current = { Value = score.Mods },
                         },
-                        new FillFlowContainer
+                        tiles = new FillFlowContainer
                         {
                             Position = new Vector2(715, 393),
                             Width = 370,
@@ -235,14 +239,14 @@ namespace osu.Game.Screens.Ranking
                             Spacing = new Vector2(4),
                             ChildrenEnumerable = mainTiles().Concat(judgementTiles()),
                         },
-                        new UpdateableAvatar(score.User, showUserPanelOnHover: true)
+                        playerAvatar = new UpdateableAvatar(score.User, showUserPanelOnHover: true)
                         {
                             Position = new Vector2(717, 512),
                             Size = new Vector2(24),
                             CornerRadius = 5,
                             Masking = true,
                         },
-                        new OsuSpriteText
+                        playerName = new OsuSpriteText
                         {
                             Position = new Vector2(747, 515),
                             Text = score.User.Username,
@@ -273,6 +277,63 @@ namespace osu.Game.Screens.Ranking
                                if (t.IsCompletedSuccessfully && t.GetResultSafely() is StarDifficulty d)
                                    showStars(d.Stars);
                            }));
+        }
+
+        private OsuSpriteText scoreText = null!;
+        private Drawable mods = null!;
+        private FillFlowContainer tiles = null!;
+        private Drawable playerAvatar = null!;
+        private Drawable playerName = null!;
+        private Sample? tickSample;
+        private double lastTick;
+
+        private long displayedScore;
+
+        /// <summary>The score as shown while it counts up (with a tick now and then, rising as it goes).</summary>
+        public long DisplayedScore
+        {
+            get => displayedScore;
+            set
+            {
+                displayedScore = value;
+                scoreText.Text = value.ToString(@"N0");
+
+                if (withFlair && Time.Current - lastTick > 60 && value < score.TotalScore)
+                {
+                    lastTick = Time.Current;
+                    var channel = tickSample?.GetChannel();
+
+                    if (channel != null)
+                    {
+                        channel.Frequency.Value = 1 + 0.5 * value / Math.Max(1, score.TotalScore);
+                        channel.Play();
+                    }
+                }
+            }
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            if (!withFlair)
+                return;
+
+            // The score counts up while the ring fills (same timing as the ring).
+            using (BeginDelayedSequence(AccuracyCircle.ACCURACY_TRANSFORM_DELAY))
+                this.TransformTo(nameof(DisplayedScore), score.TotalScore, AccuracyCircle.ACCURACY_TRANSFORM_DURATION, AccuracyCircle.ACCURACY_TRANSFORM_EASING);
+
+            // The right side comes in piece by piece, the leaderboard from the left.
+            double at = 300;
+
+            foreach (var d in new[] { mods }.Concat(tiles.Children).Append(playerAvatar).Append(playerName))
+            {
+                float x = d.X;
+                d.FadeOut().MoveToX(x + 24).Delay(at).FadeIn(300, Easing.OutQuint).MoveToX(x, 500, Easing.OutQuint);
+                at += 70;
+            }
+
+            leaderboard.FadeOut().MoveToX(-160).Delay(200).FadeIn(400, Easing.OutQuint).MoveToX(24, 700, Easing.OutQuint);
         }
 
         private void showStars(double stars)
