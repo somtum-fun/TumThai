@@ -30,7 +30,8 @@ namespace osu.Game.Screens.Ranking
     public partial class V2ResultsIntro : CompositeDrawable
     {
         private const double letter_stagger = 45;
-        private const double combo_hold = 1100;
+        // how long the finished word stays up once its last letter has turned white
+        private const double combo_word_hold = 700;
         private const double rank_hold = 1000;
 
         private readonly ScoreInfo score;
@@ -275,8 +276,10 @@ namespace osu.Game.Screens.Ranking
                     }
                 }
 
-                comboBanner.Delay(combo_hold).ScaleTo(1.05f, 300, Easing.OutQuint).FadeOut(300, Easing.OutQuint);
-                rankAt = combo_hold + 300;
+                // the last letter is white at 150 + stagger * (n - 1) + 350 + 250; then the whole word holds for a moment
+                double comboHold = 150 + letter_stagger * (comboLetters.Count - 1) + 600 + combo_word_hold;
+                comboBanner.Delay(comboHold).ScaleTo(1.05f, 300, Easing.OutQuint).FadeOut(300, Easing.OutQuint);
+                rankAt = comboHold + 300;
             }
 
             using (BeginDelayedSequence(rankAt))
