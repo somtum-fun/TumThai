@@ -38,6 +38,12 @@ namespace osu.Game.Screens.Ranking
         public Action? DetailsAction { get; init; }
         public Action? RetryAction { get; init; }
         public ScoreInfo? Score { get; init; }
+
+        /// <summary>
+        /// TumThai: the Rev 11 mockups' footer: Watch Replay, Download, Screenshot, Ranking, More Info, and Play Again as a
+        /// big button on the right.
+        /// </summary>
+        public bool Rev11Layout { get; init; }
         public bool AllowWatchingReplay { get; init; }
 
         public readonly BindableBool DetailsVisible = new BindableBool();
@@ -152,6 +158,12 @@ namespace osu.Game.Screens.Ranking
                 },
             };
 
+            if (Rev11Layout)
+            {
+                buttons = new[] { ReplayButton, ExportButton, screenshotButton, RankingButton, DetailsButton, RetryButton };
+                ExportButton.Text = ResultsScreenStrings.Download;
+            }
+
             InternalChildren = new Drawable[]
             {
                 // 1. ������ɫ�ĵף����� ScreenFooter��
@@ -198,7 +210,7 @@ namespace osu.Game.Screens.Ranking
             {
                 var button = buttons[i];
                 // AppearFromBottom fades the button back in, so alpha alone cannot hide unavailable actions.
-                if (button == RetryButton && RetryAction == null)
+                if (button == RetryButton && (RetryAction == null || Rev11Layout))
                     continue;
 
                 buttonsFlow.Add(button);
@@ -209,6 +221,21 @@ namespace osu.Game.Screens.Ranking
 
             if (Score != null && AllowWatchingReplay)
                 AddInternal(new ScoreDownloadTracker(Score) { State = { BindTarget = replayState } });
+
+            if (Rev11Layout && RetryAction != null)
+            {
+                AddInternal(new ShearedButton
+                {
+                    Width = 320,
+                    Anchor = Anchor.BottomRight,
+                    Origin = Anchor.BottomRight,
+                    Margin = new MarginPadding { Right = OsuGame.SCREEN_EDGE_MARGIN, Bottom = OsuGame.SCREEN_EDGE_MARGIN },
+                    Text = ResultsScreenStrings.PlayAgain,
+                    LighterColour = Colour4.FromHex(@"4ab6f0"),
+                    DarkerColour = Colour4.FromHex(@"2a8fd6"),
+                    Action = () => RetryAction?.Invoke(),
+                });
+            }
         }
 
         protected override void LoadComplete()

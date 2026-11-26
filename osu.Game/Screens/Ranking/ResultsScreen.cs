@@ -235,6 +235,7 @@ namespace osu.Game.Screens.Ranking
                                 RelativeSizeAxes = Axes.X,
                                 Child = v2Footer = new V2ResultsFooter
                                 {
+                                    Rev11Layout = resultsStyle.Value == ResultsScreenStyle.Rev11,
                                     Score = Score,
                                     AllowWatchingReplay = AllowWatchingReplay,
                                     BackAction = () =>
@@ -410,6 +411,7 @@ namespace osu.Game.Screens.Ranking
                     introGone = false;
                     v2Layer.Add(new V2ResultsIntro(Score)
                     {
+                        Rev11Colours = resultsStyle.Value == ResultsScreenStyle.Rev11,
                         Revealing = () =>
                         {
                             introGone = true;

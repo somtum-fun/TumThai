@@ -100,6 +100,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
         /// </summary>
         public bool ShowRankInCentre { get; init; } = true;
 
+        /// <summary>TumThai: the Rev 11 results colours for the grade (pink SS).</summary>
+        public bool Rev11Colours { get; init; }
+
         private readonly ScoreInfo score;
 
         [Resolved]
@@ -227,6 +230,7 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
                     Child = rankText = new RankText(score.Rank)
                     {
                         UseV2Style = UseV2Style,
+                        Rev11Colours = Rev11Colours,
                     },
                 },
             };

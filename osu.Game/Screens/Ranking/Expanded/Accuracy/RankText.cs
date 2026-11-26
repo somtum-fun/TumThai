@@ -21,6 +21,9 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
     {
         public bool UseV2Style { get; init; }
 
+        /// <summary>TumThai: the Rev 11 results colours (pink SS).</summary>
+        public bool Rev11Colours { get; init; }
+
         private readonly ScoreRank rank;
 
         private V2RankEmblem? emblem;
@@ -44,7 +47,7 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
         {
             if (UseV2Style)
             {
-                InternalChild = emblem = new V2RankEmblem(rank);
+                InternalChild = emblem = new V2RankEmblem(rank, Rev11Colours);
                 return;
             }
 

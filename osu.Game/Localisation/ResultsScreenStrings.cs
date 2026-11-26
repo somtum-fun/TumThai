@@ -86,6 +86,11 @@ Unstable Rate: {2:0.00}", earlyAverage, lateAverage, unstableRate);
 
         // TumThai: the V2 results screen (from torii, MIT).
         /// <summary>
+        /// "Download"
+        /// </summary>
+        public static LocalisableString Download => new TranslatableString(getKey(@"download"), @"Download");
+
+        /// <summary>
         /// "Watch Replay"
         /// </summary>
         public static LocalisableString WatchReplay => new TranslatableString(getKey(@"watch_replay"), @"Watch Replay");

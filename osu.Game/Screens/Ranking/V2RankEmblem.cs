@@ -37,10 +37,21 @@ namespace osu.Game.Screens.Ranking
 
         private bool hasAppeared;
 
-        private readonly Colour4 accent;
-        private readonly Colour4 flareColour;
+        private Colour4 accent;
+        private Colour4 flareColour;
 
-        public V2RankEmblem(ScoreRank rank)
+        /// <summary>
+        /// TumThai: the Rev 11 mockups' colours: SS pink (white into pink, magenta streaks), S gold. Other grades as before.
+        /// </summary>
+        private Colour4? letterGradientEnd;
+
+        public static Colour4? Rev11Accent(ScoreRank rank) => rank switch
+        {
+            ScoreRank.X or ScoreRank.XH => Colour4.FromHex("#FF7ACB"),
+            _ => null,
+        };
+
+        public V2RankEmblem(ScoreRank rank, bool rev11Colours = false)
         {
             this.rank = rank;
             Size = new Vector2(284, 271);
@@ -93,6 +104,13 @@ namespace osu.Game.Screens.Ranking
                     accent = Colour4.FromHex("#888888");
                     flareColour = Colour4.White;
                     break;
+            }
+
+            if (rev11Colours && Rev11Accent(rank) is Colour4 rev11)
+            {
+                accent = Colour4.FromHex("#D6007E");
+                flareColour = rev11;
+                letterGradientEnd = rev11;
             }
 
             AddInternal(glowFlare = new BufferedContainer(cachedFrameBuffer: true)
@@ -196,7 +214,7 @@ namespace osu.Game.Screens.Ranking
             if (texture != null)
             {
                 rankSprite.Texture = texture;
-                rankSprite.Colour = ColourInfo.GradientVertical(Colour4.White, accent);
+                rankSprite.Colour = ColourInfo.GradientVertical(Colour4.White, letterGradientEnd ?? accent);
                 if (ghostSprite != null)
                     ghostSprite.Texture = texture;
                 rankText.Alpha = 0;
@@ -204,7 +222,7 @@ namespace osu.Game.Screens.Ranking
             else
             {
                 rankSprite.Alpha = 0;
-                rankText.Colour = ColourInfo.GradientVertical(Colour4.White, accent);
+                rankText.Colour = ColourInfo.GradientVertical(Colour4.White, letterGradientEnd ?? accent);
                 rankText.Alpha = 1;
             }
         }

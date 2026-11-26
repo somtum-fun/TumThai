@@ -35,6 +35,9 @@ namespace osu.Game.Screens.Ranking
 
         private readonly ScoreInfo score;
 
+        /// <summary>TumThai: the Rev 11 results colours for the grade (pink SS).</summary>
+        public bool Rev11Colours { get; init; }
+
         /// <summary>Invoked once the intro is gone (played out or skipped).</summary>
         public Action? Finished;
 
@@ -231,7 +234,7 @@ namespace osu.Game.Screens.Ranking
                 // white first, with the burst; then the grade's own colour (the storyboard's middle frames)
                 rankText.Colour = Color4.White;
                 rankText.ScaleTo(2.2f).FadeIn(120).ScaleTo(1, 450, Easing.OutQuint);
-                rankText.Delay(450).FadeColour(ColourInfo.GradientVertical(Color4.White, OsuColour.ForRank(score.Rank)), 400, Easing.OutQuint);
+                rankText.Delay(450).FadeColour(ColourInfo.GradientVertical(Color4.White, Rev11Colours && V2RankEmblem.Rev11Accent(score.Rank) is Colour4 pink ? pink : OsuColour.ForRank(score.Rank)), 400, Easing.OutQuint);
 
                 rays.FadeIn(80).Then().Delay(250).FadeOut(350);
                 foreach (var ray in rays.Children.OfType<Container>())

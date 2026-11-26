@@ -308,6 +308,7 @@ namespace osu.Game.Screens.Ranking
                             Child = new AccuracyCircle(score, withFlair)
                             {
                                 UseV2Style = true,
+                                Rev11Colours = true,
                                 RelativeSizeAxes = Axes.Both,
                             },
                         },
