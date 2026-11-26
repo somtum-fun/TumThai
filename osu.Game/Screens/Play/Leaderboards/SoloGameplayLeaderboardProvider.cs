@@ -62,17 +62,15 @@ namespace osu.Game.Screens.Play.Leaderboards
 
             if (globalScores != null)
             {
-                var orderedScores = sortByPerformance
-                    ? globalScores.AllScores.OrderByCriteria(LeaderboardSortMode.PerformancePoints)
-                    : globalScores.AllScores.OrderByTotalScore();
-
-                foreach (var topScore in orderedScores)
-                {
-                    newScores.Add(new GameplayLeaderboardScore(topScore, false, GameplayLeaderboardScore.ComboDisplayMode.Highest)
-                    {
-                        DisplayPerformance = sortByPerformance,
-                    });
-                }
+                newScores.AddRange(createGlobalScores(globalScores));
+                globalScoresAdded = true;
+            }
+            else if (leaderboardManager != null)
+            {
+                // TumThai: starting a replay sets the game's beatmap/ruleset/mods to the replay's, which makes song select's
+                // board fetch again, so it can still be on its way here. Take it when it comes (if it's this beatmap's).
+                pendingScores = leaderboardManager.Scores.GetBoundCopy();
+                pendingScores.BindValueChanged(e => Schedule(() => addLateGlobalScores(e.NewValue)));
             }
 
             if (gameplayState != null)
@@ -93,6 +91,41 @@ namespace osu.Game.Screens.Play.Leaderboards
 
             sort();
             Scheduler.AddDelayed(sort, 1000, true);
+        }
+
+        private IBindable<LeaderboardScores?>? pendingScores;
+        private bool globalScoresAdded;
+
+        private IEnumerable<GameplayLeaderboardScore> createGlobalScores(LeaderboardScores globalScores)
+        {
+            var orderedScores = sortByPerformance
+                ? globalScores.AllScores.OrderByCriteria(LeaderboardSortMode.PerformancePoints)
+                : globalScores.AllScores.OrderByTotalScore();
+
+            foreach (var topScore in orderedScores)
+            {
+                yield return new GameplayLeaderboardScore(topScore, false, GameplayLeaderboardScore.ComboDisplayMode.Highest)
+                {
+                    DisplayPerformance = sortByPerformance,
+                };
+            }
+        }
+
+        private void addLateGlobalScores(LeaderboardScores? globalScores)
+        {
+            if (globalScoresAdded || globalScores == null || globalScores.FailState != null)
+                return;
+
+            // only the board of the beatmap being played
+            var boardBeatmap = leaderboardManager?.CurrentCriteria?.Beatmap;
+            if (gameplayState != null && boardBeatmap != null && boardBeatmap.ID != gameplayState.Beatmap.BeatmapInfo.ID)
+                return;
+
+            globalScoresAdded = true;
+            isPartial = globalScores.IsPartial;
+            scores.AddRange(createGlobalScores(globalScores).ToList());
+            sorting.Invalidate();
+            sort();
         }
 
         private bool isRelaxOrAutopilot() =>

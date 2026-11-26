@@ -215,6 +215,25 @@ namespace osu.Game.Tests.Visual.Gameplay
         }
 
         [Test]
+        public void TestScoresArrivingAfterStart()
+        {
+            // TumThai: a replay starts while song select's board is still being fetched again; its scores come late.
+            AddStep("no scores yet", () => ((Bindable<LeaderboardScores?>)leaderboardManager.Scores).Value = null);
+
+            createLeaderboard();
+
+            AddAssert("only the local score", () => this.ChildrenOfType<SoloGameplayLeaderboardProvider>().Single().Scores.Count == 1);
+
+            AddStep("scores arrive", () => ((Bindable<LeaderboardScores?>)leaderboardManager.Scores).Value = LeaderboardScores.Success(new[]
+            {
+                new ScoreInfo { User = new APIUser { Username = "peppy", Id = 2 }, TotalScore = 900_000, Accuracy = 0.99, MaxCombo = 999 },
+                new ScoreInfo { User = new APIUser { Username = "flyte", Id = 3103765 }, TotalScore = 700_000, Accuracy = 0.9, MaxCombo = 888 },
+            }, scoresRequested: 50, totalScores: 2, null));
+
+            AddUntilStep("board filled in", () => this.ChildrenOfType<SoloGameplayLeaderboardProvider>().Single().Scores.Count == 3);
+        }
+
+        [Test]
         public void TestQuitScore()
         {
             AddStep("set scores", () =>
