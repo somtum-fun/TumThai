@@ -131,6 +131,24 @@ namespace osu.Game.Tests.Visual.Ranking
                 AllowRetry = true;
                 IsLocalPlay = true;
             }
+
+            // a leaderboard to show: 20 others around this play
+            protected override System.Threading.Tasks.Task<ScoreInfo[]> FetchScores()
+            {
+                var scores = new ScoreInfo[20];
+                string[] names = { "ilise", "helise", "felice", "elise", "denise", "clorrise", "beatrice", "alice", "flyte", "peppy" };
+
+                for (int i = 0; i < scores.Length; i++)
+                {
+                    var s = TestResources.CreateTestScoreInfo();
+                    s.User = new osu.Game.Online.API.Requests.Responses.APIUser { Id = 100 + i, Username = names[i % names.Length], CountryCode = osu.Game.Users.CountryCode.TH };
+                    s.TotalScore = Score!.TotalScore + (10 - i) * 1000;
+                    s.Position = 568 + i;
+                    scores[i] = s;
+                }
+
+                return System.Threading.Tasks.Task.FromResult(scores);
+            }
         }
     }
 }

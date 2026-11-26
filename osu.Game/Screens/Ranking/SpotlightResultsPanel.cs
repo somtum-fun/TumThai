@@ -80,7 +80,7 @@ namespace osu.Game.Screens.Ranking
                         new Box
                         {
                             Size = new Vector2(right_panel_x, design_height),
-                            Colour = ColourInfo.GradientHorizontal(Color4.Black.Opacity(0.7f), Color4.Black.Opacity(0.35f)),
+                            Colour = ColourInfo.GradientHorizontal(Color4.Black.Opacity(0.45f), Color4.Black.Opacity(0.15f)),
                         },
                         // right: the numbers panel
                         new Box
@@ -105,7 +105,7 @@ namespace osu.Game.Screens.Ranking
                         },
                         leaderboard = new FillFlowContainer
                         {
-                            Position = new Vector2(24, 70),
+                            X = 24,
                             Width = 150,
                             AutoSizeAxes = Axes.Y,
                             Direction = FillDirection.Vertical,
@@ -119,14 +119,20 @@ namespace osu.Game.Screens.Ranking
                             Size = new Vector2(520),
                             Children = new Drawable[]
                             {
+                                new AccuracyCircle(score, withFlair)
+                                {
+                                    UseV2Style = true,
+                                    ShowRankInCentre = false,
+                                    RelativeSizeAxes = Axes.Both,
+                                },
                                 new CircularContainer
                                 {
                                     Anchor = Anchor.Centre,
                                     Origin = Anchor.Centre,
                                     RelativeSizeAxes = Axes.Both,
-                                    Size = new Vector2(0.81f),
+                                    Size = new Vector2(0.86f),
                                     Masking = true,
-                                    BorderThickness = 6,
+                                    BorderThickness = 5,
                                     BorderColour = Color4.Black,
                                     Children = new Drawable[]
                                     {
@@ -175,12 +181,6 @@ namespace osu.Game.Screens.Ranking
                                             },
                                         },
                                     },
-                                },
-                                new AccuracyCircle(score, withFlair)
-                                {
-                                    UseV2Style = true,
-                                    ShowRankInCentre = false,
-                                    RelativeSizeAxes = Axes.Both,
                                 },
                                 // the star rating on a curved band along the top of the cover, in its difficulty colour
                                 starArc = new CircularProgress
@@ -366,6 +366,10 @@ namespace osu.Game.Screens.Ranking
         {
             base.Update();
 
+            // The leaderboard sits so this play's tag is level with the ring's centre.
+            if (selfRow?.IsLoaded == true && selfRow.Parent != null)
+                leaderboard.Y = 322 - (selfRow.Y + selfRow.DrawHeight / 2);
+
             // Clear of the results footer (laid out for a 1280-wide screen, scaled with the width).
             Padding = new MarginPadding { Bottom = DrawWidth * V2ResultsFooter.DESIGN_HEIGHT / 1280 };
 
@@ -390,8 +394,9 @@ namespace osu.Game.Screens.Ranking
             for (int i = first; i < Math.Min(ordered.Count, self + 9); i++)
             {
                 var s = ordered[i];
-                int place = s.Position ?? i + 1;
-                leaderboard.Add(i == self ? selfRow(place) : row(s, place));
+                // a play without a place of its own (not on the server's board yet) comes right after the one above it
+                int place = s.Position ?? (i > 0 && ordered[i - 1].Position is int above ? above + 1 : i + 1);
+                leaderboard.Add(i == self ? selfRow = createSelfRow(place) : row(s, place));
             }
         }
 
@@ -424,7 +429,9 @@ namespace osu.Game.Screens.Ranking
             },
         };
 
-        private static Drawable selfRow(int place) => new Container
+        private Drawable? selfRow;
+
+        private static Drawable createSelfRow(int place) => new Container
         {
             Width = 150,
             Height = 38,
