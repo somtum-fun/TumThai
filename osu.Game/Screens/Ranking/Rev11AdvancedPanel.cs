@@ -15,6 +15,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
+using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
 using osu.Game.Database;
@@ -508,7 +509,10 @@ namespace osu.Game.Screens.Ranking
             var best = previousBest;
             flow.Add(statLine(@"ACCURACY", score.DisplayAccuracy.ToString(), best == null ? null : (score.Accuracy - best.Accuracy) * 100, @"0.00'%'"));
             flow.Add(statLine(@"COMBO", $"{score.MaxCombo}x", best == null ? null : score.MaxCombo - best.MaxCombo, @"0'x'"));
-            flow.Add(statLine(@"PP", score.PP is double pp ? $"{pp:N0}" : @"-", score.PP is double p1 && best?.PP is double p0 ? p1 - p0 : null, @"0"));
+            var ppLine = statLine(@"PP", score.PP is double pp ? $"{pp:N0}" : @"-", score.PP is double p1 && best?.PP is double p0 ? p1 - p0 : null, @"0");
+            flow.Add(ppLine);
+            if (score.PP == null)
+                calculatePerformance(ppLine.ChildrenOfType<OsuSpriteText>().ElementAt(1));
 
             foreach (var s in stats.Where(s => !s.Result.IsBasic()).Take(3))
                 flow.Add(statLine(s.DisplayName.ToString().ToUpperInvariant(), s.Count.ToString(@"N0")));
@@ -697,7 +701,10 @@ namespace osu.Game.Screens.Ranking
 
             foreach (var e in events)
             {
-                bool miss = !e.Result.IsHit();
+                // only real misses go along the top: ignored results (a spinner's ticks, slider ends) aren't misses
+                bool miss = e.Result.IsBasic() && !e.Result.IsHit();
+                if (!miss && !e.Result.IsHit())
+                    continue;
                 if (!miss && !HitEventExtensions.AffectsUnstableRate(e))
                     continue;
 
@@ -730,8 +737,24 @@ namespace osu.Game.Screens.Ranking
 
             var line = new Container { RelativeSizeAxes = Axes.Both };
 
-            foreach (float level in new[] { 1f, 0.5f, 0f })
-                line.Add(new Box { RelativeSizeAxes = Axes.X, Height = 1, RelativePositionAxes = Axes.Y, Y = 1 - level, Colour = Color4.White.Opacity(0.15f) });
+            // zoomed to what the play went through (in 5% steps), not 0-100%: a play mostly above 90% was a flat line on top
+            double lowest = points.Count > 0 ? points.Min(p => p.y) : 0;
+            double floor = Math.Clamp(Math.Floor((lowest - 0.01) * 20) / 20, 0, 0.95);
+            double yOf(double acc) => 1 - Math.Clamp((acc - floor) / (1 - floor), 0, 1);
+
+            foreach (double level in new[] { 1, (1 + floor) / 2, floor })
+            {
+                line.Add(new Box { RelativeSizeAxes = Axes.X, Height = 1, RelativePositionAxes = Axes.Y, Y = (float)yOf(level), Colour = Color4.White.Opacity(0.15f) });
+                line.Add(new OsuSpriteText
+                {
+                    RelativePositionAxes = Axes.Y,
+                    Y = (float)yOf(level),
+                    Origin = level >= 1 ? Anchor.TopLeft : Anchor.BottomLeft,
+                    Text = $"{level * 100:0.#}%",
+                    Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                    Colour = Color4.White.Opacity(0.45f),
+                });
+            }
 
             int step = Math.Max(1, points.Count / 600);
 
@@ -743,7 +766,7 @@ namespace osu.Game.Screens.Ranking
                     RelativePositionAxes = Axes.Both,
                     Origin = Anchor.Centre,
                     X = x,
-                    Y = 1 - Math.Clamp(y, 0, 1),
+                    Y = (float)yOf(y),
                     Size = new Vector2(3),
                     Colour = Interpolate(Color4Extensions.FromHex(@"ff5555"), Color4Extensions.FromHex(@"b3d943"), (float)Math.Clamp((y - 0.8) / 0.2, 0, 1)),
                 });
@@ -795,6 +818,29 @@ namespace osu.Game.Screens.Ranking
             Masking = true,
             Child = new Box { RelativeSizeAxes = Axes.Both, Colour = colour },
         };
+
+        [Resolved]
+        private BeatmapDifficultyCache difficultyCache { get; set; } = null!;
+
+        /// <summary>A play just finished has no pp yet (the server works it out after): work it out here.</summary>
+        private void calculatePerformance(OsuSpriteText target)
+        {
+            var token = cancellation.Token;
+
+            Task.Run(async () =>
+            {
+                var attributes = await difficultyCache.GetDifficultyAsync(score.BeatmapInfo!, score.Ruleset, score.Mods, token).ConfigureAwait(false);
+                if (attributes?.DifficultyAttributes == null)
+                    return;
+
+                var calculator = Somtum.Plara.PlaraCalculators.CreatePerformanceCalculator(score.Ruleset.CreateInstance());
+                if (calculator == null)
+                    return;
+
+                var result = await calculator.CalculateAsync(score, attributes.Value.DifficultyAttributes, token).ConfigureAwait(false);
+                Schedule(() => target.Text = $"{result.Total:N0}");
+            }, token);
+        }
 
         protected override void Dispose(bool isDisposing)
         {
