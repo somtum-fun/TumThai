@@ -65,7 +65,6 @@ namespace osu.Game.Screens.Ranking
         [BackgroundDependencyLoader]
         private void load(BeatmapManager beatmaps, BeatmapDifficultyCache difficultyCache, AudioManager audio)
         {
-            tickSample = audio.Samples.Get(@"Results/score-tick-lesser");
 
             var working = beatmaps.GetWorkingBeatmap(score.BeatmapInfo);
 
@@ -284,8 +283,6 @@ namespace osu.Game.Screens.Ranking
         private FillFlowContainer tiles = null!;
         private Drawable playerAvatar = null!;
         private Drawable playerName = null!;
-        private Sample? tickSample;
-        private double lastTick;
 
         private long displayedScore;
 
@@ -296,19 +293,8 @@ namespace osu.Game.Screens.Ranking
             set
             {
                 displayedScore = value;
+                // no ticks of its own: the accuracy ring already ticks through the reveal (two at once was too loud)
                 scoreText.Text = value.ToString(@"N0");
-
-                if (withFlair && Time.Current - lastTick > 60 && value < score.TotalScore)
-                {
-                    lastTick = Time.Current;
-                    var channel = tickSample?.GetChannel();
-
-                    if (channel != null)
-                    {
-                        channel.Frequency.Value = 1 + 0.5 * value / Math.Max(1, score.TotalScore);
-                        channel.Play();
-                    }
-                }
             }
         }
 

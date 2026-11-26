@@ -250,7 +250,7 @@ namespace osu.Game.Screens.Ranking
                 for (int n = 0; n < comboLetters.Count; n++)
                 {
                     double pitch = 1 + n * 0.05;
-                    Scheduler.AddDelayed(() => playAt(tickSample, pitch), 150 + n * letter_stagger);
+                    Scheduler.AddDelayed(() => playAt(tickSample, pitch, 0.5), 150 + n * letter_stagger);
                 }
 
                 Scheduler.AddDelayed(() => starSample?.Play(), 450);
@@ -318,12 +318,13 @@ namespace osu.Game.Screens.Ranking
             Expire();
         }
 
-        private static void playAt(Sample? sample, double pitch)
+        private static void playAt(Sample? sample, double pitch, double volume = 1)
         {
             var channel = sample?.GetChannel();
             if (channel == null) return;
 
             channel.Frequency.Value = pitch;
+            channel.Volume.Value = volume;
             channel.Play();
         }
 
