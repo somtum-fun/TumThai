@@ -15,6 +15,7 @@ using osu.Framework.Extensions.PolygonExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Threading;
@@ -83,6 +84,7 @@ namespace osu.Game.Screens.Select
 
         private IBindable<InterfaceTheme> interfaceTheme = null!;
         private WedgeBackground personalBestWedgeBg = null!;
+        private Box personalBestStableBg = null!;
         private OsuContextMenuContainer personalBestInnerContainer = null!;
         private Container personalBestContentPadding = null!;
 
@@ -182,6 +184,14 @@ namespace osu.Game.Screens.Select
                         Children = new Drawable[]
                         {
                             personalBestWedgeBg = new WedgeBackground(),
+                            // TumThai: the osu!stable theme hides the wedge background; this keeps the scores scrolled behind
+                            // the personal best from showing through it there.
+                            personalBestStableBg = new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = Color4.Black,
+                                Alpha = 0,
+                            },
                             // Required because wedge background blocks input from passing through
                             // to the main context menu container above.
                             personalBestInnerContainer = new OsuContextMenuContainer
@@ -241,6 +251,7 @@ namespace osu.Game.Screens.Select
                     Bottom = BeatmapLeaderboardScore.HEIGHT * 3,
                 };
                 personalBestWedgeBg.Alpha = isStable ? 0f : 1f;
+                personalBestStableBg.Alpha = isStable ? 0.8f : 0f;
                 personalBestDisplay.CornerRadius = isStable ? 0f : 10f;
                 personalBestDisplay.Shear = isStable ? Vector2.Zero : OsuGame.SHEAR;
                 personalBestDisplay.Margin = new MarginPadding { Left = isStable ? 4f : -40f, Right = isStable ? 4f : 0f };
@@ -506,7 +517,8 @@ namespace osu.Game.Screens.Select
 
                 scoresScroll.TransformTo(nameof(scoresScroll.Padding), new MarginPadding { Bottom = personal_best_height }, PotatoMode.UltraActive ? 0 : 300, Easing.OutQuint);
 
-                if (totalCount != null && userScore.Position != null)
+                // TumThai: a server that doesn't say how many scores there are (a total of 0) gets no "of 0".
+                if (totalCount > 0 && userScore.Position != null)
                     personalBestText.Text = BeatmapLeaderboardWedgeStrings.PersonalBestWithPosition(userScore.Position.Value, totalCount.Value);
                 else
                     personalBestText.Text = BeatmapLeaderboardWedgeStrings.PersonalBest;

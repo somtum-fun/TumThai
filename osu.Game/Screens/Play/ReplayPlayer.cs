@@ -119,11 +119,15 @@ namespace osu.Game.Screens.Play
                 Font = OsuFont.Style.Body.With(weight: FontWeight.SemiBold),
             });
 
+            // TumThai: the osu!stable theme keeps its leaderboard and score along the top, which the scrolling message ran
+            // across; there it scrolls along the bottom instead, above the progress bar.
+            bool themed = config.Get<InterfaceTheme>(OsuSetting.InterfaceTheme).IsThemed();
+
             ReplayOverlay.SetMessage(new ScrollingMessage(message)
             {
-                Y = 96,
-                Anchor = Anchor.TopCentre,
-                Origin = Anchor.TopCentre,
+                Y = themed ? -70 : 96,
+                Anchor = themed ? Anchor.BottomCentre : Anchor.TopCentre,
+                Origin = themed ? Anchor.BottomCentre : Anchor.TopCentre,
             });
 
             RulesetSkinProvidingContainer rulesetSkinProvider;
