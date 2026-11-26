@@ -52,8 +52,8 @@ namespace osu.Game.Screens.Ranking
         private List<HitResult> columns = new List<HitResult>();
         private LeaderboardCriteria? requested;
 
-        [Resolved]
-        private LeaderboardManager leaderboardManager { get; set; } = null!;
+        // TumThai: its own manager, so switching tabs here never changes the board song select and gameplay share.
+        private readonly LeaderboardManager leaderboardManager = new LeaderboardManager();
 
         [Resolved]
         private OsuColour colours { get; set; } = null!;
@@ -147,6 +147,7 @@ namespace osu.Game.Screens.Ranking
             };
 
             pinned.Add(row(score, score.Position, highlighted: true));
+            AddInternal(leaderboardManager);
             scores.BindTo(leaderboardManager.Scores);
         }
 

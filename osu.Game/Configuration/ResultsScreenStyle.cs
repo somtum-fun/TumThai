@@ -28,5 +28,9 @@ namespace osu.Game.Configuration
         /// <summary>The leaderboard, the beatmap inside the accuracy ring, and the numbers beside it.</summary>
         [LocalisableDescription(typeof(UserInterfaceStrings), nameof(UserInterfaceStrings.ResultsStyleSpotlight))]
         Spotlight,
+
+        /// <summary>ppy's Rev 11 results design, as drawn.</summary>
+        [LocalisableDescription(typeof(UserInterfaceStrings), nameof(UserInterfaceStrings.ResultsStyleRev11))]
+        Rev11,
     }
 }

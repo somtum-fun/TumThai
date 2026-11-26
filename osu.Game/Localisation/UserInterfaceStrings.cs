@@ -255,6 +255,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ResultsStyleStable => new TranslatableString(getKey(@"results_style_stable"), @"osu!stable");
 
         /// <summary>
+        /// "Rev 11 (osu! design)"
+        /// </summary>
+        public static LocalisableString ResultsStyleRev11 => new TranslatableString(getKey(@"results_style_rev11"), @"Rev 11 (osu! design)");
+
+        /// <summary>
         /// "Spotlight (map in the ring)"
         /// </summary>
         public static LocalisableString ResultsStyleSpotlight => new TranslatableString(getKey(@"results_style_spotlight"), @"Spotlight (map in the ring)");
