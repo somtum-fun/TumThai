@@ -30,6 +30,9 @@ namespace osu.Game.Tests.Visual.Ranking
     public partial class TestSceneV2ResultsShots : OsuTestScene
     {
         [Resolved]
+        private osu.Framework.Audio.AudioManager audio { get; set; } = null!;
+
+        [Resolved]
         private OsuConfigManager config { get; set; } = null!;
 
         [Resolved]
@@ -49,7 +52,34 @@ namespace osu.Game.Tests.Visual.Ranking
             // HARNESS_V2_STYLE: the layout (default V2).
             AddStep("use V2 results", () => config.SetValue(OsuSetting.ResultsScreenStyle,
                 Enum.TryParse(Environment.GetEnvironmentVariable("HARNESS_V2_STYLE"), out ResultsScreenStyle style) ? style : ResultsScreenStyle.V2));
-            AddStep("show results", () =>
+            // HARNESS_V2_WARMUP=1: show the results once first and clear them, so the shown run doesn't hitch on the
+            // first-time loading (fonts, textures, shaders) and its sounds line up with the picture in a recording.
+            if (Environment.GetEnvironmentVariable("HARNESS_V2_WARMUP") == "1")
+            {
+                AddStep("warm up", showResults);
+                AddWaitStep("warm", 1);
+                AddUntilStep("warmed", () => Time.Current - shownAt >= 3500);
+                AddStep("clear", () => Child = new Container());
+                AddUntilStep("pause", () => Time.Current - shownAt >= 6000);
+            }
+
+            // HARNESS_V2_MARKER=1: a white flash and a click together right before the shown run, so a recording's audio
+            // offset (recorder and the game's own output) can be measured from it and undone.
+            if (Environment.GetEnvironmentVariable("HARNESS_V2_MARKER") == "1")
+            {
+                AddStep("marker", () =>
+                {
+                    Child = new osu.Framework.Graphics.Shapes.Box { RelativeSizeAxes = Axes.Both, Colour = osuTK.Graphics.Color4.White };
+                    audio.Samples.Get(@"Gameplay/normal-hitnormal")?.Play();
+                });
+                AddWaitStep("marker shown", 3);
+                AddStep("marker off", () => Child = new Container());
+                AddWaitStep("after marker", 5);
+            }
+
+            AddStep("show results", showResults);
+
+            void showResults()
             {
                 var score = TestResources.CreateTestScoreInfo();
                 // HARNESS_V2_RANK: the grade to show (default SS).
@@ -62,7 +92,7 @@ namespace osu.Game.Tests.Visual.Ranking
                 score.HitEvents = TestSceneHitEventTimingDistributionGraph.CreateDistributedHitEvents(0, 35).ToList();
                 Child = new ResultsHost(new ShotResultsScreen(score));
                 shownAt = Time.Current;
-            });
+            }
 
             // HARNESS_V2_TIMES: when to shoot, in ms after the results show (default 900,1900,4500).
             string times = Environment.GetEnvironmentVariable("HARNESS_V2_TIMES") ?? "900,1900,4500";
