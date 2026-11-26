@@ -17,6 +17,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Drawables;
+using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
@@ -59,6 +60,12 @@ namespace osu.Game.Screens.Ranking
         [Resolved]
         private BeatmapManager beatmaps { get; set; } = null!;
 
+        [Resolved(canBeNull: true)]
+        private RealmAccess? realm { get; set; }
+
+        /// <summary>This player's best earlier score on the map (same ruleset, saved locally), for the "+x" differences.</summary>
+        private ScoreInfo? previousBest;
+
         public Rev11AdvancedPanel(ScoreInfo score)
         {
             this.score = score;
@@ -71,6 +78,7 @@ namespace osu.Game.Screens.Ranking
             var beatmap = score.BeatmapInfo!;
             var working = beatmaps.GetWorkingBeatmap(beatmap);
             var stats = score.GetStatisticsForDisplay().ToList();
+            previousBest = findPreviousBest();
 
             InternalChild = new DrawSizePreservingFillContainer
             {
@@ -439,6 +447,11 @@ namespace osu.Game.Screens.Ranking
                                 Spacing = new Vector2(-4, 0),
                                 Colour = ColourInfo.GradientVertical(Color4.White, Color4Extensions.FromHex(@"cfeaff")),
                             },
+                            deltaText(previousBest == null ? null : score.TotalScore - previousBest.TotalScore, @"#,0", 20).With(d =>
+                            {
+                                d.Anchor = Anchor.CentreLeft;
+                                d.Origin = Anchor.CentreLeft;
+                            }),
                         },
                     },
                     new Container
@@ -492,9 +505,10 @@ namespace osu.Game.Screens.Ranking
                 Spacing = new Vector2(0, 6),
             };
 
-            flow.Add(statLine(@"ACCURACY", score.DisplayAccuracy.ToString()));
-            flow.Add(statLine(@"COMBO", $"{score.MaxCombo}x"));
-            flow.Add(statLine(@"PP", score.PP is double pp ? $"{pp:N0}" : @"-"));
+            var best = previousBest;
+            flow.Add(statLine(@"ACCURACY", score.DisplayAccuracy.ToString(), best == null ? null : (score.Accuracy - best.Accuracy) * 100, @"0.00'%'"));
+            flow.Add(statLine(@"COMBO", $"{score.MaxCombo}x", best == null ? null : score.MaxCombo - best.MaxCombo, @"0'x'"));
+            flow.Add(statLine(@"PP", score.PP is double pp ? $"{pp:N0}" : @"-", score.PP is double p1 && best?.PP is double p0 ? p1 - p0 : null, @"0"));
 
             foreach (var s in stats.Where(s => !s.Result.IsBasic()).Take(3))
                 flow.Add(statLine(s.DisplayName.ToString().ToUpperInvariant(), s.Count.ToString(@"N0")));
@@ -502,16 +516,74 @@ namespace osu.Game.Screens.Ranking
             return flow;
         }
 
-        private static Drawable statLine(string header, string value) => new FillFlowContainer
+        private static Drawable statLine(string header, string value, double? delta = null, string deltaFormat = @"0")
         {
-            AutoSizeAxes = Axes.Both,
-            Direction = FillDirection.Vertical,
-            Children = new Drawable[]
+            var line = new FillFlowContainer
             {
-                new OsuSpriteText { Text = header, Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold) },
-                new OsuSpriteText { Text = value, Font = OsuFont.Torus.With(size: 22, weight: FontWeight.Regular) },
-            },
-        };
+                AutoSizeAxes = Axes.Both,
+                Direction = FillDirection.Vertical,
+                Children = new Drawable[]
+                {
+                    new OsuSpriteText { Text = header, Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold) },
+                    new FillFlowContainer
+                    {
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Horizontal,
+                        Spacing = new Vector2(6, 0),
+                        Children = new Drawable[]
+                        {
+                            new OsuSpriteText { Text = value, Font = OsuFont.Torus.With(size: 22, weight: FontWeight.Regular) },
+                            deltaText(delta, deltaFormat, 13).With(d =>
+                            {
+                                d.Anchor = Anchor.BottomLeft;
+                                d.Origin = Anchor.BottomLeft;
+                                d.Margin = new MarginPadding { Bottom = 3 };
+                            }),
+                        },
+                    },
+                },
+            };
+            return line;
+        }
+
+        /// <summary>"+1.23" in green, "-1.23" in red, nothing when there's no earlier score or no difference.</summary>
+        private static Drawable deltaText(double? delta, string format, float size)
+        {
+            if (delta is not double d || Math.Abs(d) < 1e-9)
+                return Empty();
+
+            return new OsuSpriteText
+            {
+                Text = (d > 0 ? @"+" : @"") + d.ToString(format, System.Globalization.CultureInfo.InvariantCulture),
+                Font = OsuFont.Torus.With(size: size, weight: FontWeight.SemiBold),
+                Colour = d > 0 ? Color4Extensions.FromHex(@"88ee66") : Color4Extensions.FromHex(@"ff6677"),
+            };
+        }
+
+        private ScoreInfo? findPreviousBest()
+        {
+            if (realm == null || score.BeatmapInfo == null)
+                return null;
+
+            try
+            {
+                Guid beatmapId = score.BeatmapInfo.ID;
+                int userId = score.User.OnlineID;
+                string ruleset = score.Ruleset.ShortName;
+
+                return realm.Run(r => r.All<ScoreInfo>()
+                                       .Where(s => !s.DeletePending && s.BeatmapInfo != null && s.BeatmapInfo.ID == beatmapId)
+                                       .ToList()
+                                       .Where(s => s.ID != score.ID && s.User.OnlineID == userId && s.Ruleset.ShortName == ruleset && s.Date < score.Date)
+                                       .OrderByDescending(s => s.TotalScore)
+                                       .FirstOrDefault()?.Detach());
+            }
+            catch
+            {
+                // the differences are nice to have
+                return null;
+            }
+        }
 
         private Drawable judgementColumn(List<HitResultDisplayStatistic> stats)
         {
