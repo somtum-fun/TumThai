@@ -118,7 +118,8 @@ namespace osu.Game.Screens.Ranking.Expanded
                                     FillMode = FillMode.Fit,
                                 }
                             },
-                            scoreCounter = new TotalScoreCounter(!withFlair)
+                            // TumThai (owner): a score opened without just playing it makes no score sounds; after a play the accuracy ring ticks
+                            scoreCounter = new TotalScoreCounter(false)
                             {
                                 Margin = new MarginPadding { Top = 0, Bottom = 5 },
                                 Current = { Value = 0 },

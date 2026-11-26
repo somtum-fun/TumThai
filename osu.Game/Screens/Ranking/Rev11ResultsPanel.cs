@@ -180,8 +180,8 @@ namespace osu.Game.Screens.Ranking
                             Children = new Drawable[]
                             {
                                 band(840, 180, 0.6f),
-                                // only the accuracy ring ticks during the reveal (as in lazer); the counter ticks when browsing a score
-                                scoreCounter = new BigScoreCounter(!withFlair)
+                                // TumThai (owner): a score opened without just playing it makes no score sounds; after a play the accuracy ring ticks
+                                scoreCounter = new BigScoreCounter(false)
                                 {
                                     Position = new Vector2(66, 8),
                                     RelativeSizeAxes = Axes.None,

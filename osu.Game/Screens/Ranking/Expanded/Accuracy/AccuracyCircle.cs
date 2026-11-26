@@ -329,10 +329,12 @@ namespace osu.Game.Screens.Ranking.Expanded.Accuracy
 
                 if (withFlair)
                 {
-                    const double score_tick_debounce_rate_start = 18f;
-                    const double score_tick_debounce_rate_end = 300f;
-                    const double score_tick_volume_start = 0.6f;
-                    const double score_tick_volume_end = 1.0f;
+                    // TumThai: the newer results styles tick more gently (lazer's ~55 ticks a second at full volume was
+                    // too much next to their own sounds); lazer's own style keeps lazer's.
+                    double score_tick_debounce_rate_start = UseV2Style ? 60 : 18;
+                    double score_tick_debounce_rate_end = UseV2Style ? 320 : 300;
+                    double score_tick_volume_start = UseV2Style ? 0.35 : 0.6;
+                    double score_tick_volume_end = UseV2Style ? 0.6 : 1.0;
 
                     // Use a bounded playback window, not paired scheduler callbacks. A hidden or masked
                     // panel can miss updates; resuming it must not restart the ticking or catch up sounds.

@@ -631,7 +631,8 @@ namespace osu.Game.Screens.Ranking
                 {
                     Position = new Vector2(48, 192),
                     Size = new Vector2(412, 101),
-                    Child = scoreCounter = new TotalScoreCounter(!withFlair)
+                    // TumThai (owner): a score opened without just playing it makes no score sounds; after a play the accuracy ring ticks
+                    Child = scoreCounter = new TotalScoreCounter(false)
                     {
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
