@@ -166,12 +166,7 @@ namespace osu.Game.Screens.Ranking
 
             foreach (char c in comboWord)
             {
-                comboLetters.Add(new OsuSpriteText
-                {
-                    Text = c.ToString(),
-                    Font = OsuFont.Torus.With(size: 64, weight: FontWeight.Bold),
-                    Alpha = 0,
-                });
+                comboLetters.Add(createLetter(c, comboLetters.Count));
             }
 
             rankSample = audio.Samples.Get(rankImpactSample(score.Rank));
@@ -179,6 +174,52 @@ namespace osu.Game.Screens.Ranking
             tickSample = audio.Samples.Get(@"Results/score-tick");
             starSample = audio.Samples.Get(@"Results/badge-dink-max");
         }
+
+        private static readonly Color4[] stroke_colours =
+        {
+            Color4Extensions.FromHex(@"ff4f9a"), Color4Extensions.FromHex(@"7a4dff"), Color4Extensions.FromHex(@"40b7ff"),
+            Color4Extensions.FromHex(@"44dd66"), Color4Extensions.FromHex(@"ffc845"), Color4Extensions.FromHex(@"ff5a4a"),
+        };
+
+        /// <summary>A letter of the banner: the white letter (first child, hidden at first) and the coloured strokes it's
+        /// drawn from, as the Rev 11 storyboard opens with.</summary>
+        private Drawable createLetter(char c, int index)
+        {
+            var letter = new Container<Drawable>
+            {
+                AutoSizeAxes = Axes.Both,
+                Alpha = 0,
+                Child = new OsuSpriteText
+                {
+                    Text = c.ToString(),
+                    Font = OsuFont.Torus.With(size: 64, weight: FontWeight.Bold),
+                    Alpha = 0,
+                },
+            };
+
+            if (c == ' ')
+                return letter;
+
+            var colour = stroke_colours[index % stroke_colours.Length];
+            float[] angles = { 0, 0, -35, 90, 35 };
+
+            // one main stroke and, for most letters, a shorter second one
+            letter.Add(stroke(new Vector2(0, -2), new Vector2(11, 46), angles[index % angles.Length], colour));
+            if (index % 3 != 2)
+                letter.Add(stroke(new Vector2(index % 2 == 0 ? 10 : -10, 12), new Vector2(11, 22), angles[(index + 2) % angles.Length], colour));
+
+            return letter;
+        }
+
+        private static Drawable stroke(Vector2 offset, Vector2 size, float rotation, Color4 colour) => new Circle
+        {
+            Anchor = Anchor.Centre,
+            Origin = Anchor.Centre,
+            Position = offset,
+            Size = size,
+            Rotation = rotation,
+            Colour = ColourInfo.GradientVertical(Color4.White, colour),
+        };
 
         private Drawable star() => new SpriteIcon
         {
@@ -220,8 +261,18 @@ namespace osu.Game.Screens.Ranking
 
                 foreach (var letter in comboLetters.Children)
                 {
-                    letter.Delay(150 + i++ * letter_stagger)
-                          .MoveToY(30).FadeIn(200, Easing.OutQuint).MoveToY(0, 400, Easing.OutBack);
+                    double at = 150 + i++ * letter_stagger;
+
+                    // the storyboard: coloured strokes first, which then become the white letter
+                    letter.Delay(at).MoveToY(30).FadeIn(150, Easing.OutQuint).MoveToY(0, 400, Easing.OutBack);
+
+                    if (letter is Container<Drawable> parts)
+                    {
+                        foreach (var piece in parts.Children.Skip(1))
+                            piece.Delay(at).ScaleTo(new Vector2(1, 0.2f)).ScaleTo(1, 250, Easing.OutQuint).Then().Delay(250).FadeOut(250, Easing.OutQuint);
+
+                        parts.Children[0].Delay(at + 350).FadeIn(250, Easing.OutQuint);
+                    }
                 }
 
                 comboBanner.Delay(combo_hold).ScaleTo(1.05f, 300, Easing.OutQuint).FadeOut(300, Easing.OutQuint);
