@@ -313,6 +313,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # A branch that builds against our framework fork (osu.Game references ../../osu-framework): fetch it beside us.
+      - name: Framework
+        shell: bash
+        run: |
+          if grep -q 'osu-framework.osu\.Framework.osu\.Framework\.csproj' osu.Game/osu.Game.csproj; then
+            git clone --filter=blob:none https://github.com/somtum-fun/tumthai-framework.git ../osu-framework
+            git -C ../osu-framework checkout "${{ inputs.framework_ref || 'tumthai-next' }}"
+            git -C ../osu-framework log -1 --format='framework %h %s'
+          fi
+
       - uses: actions/setup-java@v5
         with:
           distribution: microsoft
