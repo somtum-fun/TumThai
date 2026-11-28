@@ -30,9 +30,22 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build, e.g. 2026.1012.0 (no leading v)'
+        description: 'Version to build, e.g. 2026.1012.0, or 2026.1012.0-next for TumThai!Next (no leading v)'
         required: true
         type: string
+      server:
+        description: 'prod = somtum.fun (TumThai); dev = blueskychan.dev (TumThai Dev, -p:SomtumServer=dev)'
+        type: choice
+        options: [ prod, dev ]
+        default: prod
+      only_macos:
+        description: 'Build only the macOS apps (skip Windows, Linux and Android)'
+        type: boolean
+        default: false
+      framework_ref:
+        description: 'tumthai-framework branch or commit, for a branch that builds against it (TumThai!Next)'
+        type: string
+        default: tumthai-next
 
 permissions:
   contents: read
@@ -54,30 +67,49 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
       android_code: ${{ steps.v.outputs.android_code }}
+      pack_id: ${{ steps.v.outputs.pack_id }}
+      app_name: ${{ steps.v.outputs.app_name }}
+      bundle_id: ${{ steps.v.outputs.bundle_id }}
+      channel_suffix: ${{ steps.v.outputs.channel_suffix }}
+      server_prop: ${{ steps.v.outputs.server_prop }}
     steps:
       - id: v
         shell: bash
         env:
           INPUT_VERSION: ${{ inputs.version }}
+          INPUT_SERVER: ${{ inputs.server || 'prod' }}
         run: |
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
             VERSION="${INPUT_VERSION#v}"
           fi
-          if ! [[ "$VERSION" =~ ^[0-9]{4}\.[0-9]{1,4}\.[0-9]+$ ]]; then
-            echo "::error::version '$VERSION' should look like 2026.1012.0"
+          if ! [[ "$VERSION" =~ ^[0-9]{4}\.[0-9]{1,4}\.[0-9]+(-next)?$ ]]; then
+            echo "::error::version '$VERSION' should look like 2026.1012.0 (or 2026.1012.0-next)"
             exit 1
           fi
+          BASE="${VERSION%-next}"
           # Android versionCode: 2026.1011.2 -> 202610112 (as lazer/build-android.sh; must go up every release).
-          CODE=$(echo "$VERSION" | awk -F. '{ printf "%d%04d%d", $1, $2, $3 }')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "android_code=$CODE" >> "$GITHUB_OUTPUT"
-          echo "Building TumThai **$VERSION** (Android versionCode $CODE)" >> "$GITHUB_STEP_SUMMARY"
+          CODE=$(echo "$BASE" | awk -F. '{ printf "%d%04d%d", $1, $2, $3 }')
+          # The names already live on each server (so updates find their install): prod packs as TumThai, dev as
+          # TumThaiDev (lazer-release.sh); TumThai!Next (a -next version) uses the -next channels (win-next, ...).
+          SUFFIX=""; [[ "$VERSION" == *-next ]] && SUFFIX="-next"
+          if [[ "$INPUT_SERVER" == "dev" ]]; then
+            PACK=TumThaiDev; NAME="TumThai Dev"; BUNDLE=fun.somtum.tumthai.dev; PROP="-p:SomtumServer=dev"
+          else
+            PACK=TumThai; NAME="TumThai"; BUNDLE=fun.somtum.tumthai; PROP=""
+          fi
+          [[ -n "$SUFFIX" ]] && { NAME="$NAME Next"; BUNDLE="$BUNDLE.next"; }
+          {
+            echo "version=$VERSION"; echo "android_code=$CODE"; echo "pack_id=$PACK"; echo "app_name=$NAME"
+            echo "bundle_id=$BUNDLE"; echo "channel_suffix=$SUFFIX"; echo "server_prop=$PROP"
+          } >> "$GITHUB_OUTPUT"
+          echo "Building **$NAME $VERSION** for **$INPUT_SERVER** (pack $PACK, channels *$SUFFIX, Android versionCode $CODE)" >> "$GITHUB_STEP_SUMMARY"
 
   windows:
     name: Windows (Velopack)
     needs: version
+    if: ${{ !inputs.only_macos }}
     runs-on: windows-latest
     timeout-minutes: 60
     env:
@@ -92,8 +124,19 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # A branch that builds against our framework fork (osu.Game references ../../osu-framework): fetch it beside us.
+      - name: Framework
+        shell: bash
+        run: |
+          if grep -q 'osu-framework.osu\.Framework.osu\.Framework\.csproj' osu.Game/osu.Game.csproj; then
+            git clone --filter=blob:none https://github.com/somtum-fun/tumthai-framework.git ../osu-framework
+            git -C ../osu-framework checkout "${{ inputs.framework_ref || 'tumthai-next' }}"
+            git -C ../osu-framework log -1 --format='framework %h %s'
+          fi
+
       - name: Set version
-        run: printf -- "-p:Version=%s\n" "$VERSION" > Directory.Build.rsp
+        shell: bash
+        run: printf -- "-p:Version=%s\n%s\n" "$VERSION" "${{ needs.version.outputs.server_prop }}" > Directory.Build.rsp
 
       - name: Publish
         run: >
@@ -103,12 +146,13 @@ jobs:
       - name: Pack (Setup.exe, Portable.zip, update feed)
         run: |
           dotnet tool install vpk --version "$VPK_VERSION" --tool-path "$RUNNER_TEMP/tools"
-          "$RUNNER_TEMP/tools/vpk" pack --packId TumThai --packVersion "$VERSION" --packDir publish --mainExe tumthai.exe \
-            --packTitle TumThai --packAuthors somtum.fun --icon osu.Desktop/lazer.ico \
-            --channel win --delta None --outputDir velopack
+          PACK="${{ needs.version.outputs.pack_id }}"; CH="win${{ needs.version.outputs.channel_suffix }}"
+          "$RUNNER_TEMP/tools/vpk" pack --packId "$PACK" --packVersion "$VERSION" --packDir publish --mainExe tumthai.exe \
+            --packTitle "${{ needs.version.outputs.app_name }}" --packAuthors somtum.fun --icon osu.Desktop/lazer.ico \
+            --channel "$CH" --delta None --outputDir velopack
           mkdir -p out
-          cp velopack/TumThai-win-Setup.exe "out/TumThai-$VERSION-win-Setup.exe"
-          cp velopack/TumThai-win-Portable.zip "out/TumThai-$VERSION-win-Portable.zip"
+          cp "velopack/$PACK-$CH-Setup.exe" "out/$PACK-$VERSION-win-Setup.exe"
+          cp "velopack/$PACK-$CH-Portable.zip" "out/$PACK-$VERSION-win-Portable.zip"
           ls -la velopack out
 
       - uses: actions/upload-artifact@v7
@@ -130,6 +174,7 @@ jobs:
   linux:
     name: Linux AppImage (${{ matrix.arch }})
     needs: version
+    if: ${{ !inputs.only_macos }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -150,14 +195,25 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # A branch that builds against our framework fork (osu.Game references ../../osu-framework): fetch it beside us.
+      - name: Framework
+        shell: bash
+        run: |
+          if grep -q 'osu-framework.osu\.Framework.osu\.Framework\.csproj' osu.Game/osu.Game.csproj; then
+            git clone --filter=blob:none https://github.com/somtum-fun/tumthai-framework.git ../osu-framework
+            git -C ../osu-framework checkout "${{ inputs.framework_ref || 'tumthai-next' }}"
+            git -C ../osu-framework log -1 --format='framework %h %s'
+          fi
+
       - name: Set version
-        run: printf -- "-p:Version=%s\n" "$VERSION" > Directory.Build.rsp
+        shell: bash
+        run: printf -- "-p:Version=%s\n%s\n" "$VERSION" "${{ needs.version.outputs.server_prop }}" > Directory.Build.rsp
 
       - name: Build AppImage
         run: |
           bash build-osu-appimage.sh --rid "${{ matrix.rid }}" -r "$VERSION" -o "$RUNNER_TEMP/dist" -w "$RUNNER_TEMP/work"
           mkdir -p out
-          cp "$RUNNER_TEMP"/dist/*.AppImage "out/TumThai-$VERSION-${{ matrix.arch }}.AppImage"
+          cp "$RUNNER_TEMP"/dist/*.AppImage "out/${{ needs.version.outputs.pack_id }}-$VERSION-${{ matrix.arch }}.AppImage"
           ls -la out
 
       - uses: actions/upload-artifact@v7
@@ -184,8 +240,19 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # A branch that builds against our framework fork (osu.Game references ../../osu-framework): fetch it beside us.
+      - name: Framework
+        shell: bash
+        run: |
+          if grep -q 'osu-framework.osu\.Framework.osu\.Framework\.csproj' osu.Game/osu.Game.csproj; then
+            git clone --filter=blob:none https://github.com/somtum-fun/tumthai-framework.git ../osu-framework
+            git -C ../osu-framework checkout "${{ inputs.framework_ref || 'tumthai-next' }}"
+            git -C ../osu-framework log -1 --format='framework %h %s'
+          fi
+
       - name: Set version
-        run: printf -- "-p:Version=%s\n" "$VERSION" > Directory.Build.rsp
+        shell: bash
+        run: printf -- "-p:Version=%s\n%s\n" "$VERSION" "${{ needs.version.outputs.server_prop }}" > Directory.Build.rsp
 
       - name: Publish
         run: >
@@ -194,13 +261,14 @@ jobs:
 
       - name: Make TumThai.app
         run: |
-          bash packaging/macos/make-app.sh "$RUNNER_TEMP/publish" "$RUNNER_TEMP/app" "$VERSION"
+          NAME="${{ needs.version.outputs.app_name }}"
+          bash packaging/macos/make-app.sh "$RUNNER_TEMP/publish" "$RUNNER_TEMP/app" "$VERSION" "$NAME" "${{ needs.version.outputs.bundle_id }}"
           # No Apple developer key: ad-hoc sign the whole bundle (Apple Silicon won't run unsigned code).
-          codesign --force --deep --sign - "$RUNNER_TEMP/app/TumThai.app"
-          codesign --verify --deep "$RUNNER_TEMP/app/TumThai.app"
-          file "$RUNNER_TEMP/app/TumThai.app/Contents/MacOS/tumthai"
+          codesign --force --deep --sign - "$RUNNER_TEMP/app/$NAME.app"
+          codesign --verify --deep "$RUNNER_TEMP/app/$NAME.app"
+          file "$RUNNER_TEMP/app/$NAME.app/Contents/MacOS/tumthai"
           mkdir -p out
-          ditto -c -k --keepParent "$RUNNER_TEMP/app/TumThai.app" "out/TumThai-$VERSION-${{ matrix.rid }}.zip"
+          ditto -c -k --keepParent "$RUNNER_TEMP/app/$NAME.app" "out/${{ needs.version.outputs.pack_id }}-$VERSION-${{ matrix.rid }}.zip"
           ls -la out
 
       # Velopack's macOS package (a .pkg installer and the in-app update feed). Its own channel per architecture, so
@@ -210,9 +278,10 @@ jobs:
         continue-on-error: true
         run: |
           dotnet tool install vpk --version "$VPK_VERSION" --tool-path "$RUNNER_TEMP/tools"
-          "$RUNNER_TEMP/tools/vpk" pack --packId TumThai --packVersion "$VERSION" --packDir "$RUNNER_TEMP/app/TumThai.app" \
-            --mainExe tumthai --packTitle TumThai --packAuthors somtum.fun --icon packaging/macos/lazer.icns \
-            --bundleId fun.somtum.tumthai --channel "${{ matrix.rid }}" --delta None \
+          NAME="${{ needs.version.outputs.app_name }}"
+          "$RUNNER_TEMP/tools/vpk" pack --packId "${{ needs.version.outputs.pack_id }}" --packVersion "$VERSION" --packDir "$RUNNER_TEMP/app/$NAME.app" \
+            --mainExe tumthai --packTitle "$NAME" --packAuthors somtum.fun --icon packaging/macos/lazer.icns \
+            --bundleId "${{ needs.version.outputs.bundle_id }}" --channel "${{ matrix.rid }}${{ needs.version.outputs.channel_suffix }}" --delta None \
             --outputDir "$RUNNER_TEMP/velopack"
           ls -la "$RUNNER_TEMP/velopack"
 
@@ -231,6 +300,7 @@ jobs:
   android:
     name: Android (arm64)
     needs: version
+    if: ${{ !inputs.only_macos }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:

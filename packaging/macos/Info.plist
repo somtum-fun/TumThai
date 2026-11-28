@@ -4,11 +4,11 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>TumThai</string>
+	<string>@NAME@</string>
 	<key>CFBundleDisplayName</key>
-	<string>TumThai</string>
+	<string>@NAME@</string>
 	<key>CFBundleIdentifier</key>
-	<string>fun.somtum.tumthai</string>
+	<string>@BUNDLEID@</string>
 	<key>CFBundleExecutable</key>
 	<string>tumthai</string>
 	<key>CFBundleIconFile</key>
