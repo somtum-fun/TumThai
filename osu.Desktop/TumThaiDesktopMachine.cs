@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using osu.Game.Online;
 
@@ -45,8 +47,44 @@ namespace osu.Desktop
                     }
                 }
 
+                // TumThai: macOS's hardware UUID, which stays the same across reinstalls like the two above.
+                if (OperatingSystem.IsMacOS())
+                    return macPlatformUuid();
+
                 return null;
             }
+        }
+
+        /// <summary>macOS: IOPlatformUUID (System Information's "Hardware UUID") from <c>ioreg</c>, or null.</summary>
+        private static string? macPlatformUuid()
+        {
+            try
+            {
+                using var process = Process.Start(new ProcessStartInfo(@"/usr/sbin/ioreg", @"-rd1 -c IOPlatformExpertDevice")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                });
+
+                if (process == null)
+                    return null;
+
+                string output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit(2000);
+                return MacPlatformUuidFrom(output);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>The <c>"IOPlatformUUID" = "…"</c> value in <c>ioreg -rd1 -c IOPlatformExpertDevice</c>'s output.</summary>
+        public static string? MacPlatformUuidFrom(string ioregOutput)
+        {
+            var match = Regex.Match(ioregOutput, "\"IOPlatformUUID\"\\s*=\\s*\"([0-9A-Fa-f-]{36})\"");
+            return match.Success ? match.Groups[1].Value : null;
         }
     }
 }
